@@ -2,6 +2,7 @@
 #include <set>
 #include "z0/vulkan/vulkan_device.hpp"
 #include "z0/log.hpp"
+#include "z0/vulkan/vulkan_model.hpp"
 
 namespace z0 {
 
@@ -163,9 +164,11 @@ namespace z0 {
         createDevice();
         createSwapChain();
         createImageViews();
+        createCommandPool();
     }
 
     VulkanDevice::~VulkanDevice() {
+        vkDestroyCommandPool(device, commandPool, nullptr);
         for (auto imageView : swapChainImageViews) {
             vkDestroyImageView(device, imageView, nullptr);
         }
@@ -284,6 +287,18 @@ namespace z0 {
         }
     }
 
+    void VulkanDevice::createCommandPool() {
+        QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice, surface);
+        VkCommandPoolCreateInfo poolInfo = {};
+        poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+        poolInfo.flags =
+                VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+        if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
+            die("failed to create command pool!");
+        }
+    }
+
     bool VulkanDevice::checkLayerSupport() {
         uint32_t layerCount;
         vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
@@ -339,6 +354,170 @@ namespace z0 {
 
             return actualExtent;
         }
+    }
+
+    void VulkanDevice::defaultPipelineConfigInfo(PipelineConfigInfo& configInfo) {
+        configInfo.inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+        configInfo.inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        configInfo.inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
+
+        configInfo.viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+        configInfo.viewportInfo.viewportCount = 1;
+        configInfo.viewportInfo.pViewports = nullptr;
+        configInfo.viewportInfo.scissorCount = 1;
+        configInfo.viewportInfo.pScissors = nullptr;
+
+        configInfo.rasterizationInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+        configInfo.rasterizationInfo.depthClampEnable = VK_FALSE;
+        configInfo.rasterizationInfo.rasterizerDiscardEnable = VK_FALSE;
+        configInfo.rasterizationInfo.polygonMode = VK_POLYGON_MODE_FILL;
+        configInfo.rasterizationInfo.lineWidth = 1.0f;
+        configInfo.rasterizationInfo.cullMode = VK_CULL_MODE_NONE;
+        configInfo.rasterizationInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
+        configInfo.rasterizationInfo.depthBiasEnable = VK_FALSE;
+        configInfo.rasterizationInfo.depthBiasConstantFactor = 0.0f;  // Optional
+        configInfo.rasterizationInfo.depthBiasClamp = 0.0f;           // Optional
+        configInfo.rasterizationInfo.depthBiasSlopeFactor = 0.0f;     // Optional
+
+        configInfo.multisampleInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+        configInfo.multisampleInfo.sampleShadingEnable = VK_FALSE;
+        configInfo.multisampleInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+        configInfo.multisampleInfo.minSampleShading = 1.0f;           // Optional
+        configInfo.multisampleInfo.pSampleMask = nullptr;             // Optional
+        configInfo.multisampleInfo.alphaToCoverageEnable = VK_FALSE;  // Optional
+        configInfo.multisampleInfo.alphaToOneEnable = VK_FALSE;       // Optional
+
+        configInfo.colorBlendAttachment.colorWriteMask =
+                VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
+                VK_COLOR_COMPONENT_A_BIT;
+        configInfo.colorBlendAttachment.blendEnable = VK_FALSE;
+        configInfo.colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;   // Optional
+        configInfo.colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;  // Optional
+        configInfo.colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;              // Optional
+        configInfo.colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;   // Optional
+        configInfo.colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;  // Optional
+        configInfo.colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;              // Optional
+
+        configInfo.colorBlendInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+        configInfo.colorBlendInfo.logicOpEnable = VK_FALSE;
+        configInfo.colorBlendInfo.logicOp = VK_LOGIC_OP_COPY;  // Optional
+        configInfo.colorBlendInfo.attachmentCount = 1;
+        configInfo.colorBlendInfo.pAttachments = &configInfo.colorBlendAttachment;
+        configInfo.colorBlendInfo.blendConstants[0] = 0.0f;  // Optional
+        configInfo.colorBlendInfo.blendConstants[1] = 0.0f;  // Optional
+        configInfo.colorBlendInfo.blendConstants[2] = 0.0f;  // Optional
+        configInfo.colorBlendInfo.blendConstants[3] = 0.0f;  // Optional
+
+        configInfo.depthStencilInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+        configInfo.depthStencilInfo.depthTestEnable = VK_TRUE;
+        configInfo.depthStencilInfo.depthWriteEnable = VK_TRUE;
+        configInfo.depthStencilInfo.depthCompareOp = VK_COMPARE_OP_LESS;
+        configInfo.depthStencilInfo.depthBoundsTestEnable = VK_FALSE;
+        configInfo.depthStencilInfo.minDepthBounds = 0.0f;  // Optional
+        configInfo.depthStencilInfo.maxDepthBounds = 1.0f;  // Optional
+        configInfo.depthStencilInfo.stencilTestEnable = VK_FALSE;
+        configInfo.depthStencilInfo.front = {};  // Optional
+        configInfo.depthStencilInfo.back = {};   // Optional
+
+        configInfo.dynamicStateEnables = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+        configInfo.dynamicStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+        configInfo.dynamicStateInfo.pDynamicStates = configInfo.dynamicStateEnables.data();
+        configInfo.dynamicStateInfo.dynamicStateCount = static_cast<uint32_t >(configInfo.dynamicStateEnables.size());
+        configInfo.dynamicStateInfo.flags = 0;
+
+        configInfo.bindingDescriptions = VulkanModel::Vertex::getBindingDescription();
+        configInfo.attributeDescriptions = VulkanModel::Vertex::getAttributeDescription();
+    }
+
+    void VulkanDevice::enableAlphaBlending(PipelineConfigInfo &configInfo) {
+        configInfo.colorBlendAttachment.blendEnable = VK_TRUE;
+
+        configInfo.colorBlendAttachment.colorWriteMask =
+                VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
+                VK_COLOR_COMPONENT_A_BIT;
+        configInfo.colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+        configInfo.colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        configInfo.colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+        configInfo.colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+        configInfo.colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+        configInfo.colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+    }
+
+    uint32_t VulkanDevice::findMemoryType(VkPhysicalDevice vkPhysicalDevice, uint32_t typeFilter,
+                                          VkMemoryPropertyFlags properties) {
+        VkPhysicalDeviceMemoryProperties memProperties;
+        vkGetPhysicalDeviceMemoryProperties(vkPhysicalDevice, &memProperties);
+        for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+            if ((typeFilter & (1 << i)) &&
+                (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+                return i;
+            }
+        }
+        die("failed to find suitable memory type!");
+        return 0;
+    }
+
+    void VulkanDevice::createBuffer(
+            VkDeviceSize size,
+            VkBufferUsageFlags usage,
+            VkMemoryPropertyFlags properties,
+            VkBuffer &buffer,
+            VkDeviceMemory &bufferMemory) {
+        VkBufferCreateInfo bufferInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = size;
+        bufferInfo.usage = usage;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create vertex buffer!");
+        }
+        VkMemoryRequirements memRequirements;
+        vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
+        VkMemoryAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex = findMemoryType(physicalDevice, memRequirements.memoryTypeBits, properties);
+        if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+            throw std::runtime_error("failed to allocate vertex buffer memory!");
+        }
+        vkBindBufferMemory(device, buffer, bufferMemory, 0);
+    }
+
+    VkCommandBuffer VulkanDevice::beginSingleTimeCommands() {
+        VkCommandBufferAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocInfo.commandPool = commandPool;
+        allocInfo.commandBufferCount = 1;
+        VkCommandBuffer commandBuffer;
+        vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        vkBeginCommandBuffer(commandBuffer, &beginInfo);
+        return commandBuffer;
+    }
+
+    void VulkanDevice::endSingleTimeCommands(VkCommandBuffer commandBuffer) {
+        vkEndCommandBuffer(commandBuffer);
+        VkSubmitInfo submitInfo{};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &commandBuffer;
+        vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+        vkQueueWaitIdle(graphicsQueue);
+        vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
+    }
+
+    void VulkanDevice::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
+        // TODO : use memory barrier
+        VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+        VkBufferCopy copyRegion{};
+        copyRegion.srcOffset = 0;  // Optional
+        copyRegion.dstOffset = 0;  // Optional
+        copyRegion.size = size;
+        vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+        endSingleTimeCommands(commandBuffer);
     }
 
 

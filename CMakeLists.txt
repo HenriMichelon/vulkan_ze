@@ -16,7 +16,11 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/include/z0/log.hpp
         ${Z0_ENGINE_DIR}/src/vulkan/window_helper.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_device.cpp
-        ${Z0_ENGINE_DIR}/src/application.cpp)
+        ${Z0_ENGINE_DIR}/src/application.cpp
+        engine/include/z0/vulkan/vulkan_buffer.hpp
+        engine/include/z0/vulkan/vulkan_model.hpp
+        engine/src/vulkan/vulkan_buffer.cpp
+        engine/src/vulkan/vulkan_model.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC ${Z0_ENGINE_DIR}/include)
 
 file(GLOB_RECURSE Z0_GLSL_SOURCE_FILES
