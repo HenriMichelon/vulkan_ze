@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vulkan/vulkan.hpp>
+#include <memory>
 #include "window_helper.hpp"
 
 namespace z0 {
@@ -20,7 +21,7 @@ namespace z0 {
 
     class VulkanDevice {
     public:
-        VulkanDevice(WindowHelper &window);
+        explicit VulkanDevice(WindowHelper &window);
         ~VulkanDevice();
 
         VkDevice getDevice() { return device; }
@@ -38,15 +39,24 @@ namespace z0 {
         VkSurfaceKHR surface;
         VkQueue graphicsQueue;
         VkQueue presentQueue;
+        VkSwapchainKHR swapChain;
+        std::vector<VkImage> swapChainImages;
+        VkFormat swapChainImageFormat;
+        VkExtent2D swapChainExtent;
+        std::shared_ptr<VkSwapchainKHR> oldSwapChain;
 
         void createInstance();
         void createDevice();
+        void createSwapChain();
 
         static bool checkLayerSupport();
         static int rateDeviceSuitability(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR surface);
         static bool checkDeviceExtensionSupport(VkPhysicalDevice vkPhysicalDevice);
         static SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR surface);
         static QueueFamilyIndices findQueueFamilies(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR surface);
+        static VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
+        static VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
+        static VkExtent2D chooseSwapExtent(WindowHelper& window, const VkSurfaceCapabilitiesKHR& capabilities);
     };
 
 }
