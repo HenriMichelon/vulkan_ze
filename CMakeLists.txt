@@ -10,17 +10,12 @@ set(Z0_ENGINE_DIR engine)
 
 add_executable(${PROJECT_NAME}
         example/main.cpp
-        ${Z0_ENGINE_DIR}/include/z0/vulkan/window.hpp
-        ${Z0_ENGINE_DIR}/include/z0/vulkan/window.hpp
-        ${Z0_ENGINE_DIR}/include/z0/vulkan/main_loop.hpp
-        ${Z0_ENGINE_DIR}/include/z0/run_loop.hpp
-        ${Z0_ENGINE_DIR}/include/z0/vulkan/os.hpp
-        ${Z0_ENGINE_DIR}/include/z0/log.hpp
-        ${Z0_ENGINE_DIR}/include/z0/vulkan/device.hpp
+        ${Z0_ENGINE_DIR}/include/z0/vulkan/window_helper.hpp
+        ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_device.hpp
         ${Z0_ENGINE_DIR}/include/z0/application.hpp
-        ${Z0_ENGINE_DIR}/src/vulkan/window_glfw.cpp
-        ${Z0_ENGINE_DIR}/src/vulkan/main_loop.cpp
-        ${Z0_ENGINE_DIR}/src/vulkan/device.cpp
+        ${Z0_ENGINE_DIR}/include/z0/log.hpp
+        ${Z0_ENGINE_DIR}/src/vulkan/window_helper.cpp
+        ${Z0_ENGINE_DIR}/src/vulkan/vulkan_device.cpp
         ${Z0_ENGINE_DIR}/src/application.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC ${Z0_ENGINE_DIR}/include)
 

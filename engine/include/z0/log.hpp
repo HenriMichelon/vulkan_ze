@@ -22,13 +22,4 @@ namespace z0 {
         throw std::runtime_error(stringstream.str());
     }
 
-    void check(VkResult result, std::convertible_to<std::string_view> auto&& ...s) {
-        if (result == VK_SUCCESS) return;
-        std::stringstream stringstream;
-        for (auto v : std::initializer_list<std::string_view>{ s... }) {
-            stringstream << v << " ";
-        }
-        throw std::runtime_error(stringstream.str());
-    }
-
 }

@@ -1,9 +1,9 @@
-#include "z0/vulkan/window.hpp"
+#include "z0/vulkan/window_helper.hpp"
 
 #include <stdexcept>
 
 namespace z0 {
-    Z0Window::Z0Window(int w, int h, const std::string& windowName): width{w}, height{h} {
+    WindowHelper::WindowHelper(int w, int h, const std::string& windowName): width{w}, height{h} {
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
@@ -13,15 +13,8 @@ namespace z0 {
         glfwSetWindowPos(windowHandle, (mode->width - width)/2, (mode->height - height)/2);
     }
 
-    void Z0Window::close() {
+    void WindowHelper::close() {
         glfwDestroyWindow(windowHandle);
         glfwTerminate();
-    }
-
-    void Z0Window::run(RunLoop &mainLoop) {
-        while (!glfwWindowShouldClose(windowHandle)) {
-            glfwPollEvents();
-            mainLoop.run();
-        }
     }
 }
