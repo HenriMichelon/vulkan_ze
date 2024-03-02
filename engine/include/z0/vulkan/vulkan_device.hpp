@@ -43,11 +43,13 @@ namespace z0 {
         std::vector<VkImage> swapChainImages;
         VkFormat swapChainImageFormat;
         VkExtent2D swapChainExtent;
+        std::vector<VkImageView> swapChainImageViews;
         std::shared_ptr<VkSwapchainKHR> oldSwapChain;
 
         void createInstance();
         void createDevice();
         void createSwapChain();
+        void createImageViews();
 
         static bool checkLayerSupport();
         static int rateDeviceSuitability(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR surface);
