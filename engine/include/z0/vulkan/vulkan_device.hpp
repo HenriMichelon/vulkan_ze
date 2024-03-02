@@ -39,13 +39,14 @@ namespace z0 {
         VkQueue graphicsQueue;
         VkQueue presentQueue;
 
-        static bool checkLayerSupport();
         void createInstance();
         void createDevice();
-        int rateDeviceSuitability();
-        bool checkDeviceExtensionSupport();
-        SwapChainSupportDetails querySwapChainSupport();
-        QueueFamilyIndices findQueueFamilies();
+
+        static bool checkLayerSupport();
+        static int rateDeviceSuitability(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR surface);
+        static bool checkDeviceExtensionSupport(VkPhysicalDevice vkPhysicalDevice);
+        static SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR surface);
+        static QueueFamilyIndices findQueueFamilies(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR surface);
     };
 
 }

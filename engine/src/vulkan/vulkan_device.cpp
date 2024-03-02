@@ -15,19 +15,19 @@ namespace z0 {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME
     };
 
-    QueueFamilyIndices  VulkanDevice::findQueueFamilies() {
+    QueueFamilyIndices  VulkanDevice::findQueueFamilies(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR surface) {
         QueueFamilyIndices indices;
         uint32_t queueFamilyCount = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
+        vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, &queueFamilyCount, nullptr);
         std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
+        vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, &queueFamilyCount, queueFamilies.data());
         int i = 0;
         for (const auto& queueFamily : queueFamilies) {
             if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
                 indices.graphicsFamily = i;
             }
             VkBool32 presentSupport = false;
-            vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &presentSupport);
+            vkGetPhysicalDeviceSurfaceSupportKHR(vkPhysicalDevice, i, surface, &presentSupport);
             if (presentSupport) {
                 indices.presentFamily = i;
             }
@@ -39,29 +39,29 @@ namespace z0 {
         return indices;
     }
 
-    SwapChainSupportDetails VulkanDevice::querySwapChainSupport() {
+    SwapChainSupportDetails VulkanDevice::querySwapChainSupport(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR surface) {
         SwapChainSupportDetails details;
-        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &details.capabilities);
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vkPhysicalDevice, surface, &details.capabilities);
         uint32_t formatCount;
-        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr);
+        vkGetPhysicalDeviceSurfaceFormatsKHR(vkPhysicalDevice, surface, &formatCount, nullptr);
         if (formatCount != 0) {
             details.formats.resize(formatCount);
-            vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, details.formats.data());
+            vkGetPhysicalDeviceSurfaceFormatsKHR(vkPhysicalDevice, surface, &formatCount, details.formats.data());
         }
         uint32_t presentModeCount;
-        vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(vkPhysicalDevice, surface, &presentModeCount, nullptr);
         if (presentModeCount != 0) {
             details.presentModes.resize(presentModeCount);
-            vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, details.presentModes.data());
+            vkGetPhysicalDeviceSurfacePresentModesKHR(vkPhysicalDevice, surface, &presentModeCount, details.presentModes.data());
         }
         return details;
     }
 
-    bool VulkanDevice::checkDeviceExtensionSupport() {
+    bool VulkanDevice::checkDeviceExtensionSupport(VkPhysicalDevice vkPhysicalDevice) {
         uint32_t extensionCount;
-        vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
+        vkEnumerateDeviceExtensionProperties(vkPhysicalDevice, nullptr, &extensionCount, nullptr);
         std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-        vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableExtensions.data());
+        vkEnumerateDeviceExtensionProperties(vkPhysicalDevice, nullptr, &extensionCount, availableExtensions.data());
         std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
         for (const auto& extension : availableExtensions) {
             requiredExtensions.erase(extension.extensionName);
@@ -69,11 +69,11 @@ namespace z0 {
         return requiredExtensions.empty();
     }
 
-    int VulkanDevice::rateDeviceSuitability() {
+    int VulkanDevice::rateDeviceSuitability(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR surface) {
         VkPhysicalDeviceProperties deviceProperties;
-        vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
+        vkGetPhysicalDeviceProperties(vkPhysicalDevice, &deviceProperties);
         VkPhysicalDeviceFeatures deviceFeatures;
-        vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
+        vkGetPhysicalDeviceFeatures(vkPhysicalDevice, &deviceFeatures);
 
         int score = 0;
         // Discrete GPUs have a significant performance advantage
@@ -86,13 +86,13 @@ namespace z0 {
         if (!deviceFeatures.geometryShader) {
             return 0;
         }
-        bool extensionsSupported = checkDeviceExtensionSupport();
+        bool extensionsSupported = checkDeviceExtensionSupport(vkPhysicalDevice);
         bool swapChainAdequate = false;
         if (extensionsSupported) {
-            SwapChainSupportDetails swapChainSupport = querySwapChainSupport();
+            SwapChainSupportDetails swapChainSupport = querySwapChainSupport(vkPhysicalDevice, surface);
             swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
         }
-        QueueFamilyIndices indices = findQueueFamilies();
+        QueueFamilyIndices indices = findQueueFamilies(vkPhysicalDevice, surface);
         if ((!extensionsSupported) || (!indices.isComplete()) || (!swapChainAdequate)) {
             return 0;
         }
@@ -100,7 +100,7 @@ namespace z0 {
     }
 
     void VulkanDevice::createDevice() {
-        QueueFamilyIndices indices = findQueueFamilies();
+        QueueFamilyIndices indices = findQueueFamilies(physicalDevice, surface);
 
         float queuePriority = 1.0f;
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
@@ -134,7 +134,6 @@ namespace z0 {
 
     VulkanDevice::VulkanDevice(WindowHelper &w): window{w} {
         createInstance();
-        physicalDevice = VK_NULL_HANDLE;
         uint32_t deviceCount = 0;
         vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
         if (deviceCount == 0) {
@@ -150,7 +149,7 @@ namespace z0 {
         // Use an ordered map to automatically sort candidates by increasing score
         std::multimap<int, VkPhysicalDevice> candidates;
         for (const auto& device : devices) {
-            int score = rateDeviceSuitability();
+            int score = rateDeviceSuitability(device, surface);
             candidates.insert(std::make_pair(score, device));
         }
         // Check if the best candidate is suitable at all
