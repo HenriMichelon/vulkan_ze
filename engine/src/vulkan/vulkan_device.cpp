@@ -23,6 +23,13 @@ namespace z0 {
         VK_EXT_SHADER_OBJECT_EXTENSION_NAME
     };
 
+#ifdef GLFW_VERSION_MAJOR
+    static void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
+        auto device = reinterpret_cast<VulkanDevice*>(glfwGetWindowUserPointer(window));
+        device->framebufferResized = true;
+    }
+#endif
+
     VulkanDevice::VulkanDevice(WindowHelper &w): window{w} {
         if (volkInitialize() != VK_SUCCESS) {
             die("Failed to initialize Volk");
@@ -38,6 +45,8 @@ namespace z0 {
         if (glfwCreateWindowSurface(instance, window.getWindowHandle(), nullptr, &surface) != VK_SUCCESS) {
             die("Failed to create window surface!");
         }
+        glfwSetWindowUserPointer(window.getWindowHandle(), this);
+        glfwSetFramebufferSizeCallback(window.getWindowHandle(), framebufferResizeCallback);
 #endif
         std::vector<VkPhysicalDevice> devices(deviceCount);
         vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
@@ -60,11 +69,8 @@ namespace z0 {
     }
 
     VulkanDevice::~VulkanDevice() {
+        cleanupSwapChain();
         vkDestroyCommandPool(device, commandPool, nullptr);
-        for (auto imageView : swapChainImageViews) {
-            vkDestroyImageView(device, imageView, nullptr);
-        }
-        vkDestroySwapchainKHR(device, swapChain, nullptr);
         vkDestroyDevice(device, nullptr);
         vkDestroySurfaceKHR(instance, surface, nullptr);
         vkDestroyInstance(instance, nullptr);
@@ -203,6 +209,29 @@ namespace z0 {
         vkGetSwapchainImagesKHR(device, swapChain, &imageCount, swapChainImages.data());
         swapChainImageFormat = surfaceFormat.format;
         swapChainExtent = extent;
+    }
+
+    void VulkanDevice::recreateSwapChain() {
+        framebufferResized = false;
+#ifdef GLFW_VERSION_MAJOR
+        int width = 0, height = 0;
+        glfwGetFramebufferSize(window.getWindowHandle(), &width, &height);
+        while (width == 0 || height == 0) {
+            glfwGetFramebufferSize(window.getWindowHandle(), &width, &height);
+            glfwWaitEvents();
+        }
+#endif
+        vkDeviceWaitIdle(device);
+        cleanupSwapChain();
+        createSwapChain();
+        createImageViews();
+    }
+
+    void VulkanDevice::cleanupSwapChain() {
+        for (auto & swapChainImageView : swapChainImageViews) {
+            vkDestroyImageView(device, swapChainImageView, nullptr);
+        }
+        vkDestroySwapchainKHR(device, swapChain, nullptr);
     }
 
     void VulkanDevice::createImageViews() {

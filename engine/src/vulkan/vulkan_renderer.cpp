@@ -30,15 +30,20 @@ namespace z0 {
     // https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Rendering_and_presentation
     void VulkanRenderer::drawFrame() {
         vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
-        vkResetFences(device, 1, &inFlightFences[currentFrame]);
-
         uint32_t imageIndex;
-        vkAcquireNextImageKHR(device,
+        VkResult result = vkAcquireNextImageKHR(device,
                               vulkanDevice.getSwapChain(),
                               UINT64_MAX,
                               imageAvailableSemaphores[currentFrame],
                               VK_NULL_HANDLE,
                               &imageIndex);
+        if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+            vulkanDevice.recreateSwapChain();
+            return;
+        } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+            die("failed to acquire swap chain image!");
+        }
+        vkResetFences(device, 1, &inFlightFences[currentFrame]);
 
         vkResetCommandBuffer(commandBuffers[currentFrame], 0);
         recordCommandBuffer(commandBuffers[currentFrame], imageIndex);
@@ -72,7 +77,13 @@ namespace z0 {
                     .pImageIndices      = &imageIndex,
                     .pResults           = nullptr // Optional
             };
-            vkQueuePresentKHR(vulkanDevice.getPresentQueue(), &presentInfo);
+            result = vkQueuePresentKHR(vulkanDevice.getPresentQueue(), &presentInfo);
+            if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || vulkanDevice.framebufferResized) {
+                vulkanDevice.recreateSwapChain();
+            } else if (result != VK_SUCCESS) {
+                die("failed to present swap chain image!");
+            }
+
         }
         currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     }

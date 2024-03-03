@@ -39,6 +39,9 @@ namespace z0 {
         [[nodiscard]] std::vector<VkImageView>& getSwapChainImageViews() { return swapChainImageViews; }
         [[nodiscard]] std::vector<VkImage>& getSwapChainImages() { return swapChainImages; }
 
+        void recreateSwapChain();
+        bool framebufferResized = false;
+
         void createBuffer(
                 VkDeviceSize size,
                 VkBufferUsageFlags usage,
@@ -70,6 +73,7 @@ namespace z0 {
         void createInstance();
         void createDevice();
         void createSwapChain();
+        void cleanupSwapChain();
         void createImageViews();
         void createCommandPool();
 
