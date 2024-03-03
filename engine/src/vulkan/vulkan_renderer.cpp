@@ -41,34 +41,37 @@ namespace z0 {
         vkResetCommandBuffer(commandBuffer, 0);
         recordCommandBuffer(imageIndex);
 
-        const VkSemaphore waitSemaphores[] = {imageAvailableSemaphore};
-        const VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
         const VkSemaphore signalSemaphores[] = {renderFinishedSemaphore};
-        const VkSubmitInfo submitInfo{
-            .sType                  = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-            .waitSemaphoreCount     = 1,
-            .pWaitSemaphores        = waitSemaphores,
-            .pWaitDstStageMask      = waitStages,
-            .commandBufferCount     = 1,
-            .pCommandBuffers        = &commandBuffer,
-            .signalSemaphoreCount   = 1,
-            .pSignalSemaphores      = signalSemaphores
-        };
-        if (vkQueueSubmit(vulkanDevice.getGraphicsQueue(), 1, &submitInfo, inFlightFence) != VK_SUCCESS) {
-            die("failed to submit draw command buffer!");
+        {
+            const VkSemaphore waitSemaphores[] = {imageAvailableSemaphore};
+            const VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+            const VkSubmitInfo submitInfo{
+                    .sType                  = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+                    .waitSemaphoreCount     = 1,
+                    .pWaitSemaphores        = waitSemaphores,
+                    .pWaitDstStageMask      = waitStages,
+                    .commandBufferCount     = 1,
+                    .pCommandBuffers        = &commandBuffer,
+                    .signalSemaphoreCount   = 1,
+                    .pSignalSemaphores      = signalSemaphores
+            };
+            if (vkQueueSubmit(vulkanDevice.getGraphicsQueue(), 1, &submitInfo, inFlightFence) != VK_SUCCESS) {
+                die("failed to submit draw command buffer!");
+            }
         }
-
-        const VkSwapchainKHR swapChains[] = {vulkanDevice.getSwapChain()};
-        const VkPresentInfoKHR presentInfo{
-                .sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-                .waitSemaphoreCount = 1,
-                .pWaitSemaphores    = signalSemaphores,
-                .swapchainCount     = 1,
-                .pSwapchains        = swapChains,
-                .pImageIndices      = &imageIndex,
-                .pResults           = nullptr // Optional
-        };
-        vkQueuePresentKHR(vulkanDevice.getPresentQueue(), &presentInfo);
+        {
+            const VkSwapchainKHR swapChains[] = {vulkanDevice.getSwapChain()};
+            const VkPresentInfoKHR presentInfo{
+                    .sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+                    .waitSemaphoreCount = 1,
+                    .pWaitSemaphores    = signalSemaphores,
+                    .swapchainCount     = 1,
+                    .pSwapchains        = swapChains,
+                    .pImageIndices      = &imageIndex,
+                    .pResults           = nullptr // Optional
+            };
+            vkQueuePresentKHR(vulkanDevice.getPresentQueue(), &presentInfo);
+        }
     }
 
     void VulkanRenderer::createSyncObjects() {
@@ -138,7 +141,6 @@ namespace z0 {
             vkCmdDraw(commandBuffer, 3, 1, 0, 0);
         }
         endRendering(imageIndex);
-
         if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
             die("failed to record command buffer!");
         }
@@ -162,33 +164,36 @@ namespace z0 {
 
     void VulkanRenderer::setInitialState()
     {
-        const VkExtent2D extent = vulkanDevice.getSwapChainExtent();
-        const VkViewport viewport{
-                .x = 0.0f,
-                .y = 0.0f,
-                .width = static_cast<float>(extent.width),
-                .height = static_cast<float>(extent.height),
-                .minDepth = 0.0f,
-                .maxDepth = 1.0f
-        };
-        vkCmdSetViewportWithCountEXT(commandBuffer, 1, &viewport);
-        const VkRect2D scissor{
-                .offset = {0, 0},
-                .extent = extent
-        };
-        vkCmdSetScissorWithCountEXT(commandBuffer, 1, &scissor);
+        {
+            const VkExtent2D extent = vulkanDevice.getSwapChainExtent();
+            const VkViewport viewport{
+                    .x = 0.0f,
+                    .y = 0.0f,
+                    .width = static_cast<float>(extent.width),
+                    .height = static_cast<float>(extent.height),
+                    .minDepth = 0.0f,
+                    .maxDepth = 1.0f
+            };
+            vkCmdSetViewportWithCountEXT(commandBuffer, 1, &viewport);
+            const VkRect2D scissor{
+                    .offset = {0, 0},
+                    .extent = extent
+            };
+            vkCmdSetScissorWithCountEXT(commandBuffer, 1, &scissor);
+        }
 
-        // Rasterization is always enabled
-        vkCmdSetRasterizerDiscardEnableEXT(commandBuffer, VK_FALSE);
-        const VkColorBlendEquationEXT colorBlendEquation {
-            .srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
-            .dstColorBlendFactor = VK_BLEND_FACTOR_ZERO,
-            .colorBlendOp = VK_BLEND_OP_ADD,
-            .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
-            .dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
-            .alphaBlendOp = VK_BLEND_OP_ADD,
-        };
-        vkCmdSetColorBlendEquationEXT(commandBuffer, 0, 1, &colorBlendEquation);
+        {
+            vkCmdSetRasterizerDiscardEnableEXT(commandBuffer, VK_FALSE);
+            const VkColorBlendEquationEXT colorBlendEquation{
+                    .srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
+                    .dstColorBlendFactor = VK_BLEND_FACTOR_ZERO,
+                    .colorBlendOp = VK_BLEND_OP_ADD,
+                    .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
+                    .dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
+                    .alphaBlendOp = VK_BLEND_OP_ADD,
+            };
+            vkCmdSetColorBlendEquationEXT(commandBuffer, 0, 1, &colorBlendEquation);
+        }
 
        /* const VkVertexInputBindingDescription2EXT vertex_binding[] =
                 {
