@@ -13,10 +13,8 @@ namespace z0 {
 
     private:
         VulkanDevice& device;
-        VkRenderPass renderPass;
         VkPipelineLayout pipelineLayout;
         VkPipeline graphicsPipeline;
-        std::vector<VkFramebuffer> swapChainFramebuffers;
         VkCommandPool commandPool;
         VkCommandBuffer commandBuffer;
         VkSemaphore imageAvailableSemaphore;
@@ -24,12 +22,15 @@ namespace z0 {
         VkFence inFlightFence;
 
         void createGraphicsPipeline();
-        void createRenderPass();
-        void createFramebuffers();
         void createCommandPool();
         void createCommandBuffer();
         void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
         void createSyncObjects();
+
+        void beginRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+        void endRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+        void transitionImageToOptimal(uint32_t imageIndex);
+        void transitionImageToPresentSrc(uint32_t imageIndex);
 
         VkShaderModule createShaderModule(const std::vector<char>& code);
         static std::vector<char> readFile(const std::string& filepath);

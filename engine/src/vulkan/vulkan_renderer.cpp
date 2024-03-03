@@ -6,10 +6,8 @@
 
 namespace z0 {
 
-    VulkanRenderer::VulkanRenderer(VulkanDevice &dev): device{dev} {
-        createRenderPass();
+    VulkanRenderer::VulkanRenderer(VulkanDevice &dev) : device{dev} {
         createGraphicsPipeline();
-        createFramebuffers();
         createCommandPool();
         createCommandBuffer();
         createSyncObjects();
@@ -20,13 +18,9 @@ namespace z0 {
         vkDestroySemaphore(device.getDevice(), imageAvailableSemaphore, nullptr);
         vkDestroySemaphore(device.getDevice(), renderFinishedSemaphore, nullptr);
         vkDestroyFence(device.getDevice(), inFlightFence, nullptr);
-        for (auto framebuffer: swapChainFramebuffers) {
-            vkDestroyFramebuffer(device.getDevice(), framebuffer, nullptr);
-        }
         vkDestroyCommandPool(device.getDevice(), commandPool, nullptr);
         vkDestroyPipeline(device.getDevice(), graphicsPipeline, nullptr);
         vkDestroyPipelineLayout(device.getDevice(), pipelineLayout, nullptr);
-        vkDestroyRenderPass(device.getDevice(), renderPass, nullptr);
     }
 
     // https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Rendering_and_presentation
@@ -35,43 +29,44 @@ namespace z0 {
         vkResetFences(device.getDevice(), 1, &inFlightFence);
 
         uint32_t imageIndex;
-        vkAcquireNextImageKHR(device.getDevice(), device.getSwapChain(), UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+        vkAcquireNextImageKHR(device.getDevice(),
+                              device.getSwapChain(),
+                              UINT64_MAX,
+                              imageAvailableSemaphore,
+                              VK_NULL_HANDLE,
+                              &imageIndex);
 
         vkResetCommandBuffer(commandBuffer, 0);
         recordCommandBuffer(commandBuffer, imageIndex);
 
-        VkSubmitInfo submitInfo{};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-        VkSemaphore waitSemaphores[] = {imageAvailableSemaphore};
-        VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-        submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores = waitSemaphores;
-        submitInfo.pWaitDstStageMask = waitStages;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &commandBuffer;
-
-        VkSemaphore signalSemaphores[] = {renderFinishedSemaphore};
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = signalSemaphores;
-
+        const VkSemaphore waitSemaphores[] = {imageAvailableSemaphore};
+        const VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+        const VkSemaphore signalSemaphores[] = {renderFinishedSemaphore};
+        const VkSubmitInfo submitInfo{
+            .sType                  = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+            .waitSemaphoreCount     = 1,
+            .pWaitSemaphores        = waitSemaphores,
+            .pWaitDstStageMask      = waitStages,
+            .commandBufferCount     = 1,
+            .pCommandBuffers        = &commandBuffer,
+            .signalSemaphoreCount   = 1,
+            .pSignalSemaphores      = signalSemaphores
+        };
         if (vkQueueSubmit(device.getGraphicsQueue(), 1, &submitInfo, inFlightFence) != VK_SUCCESS) {
-            throw std::runtime_error("failed to submit draw command buffer!");
+            die("failed to submit draw command buffer!");
         }
 
-        VkPresentInfoKHR presentInfo{};
-        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
-        presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores = signalSemaphores;
-
-        VkSwapchainKHR swapChains[] = {device.getSwapChain()};
-        presentInfo.swapchainCount = 1;
-        presentInfo.pSwapchains = swapChains;
-        presentInfo.pImageIndices = &imageIndex;
-        presentInfo.pResults = nullptr; // Optional
+        const VkSwapchainKHR swapChains[] = {device.getSwapChain()};
+        const VkPresentInfoKHR presentInfo{
+                .sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+                .waitSemaphoreCount = 1,
+                .pWaitSemaphores    = signalSemaphores,
+                .swapchainCount     = 1,
+                .pSwapchains        = swapChains,
+                .pImageIndices      = &imageIndex,
+                .pResults           = nullptr // Optional
+        };
         vkQueuePresentKHR(device.getPresentQueue(), &presentInfo);
-
     }
 
     void VulkanRenderer::createSyncObjects() {
@@ -87,39 +82,17 @@ namespace z0 {
         }
     }
 
-    // https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Framebuffers
-    void VulkanRenderer::createFramebuffers() {
-        swapChainFramebuffers.resize(device.getSwapChainImageViews().size());
-        for (size_t i = 0; i < device.getSwapChainImageViews().size(); i++) {
-            VkImageView attachments[] = {
-                    device.getSwapChainImageViews()[i]
-            };
-
-            VkFramebufferCreateInfo framebufferInfo{};
-            framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-            framebufferInfo.renderPass = renderPass;
-            framebufferInfo.attachmentCount = 1;
-            framebufferInfo.pAttachments = attachments;
-            framebufferInfo.width = device.getSwapChainExtent().width;
-            framebufferInfo.height = device.getSwapChainExtent().height;
-            framebufferInfo.layers = 1;
-
-            if (vkCreateFramebuffer(device.getDevice(), &framebufferInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS) {
-                die("failed to create framebuffer!");
-            }
-        }
-    }
-
     // https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Command_buffers
     void VulkanRenderer::createCommandPool() {
-        QueueFamilyIndices queueFamilyIndices = VulkanDevice::findQueueFamilies(device.getPhysicalDevice(), device.getSurface());
+        QueueFamilyIndices queueFamilyIndices = VulkanDevice::findQueueFamilies(device.getPhysicalDevice(),
+                                                                                device.getSurface());
 
         VkCommandPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
         poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
         if (vkCreateCommandPool(device.getDevice(), &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
-           die("failed to create command pool!");
+            die("failed to create command pool!");
         }
     }
 
@@ -140,25 +113,11 @@ namespace z0 {
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         beginInfo.flags = 0; // Optional
         beginInfo.pInheritanceInfo = nullptr; // Optional
-
         if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
             die("failed to begin recording command buffer!");
         }
 
-        VkRenderPassBeginInfo renderPassInfo{};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = renderPass;
-        renderPassInfo.framebuffer = swapChainFramebuffers[imageIndex];
-
-        renderPassInfo.renderArea.offset = {0, 0};
-        renderPassInfo.renderArea.extent = device.getSwapChainExtent();
-
-        VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
-        renderPassInfo.clearValueCount = 1;
-        renderPassInfo.pClearValues = &clearColor;
-
-        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
+        beginRendering(commandBuffer, imageIndex);
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
         VkViewport viewport{};
@@ -172,19 +131,19 @@ namespace z0 {
 
         VkRect2D scissor{};
         scissor.offset = {0, 0};
-        scissor.extent =  device.getSwapChainExtent();
+        scissor.extent = device.getSwapChainExtent();
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
         vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+        endRendering(commandBuffer, imageIndex);
 
-        vkCmdEndRenderPass(commandBuffer);
         if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
             throw std::runtime_error("failed to record command buffer!");
         }
     }
 
     // https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Introduction
-    void  VulkanRenderer::createGraphicsPipeline() {
+    void VulkanRenderer::createGraphicsPipeline() {
         auto vertShaderCode = readFile("shaders/triangle.vert.spv");
         auto fragShaderCode = readFile("shaders/triangle.frag.spv");
         VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
@@ -215,10 +174,21 @@ namespace z0 {
             die("failed to create pipeline layout!");
         }
 
+        // https://docs.vulkan.org/samples/latest/samples/extensions/dynamic_rendering/README.html
+        VkFormat color_rendering_format = device.getSwapChainImageFormat();
+        VkPipelineRenderingCreateInfoKHR pipelineRenderingCreateInfo{};
+        pipelineRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
+        pipelineRenderingCreateInfo.pNext = VK_NULL_HANDLE;
+        pipelineRenderingCreateInfo.colorAttachmentCount = 1;
+        pipelineRenderingCreateInfo.pColorAttachmentFormats = &color_rendering_format;
+        //pipelineRenderingCreateInfo.depthAttachmentFormat   = depth_format;
+        //pipelineRenderingCreateInfo.stencilAttachmentFormat = depth_format;
+
         // https://vulkan-tutorial.com/en/Drawing_a_triangle/Graphics_pipeline_basics/Conclusion
         VulkanPipelineConfig defaultPipelineConfig{};
         VkGraphicsPipelineCreateInfo pipelineInfo{};
         pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+        pipelineInfo.pNext = &pipelineRenderingCreateInfo;
         pipelineInfo.stageCount = 2;
         pipelineInfo.pStages = shaderStages;
         pipelineInfo.pVertexInputState = &defaultPipelineConfig.vertexInputInfo;
@@ -230,12 +200,13 @@ namespace z0 {
         pipelineInfo.pColorBlendState = &defaultPipelineConfig.colorBlendInfo;
         pipelineInfo.pDynamicState = &defaultPipelineConfig.dynamicStateInfo;
         pipelineInfo.layout = pipelineLayout;
-        pipelineInfo.renderPass = renderPass;
+        pipelineInfo.renderPass = VK_NULL_HANDLE;
         pipelineInfo.subpass = 0;
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
         pipelineInfo.basePipelineIndex = -1; // Optional
 
-        if (vkCreateGraphicsPipelines(device.getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
+        if (vkCreateGraphicsPipelines(device.getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
+                                      &graphicsPipeline) != VK_SUCCESS) {
             die("failed to create graphics pipeline!");
         }
 
@@ -243,55 +214,12 @@ namespace z0 {
         vkDestroyShaderModule(device.getDevice(), vertShaderModule, nullptr);
     }
 
-    // https://vulkan-tutorial.com/en/Drawing_a_triangle/Graphics_pipeline_basics/Render_passes
-    void VulkanRenderer::createRenderPass() {
-        VkAttachmentDescription colorAttachment{};
-        colorAttachment.format = device.getSwapChainImageFormat();
-        colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-        colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-        VkAttachmentReference colorAttachmentRef{};
-        colorAttachmentRef.attachment = 0;
-        colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-        VkSubpassDescription subpass{};
-        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpass.colorAttachmentCount = 1;
-        subpass.pColorAttachments = &colorAttachmentRef;
-
-        VkRenderPassCreateInfo renderPassInfo{};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        renderPassInfo.attachmentCount = 1;
-        renderPassInfo.pAttachments = &colorAttachment;
-        renderPassInfo.subpassCount = 1;
-        renderPassInfo.pSubpasses = &subpass;
-
-        VkSubpassDependency dependency{};
-        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-        dependency.dstSubpass = 0;
-        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.srcAccessMask = 0;
-        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        renderPassInfo.dependencyCount = 1;
-        renderPassInfo.pDependencies = &dependency;
-
-        if (vkCreateRenderPass(device.getDevice(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
-            die("failed to create render pass!");
-        }
-    }
-
     // https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Shader_modules
-    VkShaderModule VulkanRenderer::createShaderModule(const std::vector<char>& code) {
+    VkShaderModule VulkanRenderer::createShaderModule(const std::vector<char> &code) {
         VkShaderModuleCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
         createInfo.codeSize = code.size();
-        createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+        createInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
         VkShaderModule shaderModule;
         if (vkCreateShaderModule(device.getDevice(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
             die("failed to create shader module!");
@@ -299,7 +227,7 @@ namespace z0 {
         return shaderModule;
     }
 
-    std::vector<char> VulkanRenderer::readFile(const std::string& filepath) {
+    std::vector<char> VulkanRenderer::readFile(const std::string &filepath) {
         std::ifstream file{filepath, std::ios::ate | std::ios::binary};
         if (!file.is_open()) {
             die("failed to open file : " + filepath);
@@ -311,5 +239,94 @@ namespace z0 {
         file.close();
         return buffer;
     }
+
+    // https://lesleylai.info/en/vk-khr-dynamic-rendering/
+    void VulkanRenderer::beginRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
+        transitionImageToOptimal(imageIndex);
+        VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+        const VkRenderingAttachmentInfoKHR color_attachment_info{
+                .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
+                .imageView = device.getSwapChainImageViews()[imageIndex],
+                .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR,
+                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+                .clearValue = clearColor,
+        };
+        const VkRect2D renderArea{
+                {0, 0},
+                device.getSwapChainExtent()};
+        const VkRenderingInfoKHR renderingInfo{
+                .sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR,
+                .renderArea = renderArea,
+                .layerCount = 1,
+                .colorAttachmentCount = 1,
+                .pColorAttachments = &color_attachment_info,
+        };
+        device.vkCmdBeginRenderingKHR(commandBuffer, &renderingInfo);
+    }
+
+    void VulkanRenderer::endRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
+        device.vkCmdEndRenderingKHR(commandBuffer);
+        transitionImageToPresentSrc(imageIndex);
+    }
+
+    void VulkanRenderer::transitionImageToPresentSrc(uint32_t imageIndex) {
+        const VkImageMemoryBarrier image_memory_barrier_after{
+                .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+                .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                .newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                .image = device.getSwapChainImages()[imageIndex],
+                .subresourceRange = {
+                        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                        .baseMipLevel = 0,
+                        .levelCount = 1,
+                        .baseArrayLayer = 0,
+                        .layerCount = 1,
+                }
+        };
+        vkCmdPipelineBarrier(
+                commandBuffer,
+                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,  // srcStageMask
+                VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, // dstStageMask
+                0,
+                0,
+                nullptr,
+                0,
+                nullptr,
+                1, // imageMemoryBarrierCount
+                &image_memory_barrier_after // pImageMemoryBarriers
+        );
+    }
+
+    void VulkanRenderer::transitionImageToOptimal(uint32_t imageIndex) {
+        const VkImageMemoryBarrier image_memory_barrier_before{
+                .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+                .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+                .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                .image = device.getSwapChainImages()[imageIndex],
+                .subresourceRange = {
+                        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                        .baseMipLevel = 0,
+                        .levelCount = 1,
+                        .baseArrayLayer = 0,
+                        .layerCount = 1,
+                }
+        };
+        vkCmdPipelineBarrier(
+                commandBuffer,
+                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,  // srcStageMask
+                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, // dstStageMask
+                0,
+                0,
+                nullptr,
+                0,
+                nullptr,
+                1, // imageMemoryBarrierCount
+                &image_memory_barrier_before // pImageMemoryBarriers
+        );
+    }
+
 
 }

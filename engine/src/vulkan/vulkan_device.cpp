@@ -16,7 +16,8 @@ namespace z0 {
     };
 
     const std::vector<const char*> deviceExtensions = {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+        VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
     };
 
     QueueFamilyIndices  VulkanDevice::findQueueFamilies(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR surface) {
@@ -130,6 +131,20 @@ namespace z0 {
         createInfo.ppEnabledExtensionNames = deviceExtensions.data();
         createInfo.enabledLayerCount = static_cast<uint32_t>(requestedLayers.size());
         createInfo.ppEnabledLayerNames = requestedLayers.data();
+
+        // https://lesleylai.info/en/vk-khr-dynamic-rendering/
+        constexpr VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_feature {
+                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR,
+                .dynamicRendering = VK_TRUE,
+        };
+        createInfo.pNext = &dynamic_rendering_feature;
+        vkCmdBeginRenderingKHR = (PFN_vkCmdBeginRenderingKHR) vkGetInstanceProcAddr(instance, "vkCmdBeginRenderingKHR");
+        vkCmdEndRenderingKHR   = (PFN_vkCmdEndRenderingKHR) vkGetInstanceProcAddr(instance, "vkCmdEndRenderingKHR");
+        if (!vkCmdBeginRenderingKHR || !vkCmdEndRenderingKHR)
+        {
+            die("Unable to dynamically load vkCmdBeginRenderingKHR and vkCmdEndRenderingKHR");
+        }
+
         if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
             die("Failed to create logical device!");
         }

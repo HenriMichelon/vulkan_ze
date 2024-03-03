@@ -36,6 +36,7 @@ namespace z0 {
         [[nodiscard]] const VkExtent2D& getSwapChainExtent() const { return swapChainExtent;}
         [[nodiscard]] VkFormat getSwapChainImageFormat() const { return swapChainImageFormat; }
         [[nodiscard]] std::vector<VkImageView>& getSwapChainImageViews() { return swapChainImageViews; }
+        [[nodiscard]] std::vector<VkImage>& getSwapChainImages() { return swapChainImages; }
 
         void createBuffer(
                 VkDeviceSize size,
@@ -48,6 +49,9 @@ namespace z0 {
         void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
         static QueueFamilyIndices findQueueFamilies(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR surface);
+
+        PFN_vkCmdBeginRenderingKHR vkCmdBeginRenderingKHR;
+        PFN_vkCmdEndRenderingKHR vkCmdEndRenderingKHR;
 
     private:
         WindowHelper &window;
