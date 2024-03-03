@@ -36,9 +36,9 @@ namespace z0 {
         std::unique_ptr<VulkanShader> vertShader;
         std::unique_ptr<VulkanShader> fragShader;
         void createShaders();
-        void buildShader(VulkanShader *shader);
-        void buildLinkedShaders( VulkanShader *vert, VulkanShader *frag);
-        void bindShader( VulkanShader *shader);
+        void buildShader(VulkanShader& shader);
+        void buildLinkedShaders(VulkanShader& vert, VulkanShader& frag);
+        void bindShader(VulkanShader& shader);
 
         std::vector<char> readFile(const std::string& fileName);
 

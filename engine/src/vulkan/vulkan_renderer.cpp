@@ -124,22 +124,19 @@ namespace z0 {
         }
         setInitialState();
         beginRendering(imageIndex);
-
         {
             // Disable depth write and use cull mode none to draw skybox
             vkCmdSetCullModeEXT(commandBuffer, VK_CULL_MODE_NONE);
             vkCmdSetDepthWriteEnableEXT(commandBuffer, VK_FALSE);
 
-            // Bind shaders for the skybox
-            bindShader(vertShader.get());
-            bindShader(fragShader.get());
+            bindShader(*vertShader);
+            bindShader(*fragShader);
 
             VkShaderStageFlagBits geo_stage = VK_SHADER_STAGE_GEOMETRY_BIT;
             vkCmdBindShadersEXT(commandBuffer, 1, &geo_stage, nullptr);
 
             vkCmdDraw(commandBuffer, 3, 1, 0, 0);
         }
-
         endRendering(imageIndex);
 
         if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
@@ -275,22 +272,17 @@ namespace z0 {
                 nullptr,
                 nullptr
         );
-        buildLinkedShaders(vertShader.get(), fragShader.get());
+        buildLinkedShaders(*vertShader, *fragShader);
     }
 
-    void VulkanRenderer::buildLinkedShaders(VulkanShader *vert, VulkanShader *frag)
+    void VulkanRenderer::buildLinkedShaders(VulkanShader& vert, VulkanShader& frag)
     {
         VkShaderCreateInfoEXT shader_create_infos[2];
-        if (vert == nullptr || frag == nullptr) {
-            die("buildLinkedShaders failed with null vertex or fragment shader");
-        }
-
-        shader_create_infos[0] = vert->getShaderCreateInfo();
-        shader_create_infos[1] = frag->getShaderCreateInfo();
+        shader_create_infos[0] = vert.getShaderCreateInfo();
+        shader_create_infos[1] = frag.getShaderCreateInfo();
         for (auto &shader_create : shader_create_infos){
             shader_create.flags |= VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
         }
-
         VkShaderEXT shaderEXTs[2];
         if (vkCreateShadersEXT(
                 device,
@@ -300,21 +292,21 @@ namespace z0 {
                 shaderEXTs) != VK_SUCCESS) {
             die("vkCreateShadersEXT failed\n");
         }
-        vert->setShader(shaderEXTs[0]);
-        frag->setShader(shaderEXTs[1]);
+        vert.setShader(shaderEXTs[0]);
+        frag.setShader(shaderEXTs[1]);
     }
 
-    void VulkanRenderer::buildShader(VulkanShader *shader) {
+    void VulkanRenderer::buildShader(VulkanShader& shader) {
         VkShaderEXT shaderEXT;
-        VkShaderCreateInfoEXT shaderCreateInfo = shader->getShaderCreateInfo();
+        VkShaderCreateInfoEXT shaderCreateInfo = shader.getShaderCreateInfo();
         if (vkCreateShadersEXT(device, 1, &shaderCreateInfo, nullptr, &shaderEXT) != VK_SUCCESS) {
             die("vkCreateShadersEXT failed");
         }
-        shader->setShader(shaderEXT);
+        shader.setShader(shaderEXT);
     }
 
-    void VulkanRenderer::bindShader(VulkanShader *shader) {
-        vkCmdBindShadersEXT(commandBuffer, 1, shader->getStage(), shader->getShader());
+    void VulkanRenderer::bindShader(VulkanShader& shader) {
+        vkCmdBindShadersEXT(commandBuffer, 1, shader.getStage(), shader.getShader());
     }
     //endregion
 
