@@ -15,18 +15,19 @@ namespace z0 {
         VulkanDevice& vulkanDevice;
         VkDevice device;
         VkPipelineLayout pipelineLayout;
-        VkPipeline graphicsPipeline;
+        //VkPipeline graphicsPipeline;
         VkCommandPool commandPool;
         VkCommandBuffer commandBuffer;
         VkSemaphore imageAvailableSemaphore;
         VkSemaphore renderFinishedSemaphore;
         VkFence inFlightFence;
 
-        void createGraphicsPipeline();
+        //void createGraphicsPipeline();
         void createCommandPool();
         void createCommandBuffer();
         void recordCommandBuffer(uint32_t imageIndex);
         void createSyncObjects();
+        void setInitialState();
 
         void beginRendering(uint32_t imageIndex);
         void endRendering(uint32_t imageIndex);

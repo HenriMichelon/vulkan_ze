@@ -7,7 +7,6 @@
 namespace z0 {
 
     VulkanRenderer::VulkanRenderer(VulkanDevice &dev) : vulkanDevice{dev}, device(dev.getDevice()) {
-        createGraphicsPipeline();
         createCommandPool();
         createCommandBuffer();
         createSyncObjects();
@@ -19,7 +18,6 @@ namespace z0 {
         vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
         vkDestroyFence(device, inFlightFence, nullptr);
         vkDestroyCommandPool(device, commandPool, nullptr);
-        vkDestroyPipeline(device, graphicsPipeline, nullptr);
         vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
     }
 
@@ -120,27 +118,12 @@ namespace z0 {
         if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
             die("failed to begin recording command buffer!");
         }
-
+        setInitialState();
         beginRendering(imageIndex);
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
-        const VkExtent2D extent = vulkanDevice.getSwapChainExtent();
-        const VkViewport viewport{
-            .x = 0.0f,
-            .y = 0.0f,
-            .width = static_cast<float>(extent.width),
-            .height = static_cast<float>(extent.height),
-            .minDepth = 0.0f,
-            .maxDepth = 1.0f
-        };
-        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-        const VkRect2D scissor{
-            .offset = {0, 0},
-            .extent = extent
-        };
-        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-
+        // XX
         vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+
         endRendering(imageIndex);
 
         if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
@@ -149,7 +132,7 @@ namespace z0 {
     }
 
     // https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Introduction
-    void VulkanRenderer::createGraphicsPipeline() {
+    /*void VulkanRenderer::createGraphicsPipeline() {
         auto vertShaderCode = readFile("shaders/triangle.vert.spv");
         auto fragShaderCode = readFile("shaders/triangle.frag.spv");
         VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
@@ -235,7 +218,7 @@ namespace z0 {
             die("failed to create shader module!");
         }
         return shaderModule;
-    }
+    }*/
 
     std::vector<char> VulkanRenderer::readFile(const std::string &filepath) {
         std::ifstream file{filepath, std::ios::ate | std::ios::binary};
@@ -250,17 +233,112 @@ namespace z0 {
         return buffer;
     }
 
+    void VulkanRenderer::setInitialState()
+    {
+        const VkExtent2D extent = vulkanDevice.getSwapChainExtent();
+        const VkViewport viewport{
+                .x = 0.0f,
+                .y = 0.0f,
+                .width = static_cast<float>(extent.width),
+                .height = static_cast<float>(extent.height),
+                .minDepth = 0.0f,
+                .maxDepth = 1.0f
+        };
+        vkCmdSetViewportWithCountEXT(commandBuffer, 1, &viewport);
+        const VkRect2D scissor{
+                .offset = {0, 0},
+                .extent = extent
+        };
+        vkCmdSetScissorWithCountEXT(commandBuffer, 1, &scissor);
+
+        // Rasterization is always enabled
+        vkCmdSetRasterizerDiscardEnableEXT(commandBuffer, VK_FALSE);
+
+       /* const VkVertexInputBindingDescription2EXT vertex_binding[] =
+                {
+                        vkb::initializers::vertex_input_binding_description2ext(0, sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX, 1)};
+
+        const VkVertexInputAttributeDescription2EXT vertex_attribute_description_ext[] =
+                {
+                        vkb::initializers::vertex_input_attribute_description2ext(
+                                0,
+                                0,
+                                VK_FORMAT_R32G32B32_SFLOAT,
+                                offsetof(Vertex, pos)),
+                        vkb::initializers::vertex_input_attribute_description2ext(
+                                0,
+                                1,
+                                VK_FORMAT_R32G32B32_SFLOAT,
+                                offsetof(Vertex, normal)),
+                        vkb::initializers::vertex_input_attribute_description2ext(
+                                0,
+                                2,
+                                VK_FORMAT_R32G32_SFLOAT,
+                                offsetof(Vertex, uv)),
+                };
+
+        vkCmdSetVertexInputEXT(cmd, sizeof(vertex_binding) / sizeof(vertex_binding[0]), vertex_binding, sizeof(vertex_attribute_description_ext) / sizeof(vertex_attribute_description_ext[0]), vertex_attribute_description_ext);
+        */
+        // Set the topology to triangles, don't restart primitives, set samples to only 1 per pixel
+        vkCmdSetPrimitiveTopologyEXT(commandBuffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+        vkCmdSetPrimitiveRestartEnableEXT(commandBuffer, VK_FALSE);
+        vkCmdSetRasterizationSamplesEXT(commandBuffer, VK_SAMPLE_COUNT_1_BIT);
+
+        const VkSampleMask sample_mask = 0x1;
+        vkCmdSetSampleMaskEXT(commandBuffer, VK_SAMPLE_COUNT_1_BIT, &sample_mask);
+
+        // Do not use alpha to coverage or alpha to one because not using MSAA
+        vkCmdSetAlphaToCoverageEnableEXT(commandBuffer, VK_FALSE);
+
+        vkCmdSetPolygonModeEXT(commandBuffer, VK_POLYGON_MODE_FILL);
+
+        // Set front face, cull mode is set in build_command_buffers.
+        vkCmdSetFrontFaceEXT(commandBuffer, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+
+        // Set depth state, the depth write. Don't enable depth bounds, bias, or stencil test.
+        vkCmdSetDepthTestEnableEXT(commandBuffer, VK_TRUE);
+        vkCmdSetDepthCompareOpEXT(commandBuffer, VK_COMPARE_OP_GREATER);
+        vkCmdSetDepthBoundsTestEnableEXT(commandBuffer, VK_FALSE);
+        vkCmdSetDepthBiasEnableEXT(commandBuffer, VK_FALSE);
+        vkCmdSetStencilTestEnableEXT(commandBuffer, VK_FALSE);
+
+        // Do not enable logic op
+        vkCmdSetLogicOpEnableEXT(commandBuffer, VK_FALSE);
+
+        // Disable color blending
+        VkBool32 color_blend_enables[] = {VK_FALSE};
+        vkCmdSetColorBlendEnableEXT(commandBuffer, 0, 1, color_blend_enables);
+
+        // Use RGBA color write mask
+        VkColorComponentFlags color_component_flags[] = {VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_A_BIT};
+        vkCmdSetColorWriteMaskEXT(commandBuffer, 0, 1, color_component_flags);
+    }
+
+    //region Dynamic Rendering
     // https://lesleylai.info/en/vk-khr-dynamic-rendering/
     void VulkanRenderer::beginRendering(uint32_t imageIndex) {
         transitionImageToOptimal(imageIndex);
-        VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+        const VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+        const VkClearValue depthClearValue{
+            .depthStencil = {0.f, 0}
+        };
         const VkRenderingAttachmentInfoKHR colorAttachmentInfo{
             .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
             .imageView = vulkanDevice.getSwapChainImageViews()[imageIndex],
             .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR,
+            .resolveMode = VK_RESOLVE_MODE_NONE,
             .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
             .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
             .clearValue = clearColor,
+        };
+        const VkRenderingAttachmentInfoKHR depthAttachmentInfo{
+            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
+            .imageView = vulkanDevice.getSwapChainImageViews()[imageIndex],
+            .imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+            .resolveMode = VK_RESOLVE_MODE_NONE,
+            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+            .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+            .clearValue = depthClearValue,
         };
         const VkRect2D renderArea{
             {0, 0},
@@ -271,12 +349,13 @@ namespace z0 {
             .layerCount = 1,
             .colorAttachmentCount = 1,
             .pColorAttachments = &colorAttachmentInfo,
+            .pDepthAttachment = &depthAttachmentInfo
         };
-        vulkanDevice.vkCmdBeginRenderingKHR(commandBuffer, &renderingInfo);
+        vkCmdBeginRenderingKHR(commandBuffer, &renderingInfo);
     }
 
     void VulkanRenderer::endRendering(uint32_t imageIndex) {
-        vulkanDevice.vkCmdEndRenderingKHR(commandBuffer);
+        vkCmdEndRenderingKHR(commandBuffer);
         transitionImageToPresentSrc(imageIndex);
     }
 
@@ -337,6 +416,7 @@ namespace z0 {
             &imageMemoryBarrier // pImageMemoryBarriers
         );
     }
+    //endregion
 
 
 }

@@ -1,10 +1,12 @@
 #pragma once
 
-#include "window_helper.hpp"
+#include <volk.h>
 
-#include <vulkan/vulkan.hpp>
+#include "z0/vulkan/window_helper.hpp"
 
 #include <memory>
+#include <optional>
+#include <vector>
 
 namespace z0 {
 
@@ -20,7 +22,6 @@ namespace z0 {
         std::vector<VkSurfaceFormatKHR> formats;
         std::vector<VkPresentModeKHR> presentModes;
     };
-
 
     class VulkanDevice {
     public:
@@ -50,9 +51,6 @@ namespace z0 {
 
         static QueueFamilyIndices findQueueFamilies(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR surface);
 
-        PFN_vkCmdBeginRenderingKHR vkCmdBeginRenderingKHR;
-        PFN_vkCmdEndRenderingKHR vkCmdEndRenderingKHR;
-
     private:
         WindowHelper &window;
         VkInstance instance;
@@ -74,7 +72,6 @@ namespace z0 {
         void createSwapChain();
         void createImageViews();
         void createCommandPool();
-        void enableDynamicRendering(VkDeviceCreateInfo createInfo);
 
         static bool checkLayerSupport();
         static int rateDeviceSuitability(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR surface);

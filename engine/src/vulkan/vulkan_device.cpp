@@ -17,10 +17,16 @@ namespace z0 {
 
     const std::vector<const char*> deviceExtensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-        VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
+        // https://docs.vulkan.org/samples/latest/samples/extensions/dynamic_rendering/README.html
+        VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
+        // https://docs.vulkan.org/samples/latest/samples/extensions/shader_object/README.html
+        VK_EXT_SHADER_OBJECT_EXTENSION_NAME
     };
 
     VulkanDevice::VulkanDevice(WindowHelper &w): window{w} {
+        if (volkInitialize() != VK_SUCCESS) {
+            die("Failed to initialize Volk");
+        }
         createInstance();
         uint32_t deviceCount = 0;
         vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
@@ -162,11 +168,25 @@ namespace z0 {
             queueCreateInfos.push_back(queueCreateInfo);
         }
 
+        // https://docs.vulkan.org/samples/latest/samples/extensions/shader_object/README.html
+        VkPhysicalDeviceShaderObjectFeaturesEXT deviceShaderObjectFeatures {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT,
+            .shaderObject  = VK_TRUE,
+        };
+
+        // https://lesleylai.info/en/vk-khr-dynamic-rendering/
+        const VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeature {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR,
+            .pNext = &deviceShaderObjectFeatures,
+            .dynamicRendering = VK_TRUE,
+        };
+
         const VkPhysicalDeviceFeatures deviceFeatures{
             .samplerAnisotropy = VK_TRUE
         };
         VkDeviceCreateInfo createInfo {
             .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+            .pNext = &dynamicRenderingFeature,
             .queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size()),
             .pQueueCreateInfos = queueCreateInfos.data(),
             .enabledLayerCount = static_cast<uint32_t>(requestedLayers.size()),
@@ -175,19 +195,6 @@ namespace z0 {
             .ppEnabledExtensionNames = deviceExtensions.data(),
             .pEnabledFeatures = &deviceFeatures,
         };
-
-        // https://lesleylai.info/en/vk-khr-dynamic-rendering/
-        constexpr VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_feature {
-            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR,
-            .dynamicRendering = VK_TRUE,
-        };
-        createInfo.pNext = &dynamic_rendering_feature;
-        vkCmdBeginRenderingKHR = (PFN_vkCmdBeginRenderingKHR) vkGetInstanceProcAddr(instance, "vkCmdBeginRenderingKHR");
-        vkCmdEndRenderingKHR   = (PFN_vkCmdEndRenderingKHR) vkGetInstanceProcAddr(instance, "vkCmdEndRenderingKHR");
-        if (!vkCmdBeginRenderingKHR || !vkCmdEndRenderingKHR)
-        {
-            die("Unable to dynamically load vkCmdBeginRenderingKHR and vkCmdEndRenderingKHR");
-        }
 
         if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
             die("Failed to create logical device!");
@@ -247,7 +254,7 @@ namespace z0 {
             .imageColorSpace = surfaceFormat.colorSpace,
             .imageExtent = extent,
             .imageArrayLayers = 1,
-            .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+            .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, // TODO Check if VK_IMAGE_USAGE_TRANSFER_DST_BIT is useful
             .preTransform = swapChainSupport.capabilities.currentTransform,
             .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
             .presentMode = presentMode,

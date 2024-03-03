@@ -15,6 +15,9 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_buffer.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_model.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_renderer.hpp
+        ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_pipeline_config.hpp
+        ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_shader.hpp
+        ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_extensions.hpp
         ${Z0_ENGINE_DIR}/include/z0/application.hpp
         ${Z0_ENGINE_DIR}/include/z0/log.hpp
         ${Z0_ENGINE_DIR}/src/vulkan/window_helper.cpp
@@ -23,10 +26,10 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_model.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_renderer.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_renderer.cpp
+        ${Z0_ENGINE_DIR}/src/vulkan/vulkan_pipeline_config.cpp
+        ${Z0_ENGINE_DIR}/src/vulkan/vulkan_shader.cpp
+        ${Z0_ENGINE_DIR}/src/vulkan/vulkan_extensions.cpp
         ${Z0_ENGINE_DIR}/src/application.cpp
-        engine/include/z0/vulkan/vulkan_pipeline_config.hpp
-        engine/include/z0/vulkan/vulkan_pipeline_config.hpp
-        engine/src/vulkan/vulkan_pipeline_config.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC ${Z0_ENGINE_DIR}/include)
 
