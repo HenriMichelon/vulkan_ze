@@ -15,7 +15,6 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_buffer.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_model.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_renderer.hpp
-        ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_pipeline_config.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_shader.hpp
         ${Z0_ENGINE_DIR}/include/z0/application.hpp
         ${Z0_ENGINE_DIR}/include/z0/log.hpp
@@ -23,7 +22,6 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_device.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_buffer.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_model.cpp
-        ${Z0_ENGINE_DIR}/src/vulkan/vulkan_renderer.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_renderer.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_shader.cpp
         ${Z0_ENGINE_DIR}/src/application.cpp

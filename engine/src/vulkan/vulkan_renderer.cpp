@@ -1,12 +1,14 @@
 #include "z0/vulkan/vulkan_renderer.hpp"
-#include "z0/vulkan/vulkan_pipeline_config.hpp"
 #include "z0/log.hpp"
 
 #include <fstream>
+#include <utility>
+#include <filesystem>
 
 namespace z0 {
 
-    VulkanRenderer::VulkanRenderer(VulkanDevice &dev) : vulkanDevice{dev}, device(dev.getDevice()) {
+    VulkanRenderer::VulkanRenderer(VulkanDevice &dev, std::string sDir) :
+        vulkanDevice{dev}, device(dev.getDevice()), shaderDirectory(std::move(sDir)) {
         createCommandPool();
         createCommandBuffer();
         createSyncObjects();
@@ -145,99 +147,13 @@ namespace z0 {
         }
     }
 
-    // https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Introduction
-    /*void VulkanRenderer::createGraphicsPipeline() {
-        auto vertShaderCode = readFile("shaders/triangle.vert.spv");
-        auto fragShaderCode = readFile("shaders/triangle.frag.spv");
-        VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
-        VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
-
-        const VkPipelineShaderStageCreateInfo vertShaderStageInfo{
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-            .stage = VK_SHADER_STAGE_VERTEX_BIT,
-            .module = vertShaderModule,
-            .pName = "main"
-        };
-        const VkPipelineShaderStageCreateInfo fragShaderStageInfo{
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .module = fragShaderModule,
-            .pName = "main"
-        };
-        const VkPipelineShaderStageCreateInfo shaderStages[] = {
-            vertShaderStageInfo,
-            fragShaderStageInfo
-        };
-        const VkPipelineLayoutCreateInfo pipelineLayoutInfo{
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-            .setLayoutCount = 0,
-            .pSetLayouts = nullptr,
-            .pushConstantRangeCount = 0,
-            .pPushConstantRanges = nullptr
-        };
-        if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
-            die("failed to create pipeline layout!");
-        }
-
-        // https://docs.vulkan.org/samples/latest/samples/extensions/dynamic_rendering/README.html
-        const VkFormat colorRenderingFormat = vulkanDevice.getSwapChainImageFormat();
-        const VkPipelineRenderingCreateInfoKHR pipelineRenderingCreateInfo{
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
-            .pNext = VK_NULL_HANDLE,
-            .colorAttachmentCount = 1,
-            .pColorAttachmentFormats = &colorRenderingFormat,
-            //.depthAttachmentFormat   = depth_format,
-            //.stencilAttachmentFormat = depth_format
-        };
-
-        // https://vulkan-tutorial.com/en/Drawing_a_triangle/Graphics_pipeline_basics/Conclusion
-        const VulkanPipelineConfig defaultPipelineConfig{};
-        const VkGraphicsPipelineCreateInfo pipelineInfo{
-            .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-            .pNext = &pipelineRenderingCreateInfo,
-            .stageCount = 2,
-            .pStages = shaderStages,
-            .pVertexInputState = &defaultPipelineConfig.vertexInputInfo,
-            .pInputAssemblyState = &defaultPipelineConfig.inputAssemblyInfo,
-            .pViewportState = &defaultPipelineConfig.viewportInfo,
-            .pRasterizationState = &defaultPipelineConfig.rasterizationInfo,
-            .pMultisampleState = &defaultPipelineConfig.multisampleInfo,
-            .pDepthStencilState = &defaultPipelineConfig.depthStencilInfo,
-            .pColorBlendState = &defaultPipelineConfig.colorBlendInfo,
-            .pDynamicState = &defaultPipelineConfig.dynamicStateInfo,
-            .layout = pipelineLayout,
-            .renderPass = VK_NULL_HANDLE,
-            .subpass = 0,
-            .basePipelineHandle = VK_NULL_HANDLE,
-            .basePipelineIndex = -1
-        };
-        if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
-                                      &graphicsPipeline) != VK_SUCCESS) {
-            die("failed to create graphics pipeline!");
-        }
-
-        vkDestroyShaderModule(device, fragShaderModule, nullptr);
-        vkDestroyShaderModule(device, vertShaderModule, nullptr);
-    }
-
-    // https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Shader_modules
-    VkShaderModule VulkanRenderer::createShaderModule(const std::vector<char> &code) {
-        const VkShaderModuleCreateInfo createInfo{
-            .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-            .codeSize = code.size(),
-            .pCode = reinterpret_cast<const uint32_t *>(code.data())
-        };
-        VkShaderModule shaderModule;
-        if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
-            die("failed to create shader module!");
-        }
-        return shaderModule;
-    }*/
-
-    std::vector<char> VulkanRenderer::readFile(const std::string &filepath) {
+    std::vector<char> VulkanRenderer::readFile(const std::string &fileName) {
+        std::filesystem::path filepath = shaderDirectory;
+        filepath /= fileName;
+        filepath += ".spv";
         std::ifstream file{filepath, std::ios::ate | std::ios::binary};
         if (!file.is_open()) {
-            die("failed to open file : " + filepath);
+            die("failed to open file : ", fileName);
         }
         size_t fileSize = static_cast<size_t>(file.tellg());
         std::vector<char> buffer(fileSize);
@@ -267,6 +183,15 @@ namespace z0 {
 
         // Rasterization is always enabled
         vkCmdSetRasterizerDiscardEnableEXT(commandBuffer, VK_FALSE);
+        const VkColorBlendEquationEXT colorBlendEquation {
+            .srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
+            .dstColorBlendFactor = VK_BLEND_FACTOR_ZERO,
+            .colorBlendOp = VK_BLEND_OP_ADD,
+            .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
+            .dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
+            .alphaBlendOp = VK_BLEND_OP_ADD,
+        };
+        vkCmdSetColorBlendEquationEXT(commandBuffer, 0, 1, &colorBlendEquation);
 
        /* const VkVertexInputBindingDescription2EXT vertex_binding[] =
                 {
@@ -330,7 +255,7 @@ namespace z0 {
 
     //region Shared Objects
     void VulkanRenderer::createShaders() {
-        auto vertCode = readFile("shaders/triangle.vert.spv");
+        auto vertCode = readFile("triangle.vert");
         vertShader = std::make_unique<VulkanShader>(
                 vulkanDevice,
                 VK_SHADER_STAGE_VERTEX_BIT,
@@ -340,7 +265,7 @@ namespace z0 {
                 nullptr,
                 nullptr
                 );
-        auto fragCode = readFile("shaders/triangle.frag.spv");
+        auto fragCode = readFile("triangle.frag");
         fragShader = std::make_unique<VulkanShader>(
                 vulkanDevice,
                 VK_SHADER_STAGE_FRAGMENT_BIT,

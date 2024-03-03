@@ -7,12 +7,13 @@ namespace z0 {
 
     class VulkanRenderer {
     public:
-        explicit VulkanRenderer(VulkanDevice& device);
+        explicit VulkanRenderer(VulkanDevice& device, std::string shaderDirectory);
         ~VulkanRenderer();
 
         void drawFrame();
 
     private:
+        std::string shaderDirectory;
         VulkanDevice& vulkanDevice;
         VkDevice device;
         VkCommandPool commandPool;
@@ -39,7 +40,7 @@ namespace z0 {
         void buildLinkedShaders( VulkanShader *vert, VulkanShader *frag);
         void bindShader( VulkanShader *shader);
 
-        static std::vector<char> readFile(const std::string& filepath);
+        std::vector<char> readFile(const std::string& fileName);
 
     public:
         VulkanRenderer(const VulkanRenderer&) = delete;

@@ -5,7 +5,7 @@
 namespace z0 {
     Application::Application(int w, int h, const std::string &name): window{w, h, name} {
         VulkanDevice vulkanDevice{window};
-        VulkanRenderer vulkanRenderer{vulkanDevice};
+        VulkanRenderer vulkanRenderer{vulkanDevice, "shaders"};
         while (!window.shouldClose()) {
             window.process();
             vulkanRenderer.drawFrame();
