@@ -11,7 +11,7 @@ namespace z0 {
 
     const std::vector<const char*> requestedLayers = {
 #ifndef NDEBUG
-            "VK_LAYER_KHRONOS_validation"
+        "VK_LAYER_KHRONOS_validation"
 #endif
     };
 
@@ -19,6 +19,49 @@ namespace z0 {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
         VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
     };
+
+    VulkanDevice::VulkanDevice(WindowHelper &w): window{w} {
+        createInstance();
+        uint32_t deviceCount = 0;
+        vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+        if (deviceCount == 0) {
+            die("Failed to find GPUs with Vulkan support!");
+        }
+#ifdef GLFW_VERSION_MAJOR
+        if (glfwCreateWindowSurface(instance, window.getWindowHandle(), nullptr, &surface) != VK_SUCCESS) {
+            die("Failed to create window surface!");
+        }
+#endif
+        std::vector<VkPhysicalDevice> devices(deviceCount);
+        vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+        // Use an ordered map to automatically sort candidates by increasing score
+        std::multimap<int, VkPhysicalDevice> candidates;
+        for (const auto& device : devices) {
+            int score = rateDeviceSuitability(device, surface);
+            candidates.insert(std::make_pair(score, device));
+        }
+        // Check if the best candidate is suitable at all
+        if (candidates.rbegin()->first > 0) {
+            physicalDevice = candidates.rbegin()->second;
+        } else {
+            die("Failed to find a suitable GPU!");
+        }
+        createDevice();
+        createSwapChain();
+        createImageViews();
+        createCommandPool();
+    }
+
+    VulkanDevice::~VulkanDevice() {
+        vkDestroyCommandPool(device, commandPool, nullptr);
+        for (auto imageView : swapChainImageViews) {
+            vkDestroyImageView(device, imageView, nullptr);
+        }
+        vkDestroySwapchainKHR(device, swapChain, nullptr);
+        vkDestroyDevice(device, nullptr);
+        vkDestroySurfaceKHR(instance, surface, nullptr);
+        vkDestroyInstance(instance, nullptr);
+    }
 
     QueueFamilyIndices  VulkanDevice::findQueueFamilies(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR surface) {
         QueueFamilyIndices indices;
@@ -119,23 +162,24 @@ namespace z0 {
             queueCreateInfos.push_back(queueCreateInfo);
         }
 
-        VkPhysicalDeviceFeatures deviceFeatures{};
-        deviceFeatures.samplerAnisotropy = VK_TRUE;
-
-        VkDeviceCreateInfo createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-        createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
-        createInfo.pQueueCreateInfos = queueCreateInfos.data();
-        createInfo.pEnabledFeatures = &deviceFeatures;
-        createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
-        createInfo.ppEnabledExtensionNames = deviceExtensions.data();
-        createInfo.enabledLayerCount = static_cast<uint32_t>(requestedLayers.size());
-        createInfo.ppEnabledLayerNames = requestedLayers.data();
+        const VkPhysicalDeviceFeatures deviceFeatures{
+            .samplerAnisotropy = VK_TRUE
+        };
+        VkDeviceCreateInfo createInfo {
+            .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+            .queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size()),
+            .pQueueCreateInfos = queueCreateInfos.data(),
+            .enabledLayerCount = static_cast<uint32_t>(requestedLayers.size()),
+            .ppEnabledLayerNames = requestedLayers.data(),
+            .enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size()),
+            .ppEnabledExtensionNames = deviceExtensions.data(),
+            .pEnabledFeatures = &deviceFeatures,
+        };
 
         // https://lesleylai.info/en/vk-khr-dynamic-rendering/
         constexpr VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_feature {
-                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR,
-                .dynamicRendering = VK_TRUE,
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR,
+            .dynamicRendering = VK_TRUE,
         };
         createInfo.pNext = &dynamic_rendering_feature;
         vkCmdBeginRenderingKHR = (PFN_vkCmdBeginRenderingKHR) vkGetInstanceProcAddr(instance, "vkCmdBeginRenderingKHR");
@@ -153,72 +197,30 @@ namespace z0 {
         vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
     }
 
-    VulkanDevice::VulkanDevice(WindowHelper &w): window{w} {
-        createInstance();
-        uint32_t deviceCount = 0;
-        vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
-        if (deviceCount == 0) {
-            die("Failed to find GPUs with Vulkan support!");
-        }
-#ifdef GLFW_VERSION_MAJOR
-        if (glfwCreateWindowSurface(instance, window.getWindowHandle(), nullptr, &surface) != VK_SUCCESS) {
-            die("Failed to create window surface!");
-        }
-#endif
-        std::vector<VkPhysicalDevice> devices(deviceCount);
-        vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
-        // Use an ordered map to automatically sort candidates by increasing score
-        std::multimap<int, VkPhysicalDevice> candidates;
-        for (const auto& device : devices) {
-            int score = rateDeviceSuitability(device, surface);
-            candidates.insert(std::make_pair(score, device));
-        }
-        // Check if the best candidate is suitable at all
-        if (candidates.rbegin()->first > 0) {
-            physicalDevice = candidates.rbegin()->second;
-        } else {
-            die("Failed to find a suitable GPU!");
-        }
-        createDevice();
-        createSwapChain();
-        createImageViews();
-        createCommandPool();
-    }
-
-    VulkanDevice::~VulkanDevice() {
-        vkDestroyCommandPool(device, commandPool, nullptr);
-        for (auto imageView : swapChainImageViews) {
-            vkDestroyImageView(device, imageView, nullptr);
-        }
-        vkDestroySwapchainKHR(device, swapChain, nullptr);
-        vkDestroyDevice(device, nullptr);
-        vkDestroySurfaceKHR(instance, surface, nullptr);
-        vkDestroyInstance(instance, nullptr);
-    }
-
     void VulkanDevice::createInstance() {
         if (!checkLayerSupport()) {
             die("Some requested layers are not supported");
         }
 
-        VkApplicationInfo applicationInfo {};
-        applicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        applicationInfo.apiVersion = VK_API_VERSION_1_3;
+        const VkApplicationInfo applicationInfo{
+            .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+            .apiVersion = VK_API_VERSION_1_3
+        };
 
         uint32_t extensionCount = 0;
         const char** extensions = nullptr;
 #ifdef GLFW_VERSION_MAJOR
         extensions = glfwGetRequiredInstanceExtensions(&extensionCount);
 #endif
-        VkInstanceCreateInfo createInfo  = {
-                VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-                nullptr,
-                0,
-                &applicationInfo,
-                static_cast<uint32_t>(requestedLayers.size()),
-                requestedLayers.data(),
-                extensionCount,
-                extensions
+        const VkInstanceCreateInfo createInfo  = {
+            VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+            nullptr,
+            0,
+            &applicationInfo,
+            static_cast<uint32_t>(requestedLayers.size()),
+            requestedLayers.data(),
+            extensionCount,
+            extensions
         };
         if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
             die("Failed to create Vulkan instance");
@@ -226,11 +228,10 @@ namespace z0 {
     }
 
     void VulkanDevice::createSwapChain() {
-        SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice, surface);
-
-        VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
-        VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
-        VkExtent2D extent = chooseSwapExtent(window, swapChainSupport.capabilities);
+        const SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice, surface);
+        const VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
+        const VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
+        const VkExtent2D extent = chooseSwapExtent(window, swapChainSupport.capabilities);
 
         uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
         if (swapChainSupport.capabilities.maxImageCount > 0 &&
@@ -238,20 +239,22 @@ namespace z0 {
             imageCount = swapChainSupport.capabilities.maxImageCount;
         }
 
-        VkSwapchainCreateInfoKHR createInfo = {};
-        createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-        createInfo.surface = surface;
-
-        createInfo.minImageCount = imageCount;
-        createInfo.imageFormat = surfaceFormat.format;
-        createInfo.imageColorSpace = surfaceFormat.colorSpace;
-        createInfo.imageExtent = extent;
-        createInfo.imageArrayLayers = 1;
-        createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-
-        QueueFamilyIndices indices = findQueueFamilies(physicalDevice, surface);
-        uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
-
+        VkSwapchainCreateInfoKHR createInfo = {
+            .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+            .surface = surface,
+            .minImageCount = imageCount,
+            .imageFormat = surfaceFormat.format,
+            .imageColorSpace = surfaceFormat.colorSpace,
+            .imageExtent = extent,
+            .imageArrayLayers = 1,
+            .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+            .preTransform = swapChainSupport.capabilities.currentTransform,
+            .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+            .presentMode = presentMode,
+            .clipped = VK_TRUE
+        };
+        const QueueFamilyIndices indices = findQueueFamilies(physicalDevice, surface);
+        const uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
         if (indices.graphicsFamily != indices.presentFamily) {
             createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
             createInfo.queueFamilyIndexCount = 2;
@@ -261,13 +264,6 @@ namespace z0 {
             createInfo.queueFamilyIndexCount = 0;      // Optional
             createInfo.pQueueFamilyIndices = nullptr;  // Optional
         }
-
-        createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
-        createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-
-        createInfo.presentMode = presentMode;
-        createInfo.clipped = VK_TRUE;
-
         createInfo.oldSwapchain = oldSwapChain == nullptr ? VK_NULL_HANDLE : *oldSwapChain;
 
         if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
@@ -284,21 +280,25 @@ namespace z0 {
     void VulkanDevice::createImageViews() {
         swapChainImageViews.resize(swapChainImages.size());
         for (size_t i = 0; i < swapChainImages.size(); i++) {
-            VkImageViewCreateInfo viewInfo{};
-            viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-            viewInfo.image = swapChainImages[i];
-            viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-            viewInfo.format = swapChainImageFormat;
-            viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-            viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-            viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-            viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-            viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            viewInfo.subresourceRange.baseMipLevel = 0;
-            viewInfo.subresourceRange.levelCount = 1;
-            viewInfo.subresourceRange.baseArrayLayer = 0;
-            viewInfo.subresourceRange.layerCount = 1;
-
+            const VkImageViewCreateInfo viewInfo{
+                .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                .image = swapChainImages[i],
+                .viewType = VK_IMAGE_VIEW_TYPE_2D,
+                .format = swapChainImageFormat,
+                .components = {
+                VK_COMPONENT_SWIZZLE_IDENTITY,
+                VK_COMPONENT_SWIZZLE_IDENTITY,
+                VK_COMPONENT_SWIZZLE_IDENTITY,
+                VK_COMPONENT_SWIZZLE_IDENTITY
+                },
+                .subresourceRange = {
+                    .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                    .baseMipLevel = 0,
+                    .levelCount = 1,
+                    .baseArrayLayer = 0,
+                    .layerCount = 1
+                }
+            };
             if (vkCreateImageView(device, &viewInfo, nullptr, &swapChainImageViews[i]) != VK_SUCCESS) {
                 die("failed to create texture image view!");
             }
@@ -307,11 +307,11 @@ namespace z0 {
 
     void VulkanDevice::createCommandPool() {
         QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice, surface);
-        VkCommandPoolCreateInfo poolInfo = {};
-        poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
-        poolInfo.flags =
-                VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+        const VkCommandPoolCreateInfo poolInfo = {
+            .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+            .flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+            .queueFamilyIndex = queueFamilyIndices.graphicsFamily.value(),
+        };
         if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
             die("failed to create command pool!");
         }
@@ -360,8 +360,8 @@ namespace z0 {
             return capabilities.currentExtent;
         } else {
             VkExtent2D actualExtent = {
-                static_cast<uint32_t>(window.getWidth()),
-                static_cast<uint32_t>(window.getHeight())
+            static_cast<uint32_t>(window.getWidth()),
+            static_cast<uint32_t>(window.getHeight())
             };;
             actualExtent.width = std::max(
                     capabilities.minImageExtent.width,
@@ -394,47 +394,53 @@ namespace z0 {
             VkMemoryPropertyFlags properties,
             VkBuffer &buffer,
             VkDeviceMemory &bufferMemory) {
-        VkBufferCreateInfo bufferInfo{};
-        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufferInfo.size = size;
-        bufferInfo.usage = usage;
-        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        const VkBufferCreateInfo bufferInfo{
+            .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+            .size = size,
+            .usage = usage,
+            .sharingMode = VK_SHARING_MODE_EXCLUSIVE
+        };
         if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create vertex buffer!");
+            die("failed to create vertex buffer!");
         }
         VkMemoryRequirements memRequirements;
         vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
-        VkMemoryAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = findMemoryType(physicalDevice, memRequirements.memoryTypeBits, properties);
+        VkMemoryAllocateInfo allocInfo{
+            .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+            .allocationSize = memRequirements.size,
+            .memoryTypeIndex = findMemoryType(physicalDevice, memRequirements.memoryTypeBits, properties)
+        };
         if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
-            throw std::runtime_error("failed to allocate vertex buffer memory!");
+            die("failed to allocate vertex buffer memory!");
         }
         vkBindBufferMemory(device, buffer, bufferMemory, 0);
     }
 
     VkCommandBuffer VulkanDevice::beginSingleTimeCommands() {
-        VkCommandBufferAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandPool = commandPool;
-        allocInfo.commandBufferCount = 1;
+        const VkCommandBufferAllocateInfo allocInfo{
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+            .commandPool = commandPool,
+            .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+            .commandBufferCount = 1
+        };
         VkCommandBuffer commandBuffer;
         vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
-        VkCommandBufferBeginInfo beginInfo{};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+        const VkCommandBufferBeginInfo beginInfo{
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+            .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
+        };
         vkBeginCommandBuffer(commandBuffer, &beginInfo);
         return commandBuffer;
     }
 
     void VulkanDevice::endSingleTimeCommands(VkCommandBuffer commandBuffer) {
         vkEndCommandBuffer(commandBuffer);
-        VkSubmitInfo submitInfo{};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &commandBuffer;
+        const VkSubmitInfo submitInfo{
+            .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+            .commandBufferCount = 1,
+            .pCommandBuffers = &commandBuffer
+        };
         vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
         vkQueueWaitIdle(graphicsQueue);
         vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
@@ -443,10 +449,11 @@ namespace z0 {
     void VulkanDevice::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
         // TODO : use memory barrier
         VkCommandBuffer commandBuffer = beginSingleTimeCommands();
-        VkBufferCopy copyRegion{};
-        copyRegion.srcOffset = 0;  // Optional
-        copyRegion.dstOffset = 0;  // Optional
-        copyRegion.size = size;
+        const VkBufferCopy copyRegion{
+            .srcOffset = 0,
+            .dstOffset = 0,
+            .size = size
+        };
         vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
         endSingleTimeCommands(commandBuffer);
     }

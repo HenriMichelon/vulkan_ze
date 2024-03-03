@@ -6,13 +6,14 @@ namespace z0 {
 
     class VulkanRenderer {
     public:
-        VulkanRenderer(VulkanDevice& device);
+        explicit VulkanRenderer(VulkanDevice& device);
         ~VulkanRenderer();
 
         void drawFrame();
 
     private:
-        VulkanDevice& device;
+        VulkanDevice& vulkanDevice;
+        VkDevice device;
         VkPipelineLayout pipelineLayout;
         VkPipeline graphicsPipeline;
         VkCommandPool commandPool;
@@ -24,11 +25,11 @@ namespace z0 {
         void createGraphicsPipeline();
         void createCommandPool();
         void createCommandBuffer();
-        void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+        void recordCommandBuffer(uint32_t imageIndex);
         void createSyncObjects();
 
-        void beginRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex);
-        void endRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+        void beginRendering(uint32_t imageIndex);
+        void endRendering(uint32_t imageIndex);
         void transitionImageToOptimal(uint32_t imageIndex);
         void transitionImageToPresentSrc(uint32_t imageIndex);
 

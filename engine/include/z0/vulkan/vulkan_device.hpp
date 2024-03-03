@@ -74,6 +74,7 @@ namespace z0 {
         void createSwapChain();
         void createImageViews();
         void createCommandPool();
+        void enableDynamicRendering(VkDeviceCreateInfo createInfo);
 
         static bool checkLayerSupport();
         static int rateDeviceSuitability(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR surface);
