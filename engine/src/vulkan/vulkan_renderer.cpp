@@ -10,15 +10,17 @@ namespace z0 {
         createCommandPool();
         createCommandBuffer();
         createSyncObjects();
+        createShaders();
     }
 
     VulkanRenderer::~VulkanRenderer() {
         vkDeviceWaitIdle(device);
+        fragShader.reset();
+        fragShader.reset();
         vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
         vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
         vkDestroyFence(device, inFlightFence, nullptr);
         vkDestroyCommandPool(device, commandPool, nullptr);
-        vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
     }
 
     // https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Rendering_and_presentation
@@ -121,8 +123,20 @@ namespace z0 {
         setInitialState();
         beginRendering(imageIndex);
 
-        // XX
-        vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+        {
+            // Disable depth write and use cull mode none to draw skybox
+            vkCmdSetCullModeEXT(commandBuffer, VK_CULL_MODE_NONE);
+            vkCmdSetDepthWriteEnableEXT(commandBuffer, VK_FALSE);
+
+            // Bind shaders for the skybox
+            bindShader(vertShader.get());
+            bindShader(fragShader.get());
+
+            VkShaderStageFlagBits geo_stage = VK_SHADER_STAGE_GEOMETRY_BIT;
+            vkCmdBindShadersEXT(commandBuffer, 1, &geo_stage, nullptr);
+
+            vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+        }
 
         endRendering(imageIndex);
 
@@ -314,14 +328,79 @@ namespace z0 {
         vkCmdSetColorWriteMaskEXT(commandBuffer, 0, 1, color_component_flags);
     }
 
+    //region Shared Objects
+    void VulkanRenderer::createShaders() {
+        auto vertCode = readFile("shaders/triangle.vert.spv");
+        vertShader = std::make_unique<VulkanShader>(
+                vulkanDevice,
+                VK_SHADER_STAGE_VERTEX_BIT,
+                VK_SHADER_STAGE_FRAGMENT_BIT,
+                "triangle vert",
+                vertCode,
+                nullptr,
+                nullptr
+                );
+        auto fragCode = readFile("shaders/triangle.frag.spv");
+        fragShader = std::make_unique<VulkanShader>(
+                vulkanDevice,
+                VK_SHADER_STAGE_FRAGMENT_BIT,
+                0,
+                "triangle frag",
+                fragCode,
+                nullptr,
+                nullptr
+        );
+        buildLinkedShaders(vertShader.get(), fragShader.get());
+    }
+
+    void VulkanRenderer::buildLinkedShaders(VulkanShader *vert, VulkanShader *frag)
+    {
+        VkShaderCreateInfoEXT shader_create_infos[2];
+        if (vert == nullptr || frag == nullptr) {
+            die("buildLinkedShaders failed with null vertex or fragment shader");
+        }
+
+        shader_create_infos[0] = vert->getShaderCreateInfo();
+        shader_create_infos[1] = frag->getShaderCreateInfo();
+        for (auto &shader_create : shader_create_infos){
+            shader_create.flags |= VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
+        }
+
+        VkShaderEXT shaderEXTs[2];
+        if (vkCreateShadersEXT(
+                device,
+                2,
+                shader_create_infos,
+                nullptr,
+                shaderEXTs) != VK_SUCCESS) {
+            die("vkCreateShadersEXT failed\n");
+        }
+        vert->setShader(shaderEXTs[0]);
+        frag->setShader(shaderEXTs[1]);
+    }
+
+    void VulkanRenderer::buildShader(VulkanShader *shader) {
+        VkShaderEXT shaderEXT;
+        VkShaderCreateInfoEXT shaderCreateInfo = shader->getShaderCreateInfo();
+        if (vkCreateShadersEXT(device, 1, &shaderCreateInfo, nullptr, &shaderEXT) != VK_SUCCESS) {
+            die("vkCreateShadersEXT failed");
+        }
+        shader->setShader(shaderEXT);
+    }
+
+    void VulkanRenderer::bindShader(VulkanShader *shader) {
+        vkCmdBindShadersEXT(commandBuffer, 1, shader->getStage(), shader->getShader());
+    }
+    //endregion
+
     //region Dynamic Rendering
     // https://lesleylai.info/en/vk-khr-dynamic-rendering/
     void VulkanRenderer::beginRendering(uint32_t imageIndex) {
         transitionImageToOptimal(imageIndex);
         const VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
-        const VkClearValue depthClearValue{
+        /*const VkClearValue depthClearValue{
             .depthStencil = {0.f, 0}
-        };
+        };*/
         const VkRenderingAttachmentInfoKHR colorAttachmentInfo{
             .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
             .imageView = vulkanDevice.getSwapChainImageViews()[imageIndex],
@@ -331,7 +410,7 @@ namespace z0 {
             .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
             .clearValue = clearColor,
         };
-        const VkRenderingAttachmentInfoKHR depthAttachmentInfo{
+        /*const VkRenderingAttachmentInfoKHR depthAttachmentInfo{
             .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
             .imageView = vulkanDevice.getSwapChainImageViews()[imageIndex],
             .imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
@@ -339,7 +418,7 @@ namespace z0 {
             .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
             .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
             .clearValue = depthClearValue,
-        };
+        };*/
         const VkRect2D renderArea{
             {0, 0},
             vulkanDevice.getSwapChainExtent()};
@@ -349,7 +428,7 @@ namespace z0 {
             .layerCount = 1,
             .colorAttachmentCount = 1,
             .pColorAttachments = &colorAttachmentInfo,
-            .pDepthAttachment = &depthAttachmentInfo
+            .pDepthAttachment = nullptr
         };
         vkCmdBeginRenderingKHR(commandBuffer, &renderingInfo);
     }

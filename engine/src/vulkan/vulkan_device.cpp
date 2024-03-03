@@ -28,6 +28,7 @@ namespace z0 {
             die("Failed to initialize Volk");
         }
         createInstance();
+        volkLoadInstance(instance);
         uint32_t deviceCount = 0;
         vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
         if (deviceCount == 0) {

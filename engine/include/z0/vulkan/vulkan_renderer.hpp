@@ -1,6 +1,7 @@
 #pragma once
 
 #include "z0/vulkan/vulkan_device.hpp"
+#include "vulkan_shader.hpp"
 
 namespace z0 {
 
@@ -14,15 +15,12 @@ namespace z0 {
     private:
         VulkanDevice& vulkanDevice;
         VkDevice device;
-        VkPipelineLayout pipelineLayout;
-        //VkPipeline graphicsPipeline;
         VkCommandPool commandPool;
         VkCommandBuffer commandBuffer;
         VkSemaphore imageAvailableSemaphore;
         VkSemaphore renderFinishedSemaphore;
         VkFence inFlightFence;
 
-        //void createGraphicsPipeline();
         void createCommandPool();
         void createCommandBuffer();
         void recordCommandBuffer(uint32_t imageIndex);
@@ -34,7 +32,13 @@ namespace z0 {
         void transitionImageToOptimal(uint32_t imageIndex);
         void transitionImageToPresentSrc(uint32_t imageIndex);
 
-        VkShaderModule createShaderModule(const std::vector<char>& code);
+        std::unique_ptr<VulkanShader> vertShader;
+        std::unique_ptr<VulkanShader> fragShader;
+        void createShaders();
+        void buildShader(VulkanShader *shader);
+        void buildLinkedShaders( VulkanShader *vert, VulkanShader *frag);
+        void bindShader( VulkanShader *shader);
+
         static std::vector<char> readFile(const std::string& filepath);
 
     public:

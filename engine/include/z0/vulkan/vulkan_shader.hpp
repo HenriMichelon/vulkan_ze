@@ -13,14 +13,13 @@ namespace z0 {
                      const std::vector<char>     &code,
                      const VkDescriptorSetLayout *pSetLayouts,
                      const VkPushConstantRange   *pPushConstantRange);
+        ~VulkanShader();
 
         [[nodiscard]] VkShaderCreateInfoEXT getShaderCreateInfo() const { return shaderCreateInfo; };
         [[nodiscard]] VkShaderStageFlagBits* getStage() { return &stage; };
         [[nodiscard]] VkShaderEXT* getShader() { return &shader; };
 
         void setShader(VkShaderEXT _shader) { shader = _shader; };
-
-        void destroy();
 
     private:
         VulkanDevice& device;
@@ -30,19 +29,6 @@ namespace z0 {
         std::string           shaderName;
         VkShaderCreateInfoEXT shaderCreateInfo;
         std::vector<char> spirv;
-    };
-
-    class VulkanShaderObject {
-    public:
-        VulkanShaderObject(VulkanDevice &device);
-
-        void buildShader(VulkanShader *shader);
-        void buildLinkedShaders( VulkanShader *vert, VulkanShader *frag);
-        void bindShader(VkCommandBuffer commandBuffer, VulkanShader *shader);
-
-    private:
-        VulkanDevice &device;
-
     };
 
 }

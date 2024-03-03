@@ -21,59 +21,20 @@ namespace z0 {
         shaderCreateInfo.codeSize               = spirv.size() * sizeof(spirv[0]);
         shaderCreateInfo.pCode                  = spirv.data();
         shaderCreateInfo.pName                  = "main";
-        shaderCreateInfo.setLayoutCount         = 1;
+        shaderCreateInfo.setLayoutCount         = 0;
         shaderCreateInfo.pSetLayouts            = pSetLayouts;
-        shaderCreateInfo.pushConstantRangeCount = 1;
+        shaderCreateInfo.pushConstantRangeCount = 0;
         shaderCreateInfo.pPushConstantRanges    = pPushConstantRange;
         shaderCreateInfo.pSpecializationInfo    = nullptr;
    }
 
-    void VulkanShader::destroy() {
+    VulkanShader::~VulkanShader() {
         if (shader != VK_NULL_HANDLE) {
             vkDestroyShaderEXT(device.getDevice(), shader, nullptr);
             shader = VK_NULL_HANDLE;
         }
     }
 
-    VulkanShaderObject::VulkanShaderObject(VulkanDevice &dev): device{dev} {}
 
-    void VulkanShaderObject::buildLinkedShaders(VulkanShader *vert, VulkanShader *frag)
-    {
-        VkShaderCreateInfoEXT shader_create_infos[2];
-        if (vert == nullptr || frag == nullptr) {
-            die("buildLinkedShaders failed with null vertex or fragment shader");
-        }
-
-        shader_create_infos[0] = vert->getShaderCreateInfo();
-        shader_create_infos[1] = frag->getShaderCreateInfo();
-        for (auto &shader_create : shader_create_infos){
-            shader_create.flags |= VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-        }
-
-        VkShaderEXT shaderEXTs[2];
-        if (vkCreateShadersEXT(
-             device.getDevice(),
-             2,
-             shader_create_infos,
-             nullptr,
-             shaderEXTs) != VK_SUCCESS) {
-            die("vkCreateShadersEXT failed\n");
-        }
-        vert->setShader(shaderEXTs[0]);
-        frag->setShader(shaderEXTs[1]);
-    }
-
-    void VulkanShaderObject::buildShader(VulkanShader *shader) {
-        VkShaderEXT shaderEXT;
-        VkShaderCreateInfoEXT shaderCreateInfo = shader->getShaderCreateInfo();
-        if (vkCreateShadersEXT(device.getDevice(), 1, &shaderCreateInfo, nullptr, &shaderEXT) != VK_SUCCESS) {
-            die("vkCreateShadersEXT failed");
-        }
-        shader->setShader(shaderEXT);
-    }
-
-    void VulkanShaderObject::bindShader(VkCommandBuffer commandBuffer, VulkanShader *shader) {
-        vkCmdBindShadersEXT(commandBuffer, 1, shader->getStage(), shader->getShader());
-    }
 
 }
