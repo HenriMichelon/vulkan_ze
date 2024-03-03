@@ -10,7 +10,7 @@ namespace z0 {
     VulkanRenderer::VulkanRenderer(VulkanDevice &dev, std::string sDir) :
         vulkanDevice{dev}, device(dev.getDevice()), shaderDirectory(std::move(sDir)) {
         createCommandPool();
-        createCommandBuffer();
+        createCommandBuffers();
         createSyncObjects();
         createShaders();
     }
@@ -19,31 +19,33 @@ namespace z0 {
         vkDeviceWaitIdle(device);
         fragShader.reset();
         fragShader.reset();
-        vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
-        vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
-        vkDestroyFence(device, inFlightFence, nullptr);
+        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+            vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
+            vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
+            vkDestroyFence(device, inFlightFences[i], nullptr);
+        }
         vkDestroyCommandPool(device, commandPool, nullptr);
     }
 
     // https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Rendering_and_presentation
     void VulkanRenderer::drawFrame() {
-        vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
-        vkResetFences(device, 1, &inFlightFence);
+        vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+        vkResetFences(device, 1, &inFlightFences[currentFrame]);
 
         uint32_t imageIndex;
         vkAcquireNextImageKHR(device,
                               vulkanDevice.getSwapChain(),
                               UINT64_MAX,
-                              imageAvailableSemaphore,
+                              imageAvailableSemaphores[currentFrame],
                               VK_NULL_HANDLE,
                               &imageIndex);
 
-        vkResetCommandBuffer(commandBuffer, 0);
-        recordCommandBuffer(imageIndex);
+        vkResetCommandBuffer(commandBuffers[currentFrame], 0);
+        recordCommandBuffer(commandBuffers[currentFrame], imageIndex);
 
-        const VkSemaphore signalSemaphores[] = {renderFinishedSemaphore};
+        const VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
         {
-            const VkSemaphore waitSemaphores[] = {imageAvailableSemaphore};
+            const VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
             const VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
             const VkSubmitInfo submitInfo{
                     .sType                  = VK_STRUCTURE_TYPE_SUBMIT_INFO,
@@ -51,11 +53,11 @@ namespace z0 {
                     .pWaitSemaphores        = waitSemaphores,
                     .pWaitDstStageMask      = waitStages,
                     .commandBufferCount     = 1,
-                    .pCommandBuffers        = &commandBuffer,
+                    .pCommandBuffers        = &commandBuffers[currentFrame],
                     .signalSemaphoreCount   = 1,
                     .pSignalSemaphores      = signalSemaphores
             };
-            if (vkQueueSubmit(vulkanDevice.getGraphicsQueue(), 1, &submitInfo, inFlightFence) != VK_SUCCESS) {
+            if (vkQueueSubmit(vulkanDevice.getGraphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
                 die("failed to submit draw command buffer!");
             }
         }
@@ -72,9 +74,13 @@ namespace z0 {
             };
             vkQueuePresentKHR(vulkanDevice.getPresentQueue(), &presentInfo);
         }
+        currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     }
 
     void VulkanRenderer::createSyncObjects() {
+        imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+        renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+        inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
         const VkSemaphoreCreateInfo semaphoreInfo{
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
         };
@@ -82,10 +88,12 @@ namespace z0 {
             .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
             .flags = VK_FENCE_CREATE_SIGNALED_BIT
         };
-        if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS ||
-            vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS ||
-            vkCreateFence(device, &fenceInfo, nullptr, &inFlightFence) != VK_SUCCESS) {
-            die("failed to create semaphores!");
+        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+            if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
+                vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
+                vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
+                die("failed to create semaphores!");
+            }
         }
     }
 
@@ -104,19 +112,20 @@ namespace z0 {
         }
     }
 
-    void VulkanRenderer::createCommandBuffer() {
+    void VulkanRenderer::createCommandBuffers() {
+        commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
         const VkCommandBufferAllocateInfo allocInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
             .commandPool = commandPool,
             .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-            .commandBufferCount = 1
+            .commandBufferCount = static_cast<uint32_t>(commandBuffers.size())
         };
-        if (vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer) != VK_SUCCESS) {
+        if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
             die("failed to allocate command buffers!");
         }
     }
 
-    void VulkanRenderer::recordCommandBuffer(uint32_t imageIndex) {
+    void VulkanRenderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
         const VkCommandBufferBeginInfo beginInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
             .flags = 0,
@@ -125,22 +134,22 @@ namespace z0 {
         if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
             die("failed to begin recording command buffer!");
         }
-        setInitialState();
-        beginRendering(imageIndex);
+        setInitialState(commandBuffer);
+        beginRendering(commandBuffer, imageIndex);
         {
             // Disable depth write and use cull mode none to draw skybox
             vkCmdSetCullModeEXT(commandBuffer, VK_CULL_MODE_NONE);
             vkCmdSetDepthWriteEnableEXT(commandBuffer, VK_FALSE);
 
-            bindShader(*vertShader);
-            bindShader(*fragShader);
+            bindShader(commandBuffer, *vertShader);
+            bindShader(commandBuffer, *fragShader);
 
             VkShaderStageFlagBits geo_stage = VK_SHADER_STAGE_GEOMETRY_BIT;
             vkCmdBindShadersEXT(commandBuffer, 1, &geo_stage, nullptr);
 
             vkCmdDraw(commandBuffer, 3, 1, 0, 0);
         }
-        endRendering(imageIndex);
+        endRendering(commandBuffer, imageIndex);
         if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
             die("failed to record command buffer!");
         }
@@ -162,7 +171,7 @@ namespace z0 {
         return buffer;
     }
 
-    void VulkanRenderer::setInitialState()
+    void VulkanRenderer::setInitialState(VkCommandBuffer commandBuffer)
     {
         {
             const VkExtent2D extent = vulkanDevice.getSwapChainExtent();
@@ -310,15 +319,15 @@ namespace z0 {
         shader.setShader(shaderEXT);
     }
 
-    void VulkanRenderer::bindShader(VulkanShader& shader) {
+    void VulkanRenderer::bindShader(VkCommandBuffer commandBuffer, VulkanShader& shader) {
         vkCmdBindShadersEXT(commandBuffer, 1, shader.getStage(), shader.getShader());
     }
     //endregion
 
     //region Dynamic Rendering
     // https://lesleylai.info/en/vk-khr-dynamic-rendering/
-    void VulkanRenderer::beginRendering(uint32_t imageIndex) {
-        transitionImageToOptimal(imageIndex);
+    void VulkanRenderer::beginRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
+        transitionImageToOptimal(commandBuffer, imageIndex);
         const VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
         /*const VkClearValue depthClearValue{
             .depthStencil = {0.f, 0}
@@ -355,12 +364,12 @@ namespace z0 {
         vkCmdBeginRenderingKHR(commandBuffer, &renderingInfo);
     }
 
-    void VulkanRenderer::endRendering(uint32_t imageIndex) {
+    void VulkanRenderer::endRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
         vkCmdEndRenderingKHR(commandBuffer);
-        transitionImageToPresentSrc(imageIndex);
+        transitionImageToPresentSrc(commandBuffer, imageIndex);
     }
 
-    void VulkanRenderer::transitionImageToPresentSrc(uint32_t imageIndex) {
+    void VulkanRenderer::transitionImageToPresentSrc(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
         const VkImageMemoryBarrier imageMemoryBarrier{
             .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
             .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
@@ -389,7 +398,7 @@ namespace z0 {
         );
     }
 
-    void VulkanRenderer::transitionImageToOptimal(uint32_t imageIndex) {
+    void VulkanRenderer::transitionImageToOptimal(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
         const VkImageMemoryBarrier imageMemoryBarrier{
             .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
             .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
