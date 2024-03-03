@@ -4,36 +4,41 @@
 
 namespace z0 {
 
-    struct PipelineConfigInfo {
-        PipelineConfigInfo() = default;
-        PipelineConfigInfo(const PipelineConfigInfo&) = delete;
-        PipelineConfigInfo& operator=(const PipelineConfigInfo&) = delete;
-
-        std::vector<VkVertexInputBindingDescription> bindingDescriptions{};
-        std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
-
-        VkPipelineViewportStateCreateInfo viewportInfo;
-        VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo;
-        VkPipelineRasterizationStateCreateInfo rasterizationInfo;
-        VkPipelineMultisampleStateCreateInfo multisampleInfo;
-        VkPipelineColorBlendAttachmentState colorBlendAttachment;
-        VkPipelineColorBlendStateCreateInfo colorBlendInfo;
-        VkPipelineDepthStencilStateCreateInfo depthStencilInfo;
-        std::vector<VkDynamicState> dynamicStateEnables;
-        VkPipelineDynamicStateCreateInfo dynamicStateInfo;
-        VkPipelineLayout pipelineLayout = nullptr;
-        VkRenderPass renderPass = nullptr;
-        uint32_t subpass = 0;
-    };
-
     class VulkanRenderer {
     public:
         VulkanRenderer(VulkanDevice& device);
-    protected:
-        static void defaultPipelineConfigInfo(PipelineConfigInfo& configInfo);
-        static void enableAlphaBlending(PipelineConfigInfo& configInfo);
+        ~VulkanRenderer();
+
+        void drawFrame();
+
     private:
         VulkanDevice& device;
+        VkRenderPass renderPass;
+        VkPipelineLayout pipelineLayout;
+        VkPipeline graphicsPipeline;
+        std::vector<VkFramebuffer> swapChainFramebuffers;
+        VkCommandPool commandPool;
+        VkCommandBuffer commandBuffer;
+        VkSemaphore imageAvailableSemaphore;
+        VkSemaphore renderFinishedSemaphore;
+        VkFence inFlightFence;
+
+        void createGraphicsPipeline();
+        void createRenderPass();
+        void createFramebuffers();
+        void createCommandPool();
+        void createCommandBuffer();
+        void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+        void createSyncObjects();
+
+        VkShaderModule createShaderModule(const std::vector<char>& code);
+        static std::vector<char> readFile(const std::string& filepath);
+
+    public:
+        VulkanRenderer(const VulkanRenderer&) = delete;
+        VulkanRenderer &operator=(const VulkanRenderer&) = delete;
+        VulkanRenderer(const VulkanRenderer&&) = delete;
+        VulkanRenderer &&operator=(const VulkanRenderer&&) = delete;
     };
 
 }

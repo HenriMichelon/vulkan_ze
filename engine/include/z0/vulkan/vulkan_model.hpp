@@ -39,9 +39,6 @@ namespace z0 {
 
         static std::unique_ptr<VulkanModel> createModelFromFile(VulkanDevice &device, const std::string &filepath);
 
-        VulkanModel(const VulkanModel&) = delete;
-        VulkanModel &operator=(const VulkanModel&) = delete;
-
         void bind(VkCommandBuffer commandBuffer);
         void draw(VkCommandBuffer commandBuffer);
 
@@ -56,6 +53,8 @@ namespace z0 {
         bool hasIndexBuffer{false};
         std::unique_ptr<VulkanBuffer> indexBuffer;
         uint32_t  indexCount;
-
+    public:
+        VulkanModel(const VulkanModel&) = delete;
+        VulkanModel &operator=(const VulkanModel&) = delete;
     };
 }

@@ -12,19 +12,22 @@ add_executable(${PROJECT_NAME}
         example/main.cpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/window_helper.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_device.hpp
+        ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_buffer.hpp
+        ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_model.hpp
+        ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_renderer.hpp
         ${Z0_ENGINE_DIR}/include/z0/application.hpp
         ${Z0_ENGINE_DIR}/include/z0/log.hpp
         ${Z0_ENGINE_DIR}/src/vulkan/window_helper.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_device.cpp
+        ${Z0_ENGINE_DIR}/src/vulkan/vulkan_buffer.cpp
+        ${Z0_ENGINE_DIR}/src/vulkan/vulkan_model.cpp
+        ${Z0_ENGINE_DIR}/src/vulkan/vulkan_renderer.cpp
+        ${Z0_ENGINE_DIR}/src/vulkan/vulkan_renderer.cpp
         ${Z0_ENGINE_DIR}/src/application.cpp
-        engine/include/z0/vulkan/vulkan_buffer.hpp
-        engine/include/z0/vulkan/vulkan_model.hpp
-        engine/src/vulkan/vulkan_buffer.cpp
-        engine/src/vulkan/vulkan_model.cpp
-        engine/include/z0/vulkan/vulkan_renderer.hpp
-        engine/include/z0/vulkan/vulkan_renderer.hpp
-        engine/src/vulkan/vulkan_renderer.cpp
-        engine/src/vulkan/vulkan_renderer.cpp)
+        engine/include/z0/vulkan/vulkan_pipeline_config.hpp
+        engine/include/z0/vulkan/vulkan_pipeline_config.hpp
+        engine/src/vulkan/vulkan_pipeline_config.cpp
+)
 target_include_directories(${PROJECT_NAME} PUBLIC ${Z0_ENGINE_DIR}/include)
 
 file(GLOB_RECURSE Z0_GLSL_SOURCE_FILES

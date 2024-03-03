@@ -1,8 +1,11 @@
+// https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Base_code
+// https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Window_surface
+#include "z0/vulkan/vulkan_device.hpp"
+#include "z0/vulkan/vulkan_model.hpp"
+#include "z0/log.hpp"
+
 #include <map>
 #include <set>
-#include "z0/vulkan/vulkan_device.hpp"
-#include "z0/log.hpp"
-#include "z0/vulkan/vulkan_model.hpp"
 
 namespace z0 {
 
@@ -432,5 +435,7 @@ namespace z0 {
         vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
         endSingleTimeCommands(commandBuffer);
     }
+
+
 
 }

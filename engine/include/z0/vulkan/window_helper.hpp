@@ -22,8 +22,8 @@ namespace z0 {
         void process() { return glfwPollEvents(); };
         void close();
 
-        int getWidth() { return width; }
-        int getHeight() { return height; }
+        [[nodiscard]] int getWidth() const { return width; }
+        [[nodiscard]] int getHeight() const { return height; }
 
 #ifdef GLFW_VERSION_MAJOR
         GLFWwindow *getWindowHandle() { return windowHandle; }

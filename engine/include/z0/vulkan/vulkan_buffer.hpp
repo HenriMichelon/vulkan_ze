@@ -15,9 +15,6 @@ namespace z0 {
                 VkDeviceSize minOffsetAlignment = 1);
         ~VulkanBuffer();
 
-        VulkanBuffer(const VulkanBuffer&) = delete;
-        VulkanBuffer& operator=(const VulkanBuffer&) = delete;
-
         VkResult map(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
         void unmap();
 
@@ -54,6 +51,10 @@ namespace z0 {
         VkDeviceSize alignmentSize;
         VkBufferUsageFlags usageFlags;
         VkMemoryPropertyFlags memoryPropertyFlags;
+
+    public:
+        VulkanBuffer(const VulkanBuffer&) = delete;
+        VulkanBuffer& operator=(const VulkanBuffer&) = delete;
     };
 
 }
