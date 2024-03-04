@@ -28,6 +28,8 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_shader.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_descriptors.cpp
         ${Z0_ENGINE_DIR}/src/application.cpp
+        engine/include/z0/vulkan/vulkan_image.hpp
+        engine/src/vulkan/vulkan_image.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC ${Z0_ENGINE_DIR}/include)
 

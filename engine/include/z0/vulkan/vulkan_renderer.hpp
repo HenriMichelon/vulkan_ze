@@ -4,6 +4,7 @@
 #include "vulkan_shader.hpp"
 #include "vulkan_model.hpp"
 #include "vulkan_descriptors.hpp"
+#include "vulkan_image.hpp"
 
 namespace z0 {
     class VulkanRenderer {
@@ -14,8 +15,6 @@ namespace z0 {
         void drawFrame();
 
     private:
-        std::unique_ptr<VulkanModel> model;
-
         std::string shaderDirectory;
         VulkanDevice& vulkanDevice;
         VkDevice device;
@@ -33,6 +32,9 @@ namespace z0 {
         std::vector<VkFence> inFlightFences;
         std::vector<std::unique_ptr<VulkanBuffer>> uboBuffers{2}; // MAX_FRAMES_IN_FLIGHT
 
+        std::unique_ptr<VulkanModel> model;
+        std::unique_ptr<VulkanImage> texture;
+
         void createPipelineLayout();
         void createCommandPool();
         void createCommandBuffers();
@@ -42,19 +44,14 @@ namespace z0 {
         void createDescriptorSetLayout();
         void update(uint32_t frameIndex);
 
-        VkImage textureImage;
-        VkDeviceMemory textureImageMemory;
-        void createTextureImage();
-        VkCommandBuffer beginSingleTimeCommands();
-        void endSingleTimeCommands(VkCommandBuffer commandBuffer);
-        void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-        void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
-        void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
-
         void beginRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex);
         void endRendering(VkCommandBuffer commandBuffer,uint32_t imageIndex);
         void transitionImageToOptimal(VkCommandBuffer commandBuffer,uint32_t imageIndex);
         void transitionImageToPresentSrc(VkCommandBuffer commandBuffer,uint32_t imageIndex);
+
+        VkCommandBuffer beginSingleTimeCommands();
+        void endSingleTimeCommands(VkCommandBuffer commandBuffer);
+        void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
         std::unique_ptr<VulkanShader> vertShader;
         std::unique_ptr<VulkanShader> fragShader;
