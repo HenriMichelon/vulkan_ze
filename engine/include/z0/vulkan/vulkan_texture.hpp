@@ -9,6 +9,8 @@ namespace z0 {
         VulkanTexture(VulkanDevice& device, std::string filepath);
         ~VulkanTexture();
 
+        VkDescriptorImageInfo imageInfo();
+
     private:
         VulkanDevice& vulkanDevice;
         VkImage textureImage;

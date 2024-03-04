@@ -1,5 +1,6 @@
 // https://github.com/blurrypiano/littleVulkanEngine
 #include "z0/vulkan/vulkan_descriptors.hpp"
+#include "z0/log.hpp"
 
 #include <cassert>
 #include <stdexcept>
@@ -12,11 +13,12 @@ namespace z0 {
             VkShaderStageFlags stageFlags,
             uint32_t count) {
         assert(bindings.count(binding) == 0 && "Binding already in use");
-        VkDescriptorSetLayoutBinding layoutBinding{};
-        layoutBinding.binding = binding;
-        layoutBinding.descriptorType = descriptorType;
-        layoutBinding.descriptorCount = count;
-        layoutBinding.stageFlags = stageFlags;
+        VkDescriptorSetLayoutBinding layoutBinding{
+            .binding = binding,
+            .descriptorType = descriptorType,
+            .descriptorCount = count,
+            .stageFlags = stageFlags,
+        };
         bindings[binding] = layoutBinding;
         return *this;
     }
@@ -86,7 +88,7 @@ namespace z0 {
 
         if (vkCreateDescriptorPool(device.getDevice(), &descriptorPoolInfo, nullptr, &descriptorPool) !=
             VK_SUCCESS) {
-            throw std::runtime_error("failed to create descriptor pool!");
+            die("failed to create descriptor pool!");
         }
     }
 

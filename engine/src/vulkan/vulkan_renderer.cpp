@@ -17,16 +17,10 @@ namespace z0 {
         globalPool = VulkanDescriptorPool::Builder(vulkanDevice)
                 .setMaxSets(MAX_FRAMES_IN_FLIGHT)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, MAX_FRAMES_IN_FLIGHT)
+                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT)
                 .build();
 
-        createCommandBuffers();
-        createSyncObjects();
-        createDescriptorSetLayout();
-        createPipelineLayout();
-        createShaders();
-
         texture = std::make_unique<VulkanTexture>(vulkanDevice, "../texture.jpg");
-
         const std::vector<VulkanModel::Vertex> vertices = {
                 {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
                 {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
@@ -38,6 +32,12 @@ namespace z0 {
         };
         VulkanModel::Builder builder{vertices, indices};
         model = std::make_unique<VulkanModel>(vulkanDevice, builder);
+        
+        createCommandBuffers();
+        createSyncObjects();
+        createDescriptorSetLayout();
+        createPipelineLayout();
+        createShaders();
     }
 
     VulkanRenderer::~VulkanRenderer() {
@@ -321,11 +321,16 @@ namespace z0 {
                 .addBinding(0,
                             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                             VK_SHADER_STAGE_ALL_GRAPHICS)
+                .addBinding(1,
+                            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                            VK_SHADER_STAGE_ALL_GRAPHICS)
                 .build();
         for (int i = 0; i < globalDescriptorSets.size(); i++) {
             auto bufferInfo = uboBuffers[i]->descriptorInfo();
+            auto imageInfo = texture->imageInfo();
             if (!VulkanDescriptorWriter(*globalSetLayout, *globalPool)
                     .writeBuffer(0, &bufferInfo)
+                    .writeImage(1, &imageInfo)
                     .build(globalDescriptorSets[i])) {
                 die("Cannot allocate descriptor set");
             }

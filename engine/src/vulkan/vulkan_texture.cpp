@@ -175,6 +175,14 @@ namespace z0 {
         createTextureSampler();
     }
 
+    VkDescriptorImageInfo VulkanTexture::imageInfo() {
+        return VkDescriptorImageInfo {
+            .sampler = textureSampler,
+            .imageView = textureImageView,
+            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        };
+    }
+
     void VulkanTexture::createTextureSampler() {
         VkPhysicalDeviceProperties properties{};
         vkGetPhysicalDeviceProperties(vulkanDevice.getPhysicalDevice(), &properties);
