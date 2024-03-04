@@ -44,8 +44,6 @@ namespace z0 {
 
         void beginRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex);
         void endRendering(VkCommandBuffer commandBuffer,uint32_t imageIndex);
-        void transitionImageToOptimal(VkCommandBuffer commandBuffer,uint32_t imageIndex);
-        void transitionImageToPresentSrc(VkCommandBuffer commandBuffer,uint32_t imageIndex);
 
         std::unique_ptr<VulkanShader> vertShader;
         std::unique_ptr<VulkanShader> fragShader;

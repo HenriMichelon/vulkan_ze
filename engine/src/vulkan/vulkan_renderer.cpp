@@ -405,7 +405,12 @@ namespace z0 {
     //region Dynamic Rendering
     // https://lesleylai.info/en/vk-khr-dynamic-rendering/
     void VulkanRenderer::beginRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
-        transitionImageToOptimal(commandBuffer, imageIndex);
+        vulkanDevice.transitionImageLayout(
+                commandBuffer,
+                vulkanDevice.getSwapChainImages()[imageIndex],
+                VK_FORMAT_UNDEFINED,
+                VK_IMAGE_LAYOUT_UNDEFINED,
+                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
         vulkanDevice.transitionImageLayout(commandBuffer,
                                            vulkanDevice.getDepthImage(),
                                            vulkanDevice.getDepthFormat(),
@@ -448,68 +453,15 @@ namespace z0 {
 
     void VulkanRenderer::endRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
         vkCmdEndRenderingKHR(commandBuffer);
-        transitionImageToPresentSrc(commandBuffer, imageIndex);
+        //transitionImageToPresentSrc(commandBuffer, imageIndex);
+        vulkanDevice.transitionImageLayout(
+                commandBuffer,
+                vulkanDevice.getSwapChainImages()[imageIndex],
+                VK_FORMAT_UNDEFINED,
+                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
     }
 
-    // TODO make a generic function or class
-    void VulkanRenderer::transitionImageToPresentSrc(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
-        const VkImageMemoryBarrier imageMemoryBarrier{
-            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-            .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-            .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            .newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-            .image = vulkanDevice.getSwapChainImages()[imageIndex],
-            .subresourceRange = {
-                    .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-                    .baseMipLevel = 0,
-                    .levelCount = 1,
-                    .baseArrayLayer = 0,
-                    .layerCount = 1,
-            }
-        };
-        vkCmdPipelineBarrier(
-            commandBuffer,
-            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,  // srcStageMask
-            VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, // dstStageMask
-            0,
-            0,
-            nullptr,
-            0,
-            nullptr,
-            1, // imageMemoryBarrierCount
-            &imageMemoryBarrier // pImageMemoryBarriers
-        );
-    }
-
-    // TODO make a generic function or class
-    void VulkanRenderer::transitionImageToOptimal(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
-        const VkImageMemoryBarrier imageMemoryBarrier{
-            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-            .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-            .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-            .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            .image = vulkanDevice.getSwapChainImages()[imageIndex],
-            .subresourceRange = {
-                    .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-                    .baseMipLevel = 0,
-                    .levelCount = 1,
-                    .baseArrayLayer = 0,
-                    .layerCount = 1,
-            }
-        };
-        vkCmdPipelineBarrier(
-            commandBuffer,
-            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,  // srcStageMask
-            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, // dstStageMask
-            0,
-            0,
-            nullptr,
-            0,
-            nullptr,
-            1, // imageMemoryBarrierCount
-            &imageMemoryBarrier // pImageMemoryBarriers
-        );
-    }
     //endregion
 
 }
