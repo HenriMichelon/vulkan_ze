@@ -19,7 +19,6 @@ namespace z0 {
         VulkanDevice& vulkanDevice;
         VkDevice device;
         VkPipelineLayout pipelineLayout;
-        VkCommandPool commandPool;
         std::unique_ptr<VulkanDescriptorSetLayout> globalSetLayout;
         std::unique_ptr<VulkanDescriptorPool> globalPool{};
         std::vector<VkDescriptorSet> globalDescriptorSets{2}; // MAX_FRAMES_IN_FLIGHT
@@ -36,7 +35,6 @@ namespace z0 {
         std::unique_ptr<VulkanImage> texture;
 
         void createPipelineLayout();
-        void createCommandPool();
         void createCommandBuffers();
         void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
         void createSyncObjects();
@@ -48,10 +46,6 @@ namespace z0 {
         void endRendering(VkCommandBuffer commandBuffer,uint32_t imageIndex);
         void transitionImageToOptimal(VkCommandBuffer commandBuffer,uint32_t imageIndex);
         void transitionImageToPresentSrc(VkCommandBuffer commandBuffer,uint32_t imageIndex);
-
-        VkCommandBuffer beginSingleTimeCommands();
-        void endSingleTimeCommands(VkCommandBuffer commandBuffer);
-        void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
         std::unique_ptr<VulkanShader> vertShader;
         std::unique_ptr<VulkanShader> fragShader;

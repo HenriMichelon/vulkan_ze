@@ -34,6 +34,7 @@ namespace z0 {
         [[nodiscard]] VkPhysicalDevice getPhysicalDevice() { return physicalDevice; }
         [[nodiscard]] VkQueue getGraphicsQueue() { return graphicsQueue; }
         [[nodiscard]] VkQueue getPresentQueue() { return presentQueue; }
+        [[nodiscard]] VkCommandPool getCommandPool() { return commandPool; }
         [[nodiscard]] const VkExtent2D& getSwapChainExtent() const { return swapChainExtent;}
         [[nodiscard]] VkFormat getSwapChainImageFormat() const { return swapChainImageFormat; }
         [[nodiscard]] std::vector<VkImageView>& getSwapChainImageViews() { return swapChainImageViews; }
@@ -51,6 +52,7 @@ namespace z0 {
         VkCommandBuffer beginSingleTimeCommands();
         void endSingleTimeCommands(VkCommandBuffer commandBuffer);
         void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+        VkImageView createImageView(VkImage image, VkFormat format);
 
         static QueueFamilyIndices findQueueFamilies(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR surface);
         static uint32_t findMemoryType(VkPhysicalDevice vkPhysicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties);

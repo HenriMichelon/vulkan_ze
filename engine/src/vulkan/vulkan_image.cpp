@@ -104,7 +104,7 @@ namespace z0 {
 
     void VulkanImage::createTextureImage(std::string filepath) {
         int texWidth, texHeight, texChannels;
-        stbi_uc* pixels = stbi_load(filepath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+        stbi_uc *pixels = stbi_load(filepath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
         VkDeviceSize imageSize = texWidth * texHeight * 4;
         if (!pixels) {
             throw std::runtime_error("failed to load texture image!");
@@ -169,6 +169,10 @@ namespace z0 {
                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                               VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
+        textureImageView = vulkanDevice.createImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB);
+
     }
+
+
 
 }
