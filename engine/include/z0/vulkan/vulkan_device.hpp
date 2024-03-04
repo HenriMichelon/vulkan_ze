@@ -35,6 +35,9 @@ namespace z0 {
         [[nodiscard]] VkQueue getGraphicsQueue() { return graphicsQueue; }
         [[nodiscard]] VkQueue getPresentQueue() { return presentQueue; }
         [[nodiscard]] VkCommandPool getCommandPool() { return commandPool; }
+        [[nodiscard]] VkFormat getDepthFormat() { return depthFormat; }
+        [[nodiscard]] VkImage getDepthImage() { return depthImage; }
+        [[nodiscard]] VkImageView getDepthImageView() { return depthImageView; }
         [[nodiscard]] const VkExtent2D& getSwapChainExtent() const { return swapChainExtent;}
         [[nodiscard]] VkFormat getSwapChainImageFormat() const { return swapChainImageFormat; }
         [[nodiscard]] std::vector<VkImageView>& getSwapChainImageViews() { return swapChainImageViews; }
@@ -56,9 +59,11 @@ namespace z0 {
                          VkImageTiling tiling, VkImageUsageFlags usage,
                          VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
         VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+        void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+        void transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 
         static QueueFamilyIndices findQueueFamilies(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR surface);
-        static uint32_t findMemoryType(VkPhysicalDevice vkPhysicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties);
+        uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
         static bool hasStencilComponent(VkFormat format);
 
     private:
@@ -77,6 +82,7 @@ namespace z0 {
         std::shared_ptr<VkSwapchainKHR> oldSwapChain;
         VkCommandPool commandPool;
         VkImage depthImage;
+        VkFormat depthFormat;
         VkDeviceMemory depthImageMemory;
         VkImageView depthImageView;
 

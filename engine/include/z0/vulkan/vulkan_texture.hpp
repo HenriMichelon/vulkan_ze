@@ -20,7 +20,7 @@ namespace z0 {
 
         void createTextureImage(std::string filepath);
         void createTextureSampler();
-        void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+
         void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
     };

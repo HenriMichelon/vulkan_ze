@@ -196,8 +196,8 @@ namespace z0 {
 
         beginRendering(commandBuffer, imageIndex);
         {
-            vkCmdSetCullModeEXT(commandBuffer, VK_CULL_MODE_NONE);
-            vkCmdSetDepthWriteEnableEXT(commandBuffer, VK_FALSE);
+            vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_NONE);
+            vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
             vkCmdBindDescriptorSets(commandBuffer,
                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
                                     pipelineLayout,
@@ -247,16 +247,16 @@ namespace z0 {
                     .minDepth = 0.0f,
                     .maxDepth = 1.0f
             };
-            vkCmdSetViewportWithCountEXT(commandBuffer, 1, &viewport);
+            vkCmdSetViewportWithCount(commandBuffer, 1, &viewport);
             const VkRect2D scissor{
                     .offset = {0, 0},
                     .extent = extent
             };
-            vkCmdSetScissorWithCountEXT(commandBuffer, 1, &scissor);
+            vkCmdSetScissorWithCount(commandBuffer, 1, &scissor);
         }
 
         {
-            vkCmdSetRasterizerDiscardEnableEXT(commandBuffer, VK_FALSE);
+            vkCmdSetRasterizerDiscardEnable(commandBuffer, VK_FALSE);
             const VkColorBlendEquationEXT colorBlendEquation{
                     .srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
                     .dstColorBlendFactor = VK_BLEND_FACTOR_ZERO,
@@ -276,7 +276,6 @@ namespace z0 {
                                vertexAttribute.size(),
                                vertexAttribute.data());
 
-
         // Set the topology to triangles, don't restart primitives, set samples to only 1 per pixel
         vkCmdSetPrimitiveTopologyEXT(commandBuffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
         vkCmdSetPrimitiveRestartEnableEXT(commandBuffer, VK_FALSE);
@@ -291,14 +290,14 @@ namespace z0 {
         vkCmdSetPolygonModeEXT(commandBuffer, VK_POLYGON_MODE_FILL);
 
         // Set front face, cull mode is set in build_command_buffers.
-        vkCmdSetFrontFaceEXT(commandBuffer, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+        vkCmdSetFrontFace(commandBuffer, VK_FRONT_FACE_COUNTER_CLOCKWISE);
 
         // Set depth state, the depth write. Don't enable depth bounds, bias, or stencil test.
-        vkCmdSetDepthTestEnableEXT(commandBuffer, VK_TRUE);
-        vkCmdSetDepthCompareOpEXT(commandBuffer, VK_COMPARE_OP_GREATER);
-        vkCmdSetDepthBoundsTestEnableEXT(commandBuffer, VK_FALSE);
-        vkCmdSetDepthBiasEnableEXT(commandBuffer, VK_FALSE);
-        vkCmdSetStencilTestEnableEXT(commandBuffer, VK_FALSE);
+        vkCmdSetDepthTestEnable(commandBuffer, VK_TRUE);
+        vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_LESS);
+        vkCmdSetDepthBoundsTestEnable(commandBuffer, VK_FALSE);
+        vkCmdSetDepthBiasEnable(commandBuffer, VK_FALSE);
+        vkCmdSetStencilTestEnable(commandBuffer, VK_FALSE);
 
         // Do not enable logic op
         vkCmdSetLogicOpEnableEXT(commandBuffer, VK_FALSE);
@@ -407,10 +406,12 @@ namespace z0 {
     // https://lesleylai.info/en/vk-khr-dynamic-rendering/
     void VulkanRenderer::beginRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
         transitionImageToOptimal(commandBuffer, imageIndex);
+        vulkanDevice.transitionImageLayout(commandBuffer,
+                                           vulkanDevice.getDepthImage(),
+                                           vulkanDevice.getDepthFormat(),
+                                           VK_IMAGE_LAYOUT_UNDEFINED,
+                                           VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
         const VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
-        /*const VkClearValue depthClearValue{
-            .depthStencil = {0.f, 0}
-        };*/
         const VkRenderingAttachmentInfoKHR colorAttachmentInfo{
             .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
             .imageView = vulkanDevice.getSwapChainImageViews()[imageIndex],
@@ -420,15 +421,16 @@ namespace z0 {
             .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
             .clearValue = clearColor,
         };
-        /*const VkRenderingAttachmentInfoKHR depthAttachmentInfo{
+        const VkClearValue depthClearValue{ .depthStencil = {1.0f, 0} };
+        const VkRenderingAttachmentInfoKHR depthAttachmentInfo{
             .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
-            .imageView = vulkanDevice.getSwapChainImageViews()[imageIndex],
+            .imageView = vulkanDevice.getDepthImageView(),
             .imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
             .resolveMode = VK_RESOLVE_MODE_NONE,
             .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-            .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+            .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
             .clearValue = depthClearValue,
-        };*/
+        };
         const VkRect2D renderArea{
             {0, 0},
             vulkanDevice.getSwapChainExtent()};
@@ -438,7 +440,8 @@ namespace z0 {
             .layerCount = 1,
             .colorAttachmentCount = 1,
             .pColorAttachments = &colorAttachmentInfo,
-            .pDepthAttachment = nullptr
+            .pDepthAttachment = &depthAttachmentInfo,
+            .pStencilAttachment = nullptr
         };
         vkCmdBeginRenderingKHR(commandBuffer, &renderingInfo);
     }
