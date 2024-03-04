@@ -1,12 +1,10 @@
-#define GLM_FORCE_RADIANS
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-
 #include "z0/vulkan/vulkan_renderer.hpp"
-#include "z0/log.hpp"
 #include "z0/vulkan/vulkan_model.hpp"
 #include "z0/vulkan/vulkan_descriptors.hpp"
 #include "z0/vulkan/vulkan_ubo.hpp"
+#include "z0/log.hpp"
+
+#include <glm/gtc/matrix_transform.hpp>
 
 #include <fstream>
 #include <utility>
