@@ -2,9 +2,9 @@
 
 #include "z0/vulkan/vulkan_device.hpp"
 #include "vulkan_shader.hpp"
+#include "vulkan_model.hpp"
 
 namespace z0 {
-
     class VulkanRenderer {
     public:
         explicit VulkanRenderer(VulkanDevice& device, std::string shaderDirectory);
@@ -13,6 +13,8 @@ namespace z0 {
         void drawFrame();
 
     private:
+        std::unique_ptr<VulkanModel> model;
+
         std::string shaderDirectory;
         VulkanDevice& vulkanDevice;
         VkDevice device;

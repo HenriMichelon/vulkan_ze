@@ -1,5 +1,6 @@
 #include "z0/vulkan/vulkan_renderer.hpp"
 #include "z0/log.hpp"
+#include "z0/vulkan/vulkan_model.hpp"
 
 #include <fstream>
 #include <utility>
@@ -13,6 +14,14 @@ namespace z0 {
         createCommandBuffers();
         createSyncObjects();
         createShaders();
+
+        const std::vector<VulkanModel::Vertex> vertices = {
+                {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+                {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+                {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+        };
+        VulkanModel::Builder builder{vertices, {}};
+        model = std::make_unique<VulkanModel>(vulkanDevice, builder);
     }
 
     VulkanRenderer::~VulkanRenderer() {
@@ -146,19 +155,17 @@ namespace z0 {
             die("failed to begin recording command buffer!");
         }
         setInitialState(commandBuffer);
+
         beginRendering(commandBuffer, imageIndex);
         {
-            // Disable depth write and use cull mode none to draw skybox
             vkCmdSetCullModeEXT(commandBuffer, VK_CULL_MODE_NONE);
             vkCmdSetDepthWriteEnableEXT(commandBuffer, VK_FALSE);
-
             bindShader(commandBuffer, *vertShader);
             bindShader(commandBuffer, *fragShader);
-
             VkShaderStageFlagBits geo_stage = VK_SHADER_STAGE_GEOMETRY_BIT;
             vkCmdBindShadersEXT(commandBuffer, 1, &geo_stage, nullptr);
-
-            vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+            model->bind(commandBuffer);
+            model->draw(commandBuffer);
         }
         endRendering(commandBuffer, imageIndex);
         if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
@@ -215,31 +222,15 @@ namespace z0 {
             vkCmdSetColorBlendEquationEXT(commandBuffer, 0, 1, &colorBlendEquation);
         }
 
-       /* const VkVertexInputBindingDescription2EXT vertex_binding[] =
-                {
-                        vkb::initializers::vertex_input_binding_description2ext(0, sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX, 1)};
+        std::vector<VkVertexInputBindingDescription2EXT> vertexBinding = VulkanModel::Vertex::getBindingDescription();
+        std::vector<VkVertexInputAttributeDescription2EXT> vertexAttribute = VulkanModel::Vertex::getAttributeDescription();
+        vkCmdSetVertexInputEXT(commandBuffer,
+                               vertexBinding.size(),
+                               vertexBinding.data(),
+                               vertexAttribute.size(),
+                               vertexAttribute.data());
 
-        const VkVertexInputAttributeDescription2EXT vertex_attribute_description_ext[] =
-                {
-                        vkb::initializers::vertex_input_attribute_description2ext(
-                                0,
-                                0,
-                                VK_FORMAT_R32G32B32_SFLOAT,
-                                offsetof(Vertex, pos)),
-                        vkb::initializers::vertex_input_attribute_description2ext(
-                                0,
-                                1,
-                                VK_FORMAT_R32G32B32_SFLOAT,
-                                offsetof(Vertex, normal)),
-                        vkb::initializers::vertex_input_attribute_description2ext(
-                                0,
-                                2,
-                                VK_FORMAT_R32G32_SFLOAT,
-                                offsetof(Vertex, uv)),
-                };
 
-        vkCmdSetVertexInputEXT(cmd, sizeof(vertex_binding) / sizeof(vertex_binding[0]), vertex_binding, sizeof(vertex_attribute_description_ext) / sizeof(vertex_attribute_description_ext[0]), vertex_attribute_description_ext);
-        */
         // Set the topology to triangles, don't restart primitives, set samples to only 1 per pixel
         vkCmdSetPrimitiveTopologyEXT(commandBuffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
         vkCmdSetPrimitiveRestartEnableEXT(commandBuffer, VK_FALSE);
