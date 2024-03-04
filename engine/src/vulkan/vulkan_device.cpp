@@ -181,8 +181,7 @@ namespace z0 {
                 .imageColorSpace = surfaceFormat.colorSpace,
                 .imageExtent = extent,
                 .imageArrayLayers = 1,
-                .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-                              VK_IMAGE_USAGE_TRANSFER_DST_BIT, // TODO Check if VK_IMAGE_USAGE_TRANSFER_DST_BIT is useful
+                .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                 .preTransform = swapChainSupport.capabilities.currentTransform,
                 .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
                 .presentMode = presentMode,
@@ -280,6 +279,9 @@ namespace z0 {
 
     VkSurfaceFormatKHR VulkanDevice::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats) {
         for (const auto& availableFormat : availableFormats) {
+            /*if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+                return availableFormat;
+            }*/
             if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
                 return availableFormat;
             }
@@ -559,7 +561,7 @@ namespace z0 {
         createImage(swapChainExtent.width, swapChainExtent.height,
                     depthFormat,
                     VK_IMAGE_TILING_OPTIMAL,
-                    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+                    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                     depthImage, depthImageMemory);
         depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);

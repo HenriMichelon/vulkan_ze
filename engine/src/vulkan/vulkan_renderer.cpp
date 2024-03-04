@@ -453,7 +453,6 @@ namespace z0 {
 
     void VulkanRenderer::endRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
         vkCmdEndRenderingKHR(commandBuffer);
-        //transitionImageToPresentSrc(commandBuffer, imageIndex);
         vulkanDevice.transitionImageLayout(
                 commandBuffer,
                 vulkanDevice.getSwapChainImages()[imageIndex],

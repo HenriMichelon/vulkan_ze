@@ -66,13 +66,16 @@ namespace z0 {
         textureStagingBuffer.writeToBuffer(pixels);
         stbi_image_free(pixels);
 
+        //const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+        const VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
+
         vulkanDevice.createImage(texWidth, texHeight,
-                                 VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+                                 format,
+                                 VK_IMAGE_TILING_OPTIMAL,
                                  VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
-
         vulkanDevice.transitionImageLayout(textureImage,
-                              VK_FORMAT_R8G8B8A8_SRGB,
+                                           format,
                               VK_IMAGE_LAYOUT_UNDEFINED,
                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
         copyBufferToImage(textureStagingBuffer.getBuffer(),
@@ -80,11 +83,11 @@ namespace z0 {
                           static_cast<uint32_t>(texWidth),
                           static_cast<uint32_t>(texHeight));
         vulkanDevice.transitionImageLayout(textureImage,
-                              VK_FORMAT_R8G8B8A8_SRGB,
+                                           format,
                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                               VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-        textureImageView = vulkanDevice.createImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+        textureImageView = vulkanDevice.createImageView(textureImage, format, VK_IMAGE_ASPECT_COLOR_BIT);
         createTextureSampler();
     }
 
