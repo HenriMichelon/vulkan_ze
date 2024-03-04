@@ -36,7 +36,7 @@ namespace  z0 {
     VulkanModel::VulkanModel(VulkanDevice &dev, const VulkanModel::Builder &builder):
         device{dev}  {
         createVertexBuffers(builder.vertices);
-        //createIndexBuffers(builder.indices);
+        createIndexBuffers(builder.indices);
     }
 
     VulkanModel::~VulkanModel() {
