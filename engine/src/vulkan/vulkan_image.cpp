@@ -12,6 +12,7 @@ namespace z0 {
     }
 
     VulkanImage::~VulkanImage() {
+        vkDestroyImageView(vulkanDevice.getDevice(), textureImageView, nullptr);
         vkDestroyImage(vulkanDevice.getDevice(), textureImage, nullptr);
         vkFreeMemory(vulkanDevice.getDevice(), textureImageMemory, nullptr);
     }
