@@ -186,8 +186,6 @@ namespace z0 {
     void VulkanTexture::createTextureSampler() {
         VkPhysicalDeviceProperties properties{};
         vkGetPhysicalDeviceProperties(vulkanDevice.getPhysicalDevice(), &properties);
-
-
         VkSamplerCreateInfo samplerInfo{};
         samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
         samplerInfo.magFilter = VK_FILTER_LINEAR;

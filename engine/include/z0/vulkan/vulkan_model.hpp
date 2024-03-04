@@ -17,8 +17,8 @@ namespace z0 {
         struct Vertex {
             glm::vec2 position{};
             glm::vec3 color{};
-            /*glm::vec3 normal{};
-            glm::vec2 uv{};*/
+            //glm::vec3 normal{};
+            glm::vec2 uv{};
 
             static std::vector<VkVertexInputBindingDescription2EXT> getBindingDescription();
             static std::vector<VkVertexInputAttributeDescription2EXT> getAttributeDescription();
