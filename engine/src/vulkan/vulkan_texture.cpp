@@ -122,41 +122,10 @@ namespace z0 {
         textureStagingBuffer.writeToBuffer(pixels);
         stbi_image_free(pixels);
 
-        VkImageCreateInfo imageInfo{};
-        imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-        imageInfo.imageType = VK_IMAGE_TYPE_2D;
-        imageInfo.extent.width = static_cast<uint32_t>(texWidth);
-        imageInfo.extent.height = static_cast<uint32_t>(texHeight);
-        imageInfo.extent.depth = 1;
-        imageInfo.mipLevels = 1;
-        imageInfo.arrayLayers = 1;
-        imageInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
-        imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-        imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-        imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-        imageInfo.flags = 0; // Optional
-        if (vkCreateImage(vulkanDevice.getDevice(), &imageInfo, nullptr, &textureImage) != VK_SUCCESS) {
-            die("failed to create image!");
-        }
-
-        // bind : make a class
-        VkMemoryRequirements memRequirements;
-        vkGetImageMemoryRequirements(vulkanDevice.getDevice(), textureImage, &memRequirements);
-
-        VkMemoryAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = VulkanDevice::findMemoryType(vulkanDevice.getPhysicalDevice(),
-                                                                 memRequirements.memoryTypeBits,
-                                                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-        if (vkAllocateMemory(vulkanDevice.getDevice(), &allocInfo, nullptr, &textureImageMemory) != VK_SUCCESS) {
-            throw std::runtime_error("failed to allocate image memory!");
-        }
-
-        vkBindImageMemory(vulkanDevice.getDevice(), textureImage, textureImageMemory, 0);
+        vulkanDevice.createImage(texWidth, texHeight,
+                                 VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+                                 VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
 
         transitionImageLayout(textureImage,
                               VK_FORMAT_R8G8B8A8_SRGB,
@@ -171,7 +140,7 @@ namespace z0 {
                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                               VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-        textureImageView = vulkanDevice.createImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB);
+        textureImageView = vulkanDevice.createImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
         createTextureSampler();
     }
 

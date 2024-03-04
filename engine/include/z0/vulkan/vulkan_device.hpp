@@ -52,10 +52,14 @@ namespace z0 {
         VkCommandBuffer beginSingleTimeCommands();
         void endSingleTimeCommands(VkCommandBuffer commandBuffer);
         void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-        VkImageView createImageView(VkImage image, VkFormat format);
+        void createImage(uint32_t width, uint32_t height, VkFormat format,
+                         VkImageTiling tiling, VkImageUsageFlags usage,
+                         VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+        VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 
         static QueueFamilyIndices findQueueFamilies(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR surface);
         static uint32_t findMemoryType(VkPhysicalDevice vkPhysicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties);
+        static bool hasStencilComponent(VkFormat format);
 
     private:
         WindowHelper &window;
@@ -72,6 +76,9 @@ namespace z0 {
         std::vector<VkImageView> swapChainImageViews;
         std::shared_ptr<VkSwapchainKHR> oldSwapChain;
         VkCommandPool commandPool;
+        VkImage depthImage;
+        VkDeviceMemory depthImageMemory;
+        VkImageView depthImageView;
 
         void createInstance();
         void createDevice();
@@ -79,6 +86,7 @@ namespace z0 {
         void cleanupSwapChain();
         void createImageViews();
         void createCommandPool();
+        void createDepthResources();
 
         static bool checkLayerSupport();
         static int rateDeviceSuitability(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR surface);
@@ -87,6 +95,7 @@ namespace z0 {
         static VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
         static VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
         static VkExtent2D chooseSwapExtent(WindowHelper& window, const VkSurfaceCapabilitiesKHR& capabilities);
+        VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
     public:
         VulkanDevice(const VulkanDevice&) = delete;

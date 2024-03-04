@@ -137,7 +137,7 @@ namespace  z0 {
             nullptr,
             0,
             0,
-            VK_FORMAT_R32G32_SFLOAT,
+            VK_FORMAT_R32G32B32_SFLOAT,
             offsetof(Vertex, position)
         });
         attributeDescriptions.push_back({
