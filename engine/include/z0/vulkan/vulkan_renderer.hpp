@@ -4,7 +4,7 @@
 #include "vulkan_shader.hpp"
 #include "vulkan_model.hpp"
 #include "vulkan_descriptors.hpp"
-#include "vulkan_image.hpp"
+#include "vulkan_texture.hpp"
 
 namespace z0 {
     class VulkanRenderer {
@@ -32,7 +32,7 @@ namespace z0 {
         std::vector<std::unique_ptr<VulkanBuffer>> uboBuffers{2}; // MAX_FRAMES_IN_FLIGHT
 
         std::unique_ptr<VulkanModel> model;
-        std::unique_ptr<VulkanImage> texture;
+        std::unique_ptr<VulkanTexture> texture;
 
         void createPipelineLayout();
         void createCommandBuffers();

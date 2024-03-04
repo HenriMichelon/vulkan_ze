@@ -25,7 +25,7 @@ namespace z0 {
         createPipelineLayout();
         createShaders();
 
-        texture = std::make_unique<VulkanImage>(vulkanDevice, "../texture.jpg");
+        texture = std::make_unique<VulkanTexture>(vulkanDevice, "../texture.jpg");
 
         const std::vector<VulkanModel::Vertex> vertices = {
                 {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},

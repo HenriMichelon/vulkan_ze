@@ -1,4 +1,4 @@
-#include "z0/vulkan/vulkan_image.hpp"
+#include "z0/vulkan/vulkan_texture.hpp"
 #include "z0/log.hpp"
 #include "z0/vulkan/vulkan_buffer.hpp"
 
@@ -7,17 +7,18 @@
 
 namespace z0 {
 
-    VulkanImage::VulkanImage(VulkanDevice& device, std::string filepath): vulkanDevice{device} {
+    VulkanTexture::VulkanTexture(VulkanDevice& device, std::string filepath): vulkanDevice{device} {
         createTextureImage(filepath);
     }
 
-    VulkanImage::~VulkanImage() {
+    VulkanTexture::~VulkanTexture() {
+        vkDestroySampler(vulkanDevice.getDevice(), textureSampler, nullptr);
         vkDestroyImageView(vulkanDevice.getDevice(), textureImageView, nullptr);
         vkDestroyImage(vulkanDevice.getDevice(), textureImage, nullptr);
         vkFreeMemory(vulkanDevice.getDevice(), textureImageMemory, nullptr);
     }
 
-    void VulkanImage::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
+    void VulkanTexture::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
         VkCommandBuffer commandBuffer = vulkanDevice.beginSingleTimeCommands();
 
         VkImageMemoryBarrier imageMemoryBarrier{
@@ -73,7 +74,7 @@ namespace z0 {
         vulkanDevice.endSingleTimeCommands(commandBuffer);
     }
 
-    void VulkanImage::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
+    void VulkanTexture::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
         VkCommandBuffer commandBuffer = vulkanDevice.beginSingleTimeCommands();
 
         VkBufferImageCopy region{};
@@ -103,7 +104,7 @@ namespace z0 {
         vulkanDevice.endSingleTimeCommands(commandBuffer);
     }
 
-    void VulkanImage::createTextureImage(std::string filepath) {
+    void VulkanTexture::createTextureImage(std::string filepath) {
         int texWidth, texHeight, texChannels;
         stbi_uc *pixels = stbi_load(filepath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
         VkDeviceSize imageSize = texWidth * texHeight * 4;
@@ -171,7 +172,34 @@ namespace z0 {
                               VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
         textureImageView = vulkanDevice.createImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB);
+        createTextureSampler();
+    }
 
+    void VulkanTexture::createTextureSampler() {
+        VkPhysicalDeviceProperties properties{};
+        vkGetPhysicalDeviceProperties(vulkanDevice.getPhysicalDevice(), &properties);
+
+
+        VkSamplerCreateInfo samplerInfo{};
+        samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        samplerInfo.magFilter = VK_FILTER_LINEAR;
+        samplerInfo.minFilter = VK_FILTER_LINEAR;
+        samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.anisotropyEnable = VK_TRUE;
+        samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+        samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+        samplerInfo.unnormalizedCoordinates = VK_FALSE;
+        samplerInfo.compareEnable = VK_FALSE;
+        samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+        samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        samplerInfo.mipLodBias = 0.0f;
+        samplerInfo.minLod = 0.0f;
+        samplerInfo.maxLod = 0.0f;
+        if (vkCreateSampler(vulkanDevice.getDevice(), &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS) {
+            die("failed to create texture sampler!");
+        }
     }
 
 
