@@ -1,6 +1,12 @@
+#define GLM_FORCE_RADIANS
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 #include "z0/vulkan/vulkan_renderer.hpp"
 #include "z0/log.hpp"
 #include "z0/vulkan/vulkan_model.hpp"
+#include "z0/vulkan/vulkan_descriptors.hpp"
+#include "z0/vulkan/vulkan_ubo.hpp"
 
 #include <fstream>
 #include <utility>
@@ -10,9 +16,16 @@ namespace z0 {
 
     VulkanRenderer::VulkanRenderer(VulkanDevice &dev, std::string sDir) :
         vulkanDevice{dev}, device(dev.getDevice()), shaderDirectory(std::move(sDir)) {
+        globalPool = VulkanDescriptorPool::Builder(vulkanDevice)
+                .setMaxSets(MAX_FRAMES_IN_FLIGHT)
+                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, MAX_FRAMES_IN_FLIGHT)
+                .build();
+
         createCommandPool();
         createCommandBuffers();
         createSyncObjects();
+        createDescriptorSetLayout();
+        createPipelineLayout();
         createShaders();
 
         const std::vector<VulkanModel::Vertex> vertices = {
@@ -38,6 +51,20 @@ namespace z0 {
             vkDestroyFence(device, inFlightFences[i], nullptr);
         }
         vkDestroyCommandPool(device, commandPool, nullptr);
+        vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+    }
+
+    void VulkanRenderer::update(uint32_t frameIndex) {
+        static auto startTime = std::chrono::high_resolution_clock::now();
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+        UniformBufferObject ubo{};
+        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.proj = glm::perspective(glm::radians(45.0f), vulkanDevice.getSwapChainExtent().width / (float) vulkanDevice.getSwapChainExtent().height, 0.1f, 10.0f);
+        ubo.proj[1][1] *= -1;
+        uboBuffers[frameIndex]->writeToBuffer(&ubo);
+        uboBuffers[frameIndex]->flush();
     }
 
     // https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Rendering_and_presentation
@@ -65,6 +92,9 @@ namespace z0 {
         {
             const VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
             const VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+
+            update(currentFrame);
+
             const VkSubmitInfo submitInfo{
                     .sType                  = VK_STRUCTURE_TYPE_SUBMIT_INFO,
                     .waitSemaphoreCount     = 1,
@@ -121,6 +151,20 @@ namespace z0 {
         }
     }
 
+    // https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Introduction
+    void VulkanRenderer::createPipelineLayout() {
+        const VkPipelineLayoutCreateInfo pipelineLayoutInfo{
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+                .setLayoutCount = 1,
+                .pSetLayouts = globalSetLayout->getDescriptorSetLayout(),
+                .pushConstantRangeCount = 0,
+                .pPushConstantRanges = nullptr
+        };
+        if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+            die("failed to create pipeline layout!");
+        }
+    }
+
     // https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Command_buffers
     void VulkanRenderer::createCommandPool() {
         QueueFamilyIndices queueFamilyIndices =
@@ -164,6 +208,14 @@ namespace z0 {
         {
             vkCmdSetCullModeEXT(commandBuffer, VK_CULL_MODE_NONE);
             vkCmdSetDepthWriteEnableEXT(commandBuffer, VK_FALSE);
+            vkCmdBindDescriptorSets(commandBuffer,
+                                    VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                    pipelineLayout,
+                                    0,
+                                    1,
+                                    &globalDescriptorSets[currentFrame],
+                                    0,
+                                    nullptr);
             bindShader(commandBuffer, *vertShader);
             bindShader(commandBuffer, *fragShader);
             VkShaderStageFlagBits geo_stage = VK_SHADER_STAGE_GEOMETRY_BIT;
@@ -270,6 +322,32 @@ namespace z0 {
         vkCmdSetColorWriteMaskEXT(commandBuffer, 0, 1, color_component_flags);
     }
 
+    void VulkanRenderer::createDescriptorSetLayout() {
+        for(int i = 0; i < uboBuffers.size(); i++) {
+            uboBuffers[i] = std::make_unique<VulkanBuffer>(
+                    vulkanDevice,
+                    sizeof(UniformBufferObject),
+                    1,
+                    VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
+            );
+            uboBuffers[i]->map();
+        }
+        globalSetLayout = VulkanDescriptorSetLayout::Builder(vulkanDevice)
+                .addBinding(0,
+                            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                            VK_SHADER_STAGE_ALL_GRAPHICS)
+                .build();
+        for (int i = 0; i < globalDescriptorSets.size(); i++) {
+            auto bufferInfo = uboBuffers[i]->descriptorInfo();
+            if (!VulkanDescriptorWriter(*globalSetLayout, *globalPool)
+                    .writeBuffer(0, &bufferInfo)
+                    .build(globalDescriptorSets[i])) {
+                die("Cannot allocate descriptor set");
+            }
+        }
+    }
+
     //region Shared Objects
     void VulkanRenderer::createShaders() {
         auto vertCode = readFile("triangle.vert");
@@ -279,7 +357,7 @@ namespace z0 {
                 VK_SHADER_STAGE_FRAGMENT_BIT,
                 "triangle vert",
                 vertCode,
-                nullptr,
+                globalSetLayout->getDescriptorSetLayout(),
                 nullptr
                 );
         auto fragCode = readFile("triangle.frag");
@@ -289,7 +367,7 @@ namespace z0 {
                 0,
                 "triangle frag",
                 fragCode,
-                nullptr,
+                globalSetLayout->getDescriptorSetLayout(),
                 nullptr
         );
         buildLinkedShaders(*vertShader, *fragShader);
