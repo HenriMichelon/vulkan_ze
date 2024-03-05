@@ -59,6 +59,7 @@ namespace z0 {
         // Check if the best candidate is suitable at all
         if (candidates.rbegin()->first > 0) {
             physicalDevice = candidates.rbegin()->second;
+            msaaSamples = getMaxUsableMSAASampleCount();
         } else {
             die("Failed to find a suitable GPU!");
         }
@@ -66,6 +67,7 @@ namespace z0 {
         createSwapChain();
         createImageViews();
         createCommandPool();
+        createColorResources();
         createDepthResources();
     }
 
@@ -225,6 +227,7 @@ namespace z0 {
         cleanupSwapChain();
         createSwapChain();
         createImageViews();
+        createColorResources();
         createDepthResources();
     }
 
@@ -232,6 +235,9 @@ namespace z0 {
         vkDestroyImageView(device, depthImageView, nullptr);
         vkDestroyImage(device, depthImage, nullptr);
         vkFreeMemory(device, depthImageMemory, nullptr);
+        vkDestroyImageView(device, colorImageView, nullptr);
+        vkDestroyImage(device, colorImage, nullptr);
+        vkFreeMemory(device, colorImageMemory, nullptr);
         for (auto & swapChainImageView : swapChainImageViews) {
             vkDestroyImageView(device, swapChainImageView, nullptr);
         }
@@ -497,6 +503,21 @@ namespace z0 {
         return candidates.at(0);
     }
 
+    VkSampleCountFlagBits VulkanDevice::getMaxUsableMSAASampleCount() {
+        VkPhysicalDeviceProperties physicalDeviceProperties;
+        vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
+
+        VkSampleCountFlags counts = physicalDeviceProperties.limits.framebufferColorSampleCounts & physicalDeviceProperties.limits.framebufferDepthSampleCounts;
+        if (counts & VK_SAMPLE_COUNT_64_BIT) { return VK_SAMPLE_COUNT_64_BIT; }
+        if (counts & VK_SAMPLE_COUNT_32_BIT) { return VK_SAMPLE_COUNT_32_BIT; }
+        if (counts & VK_SAMPLE_COUNT_16_BIT) { return VK_SAMPLE_COUNT_16_BIT; }
+        if (counts & VK_SAMPLE_COUNT_8_BIT) { return VK_SAMPLE_COUNT_8_BIT; }
+        if (counts & VK_SAMPLE_COUNT_4_BIT) { return VK_SAMPLE_COUNT_4_BIT; }
+        if (counts & VK_SAMPLE_COUNT_2_BIT) { return VK_SAMPLE_COUNT_2_BIT; }
+
+        return VK_SAMPLE_COUNT_1_BIT;
+    }
+
     VkImageView VulkanDevice::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels) {
         VkImageViewCreateInfo viewInfo{};
         viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -516,7 +537,7 @@ namespace z0 {
         return imageView;
     }
 
-    void VulkanDevice::createImage(uint32_t width, uint32_t height, uint32_t mipLevels,
+    void VulkanDevice::createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples,
                                    VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
                                    VkMemoryPropertyFlags properties, VkImage &image,
                                    VkDeviceMemory &imageMemory) {
@@ -532,7 +553,7 @@ namespace z0 {
         imageInfo.tiling = tiling;
         imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         imageInfo.usage = usage;
-        imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+        imageInfo.samples = numSamples;
         imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
         if (vkCreateImage(device, &imageInfo, nullptr, &image) != VK_SUCCESS) {
@@ -554,13 +575,25 @@ namespace z0 {
         vkBindImageMemory(device, image, imageMemory, 0);
     }
 
+    void VulkanDevice::createColorResources() {
+        VkFormat colorFormat = swapChainImageFormat;
+        createImage(swapChainExtent.width, swapChainExtent.height,
+                    1, msaaSamples, colorFormat,
+                    VK_IMAGE_TILING_OPTIMAL,
+                    VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                    colorImage, colorImageMemory);
+        colorImageView = createImageView(colorImage, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+    }
+
     void VulkanDevice::createDepthResources() {
         depthFormat = findSupportedFormat(
                 {VK_FORMAT_D16_UNORM, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
                 VK_IMAGE_TILING_OPTIMAL,
                 VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
         );
-        createImage(swapChainExtent.width, swapChainExtent.height, 1,
+        createImage(swapChainExtent.width, swapChainExtent.height,
+                    1, msaaSamples,
                     depthFormat,
                     VK_IMAGE_TILING_OPTIMAL,
                     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,

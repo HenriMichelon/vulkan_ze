@@ -75,7 +75,7 @@ namespace z0 {
         //const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
         const VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
 
-        vulkanDevice.createImage(texWidth, texHeight, mipLevels, format,
+        vulkanDevice.createImage(texWidth, texHeight, mipLevels, VK_SAMPLE_COUNT_1_BIT, format,
                      VK_IMAGE_TILING_OPTIMAL,
                      VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
@@ -201,7 +201,7 @@ namespace z0 {
         samplerInfo.compareEnable = VK_FALSE;
         samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
         samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-        samplerInfo.minLod =  0.0f; //static_cast<float>(mipLevels / 2);
+        samplerInfo.minLod =  0.0f;
         samplerInfo.maxLod = static_cast<float>(mipLevels);
         samplerInfo.mipLodBias = 0.0f; // Optional
         if (vkCreateSampler(vulkanDevice.getDevice(), &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS) {

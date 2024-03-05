@@ -55,7 +55,7 @@ namespace z0 {
         VkCommandBuffer beginSingleTimeCommands();
         void endSingleTimeCommands(VkCommandBuffer commandBuffer);
         void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-        void createImage(uint32_t width, uint32_t height, uint32_t mipLevels,
+        void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples,
                          VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
                          VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
         VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
@@ -83,10 +83,6 @@ namespace z0 {
         std::vector<VkImageView> swapChainImageViews;
         std::shared_ptr<VkSwapchainKHR> oldSwapChain;
         VkCommandPool commandPool;
-        VkImage depthImage;
-        VkFormat depthFormat;
-        VkDeviceMemory depthImageMemory;
-        VkImageView depthImageView;
 
         void createInstance();
         void createDevice();
@@ -94,7 +90,21 @@ namespace z0 {
         void cleanupSwapChain();
         void createImageViews();
         void createCommandPool();
+
+        // Depth buffering
+        VkImage depthImage;
+        VkFormat depthFormat;
+        VkDeviceMemory depthImageMemory;
+        VkImageView depthImageView;
         void createDepthResources();
+
+        // MSAA
+        VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
+        VkImage colorImage;
+        VkDeviceMemory colorImageMemory;
+        VkImageView colorImageView;
+        VkSampleCountFlagBits getMaxUsableMSAASampleCount();
+        void createColorResources();
 
         static bool checkLayerSupport();
         static int rateDeviceSuitability(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR surface);
