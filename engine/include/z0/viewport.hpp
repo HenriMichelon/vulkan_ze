@@ -28,6 +28,8 @@ namespace z0 {
         std::unique_ptr<VulkanDevice> vulkanDevice;
         std::unique_ptr<VulkanRenderer> vulkanRenderer;
 
+    public:
+        VulkanDevice& _getDevice() { return *vulkanDevice; }
     };
 
 }

@@ -1,11 +1,9 @@
 #pragma once
 
-#include "z0/vulkan/vulkan_model.hpp"
+#include "z0/object.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <memory>
-#include <unordered_map>
 
 namespace z0 {
     struct TransformComponent {
@@ -24,7 +22,7 @@ namespace z0 {
         float lightIntensity = 1.0f;
     };*/
 
-    class Node {
+    class Node: public Object {
     public:
         using id_t = unsigned int;
         using Map = std::unordered_map<id_t, Node>;
@@ -40,24 +38,20 @@ namespace z0 {
                 glm::vec3 color = glm::vec3(1.0f)
                 );*/
 
-        id_t getId() { return id; }
-
-        Node(const Node &) = delete;
-        Node& operator=(const Node &) = delete;
-        Node(Node &&) = default;
-        Node &operator=(Node &&) = delete;
+        id_t getId() const { return id; }
 
         glm::vec3 color{};
         TransformComponent transform{};
-
-        // optional pointer components
-        std::shared_ptr<VulkanModel> model{};
-        //std::unique_ptr<PointLightComponent> pointLight = nullptr;
 
     private:
         id_t id;
 
         explicit Node(id_t objId): id{objId} {};
 
+    public:
+        Node(const Node &) = delete;
+        Node& operator=(const Node &) = delete;
+        Node(Node &&) = default;
+        Node &operator=(Node &&) = delete;
     };
 }

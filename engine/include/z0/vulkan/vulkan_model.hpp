@@ -2,7 +2,10 @@
 
 #include "z0/vulkan/vulkan_device.hpp"
 #include "z0/vulkan/vulkan_buffer.hpp"
-#include "z0/mesh.hpp"
+
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <glm/glm.hpp>
 
 #include <memory>
 #include <vector>

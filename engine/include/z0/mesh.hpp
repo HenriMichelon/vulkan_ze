@@ -1,15 +1,17 @@
 #pragma once
 
 #include "object.hpp"
+#include "viewport.hpp"
 
 namespace z0 {
 
     class Mesh: public Object {
     public:
-        static std::unique_ptr<Mesh> createFromFile(const std::string &filepath);
+        Mesh(Viewport &viewport, const std::string& filename);
 
-    protected:
-        Mesh() {};
+    private:
+        Viewport &viewport;
+        std::unique_ptr<VulkanModel> vulkanModel;
     };
 
 }

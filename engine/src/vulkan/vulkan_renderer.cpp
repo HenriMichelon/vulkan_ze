@@ -52,9 +52,9 @@ namespace z0 {
 
         Camera camera{};
         auto cameraNode = Node::create();
-        cameraNode.transform.translation.z = -3.0f;
-        cameraNode.transform.translation.y = -1.5f;
-        cameraNode.transform.rotation.x = -0.5f;
+        cameraNode.transform.translation.z = -15.0f;
+        cameraNode.transform.translation.y = 0.0f;
+        cameraNode.transform.rotation.x = 0.0f;
         camera.setViewYXZ(cameraNode.transform.translation, cameraNode.transform.rotation);
         float aspect = vulkanDevice.getAspectRatio();
         camera.setPerspectiveProjection(glm::radians(50.0f), aspect, 0.1f, 100.0f);
@@ -64,10 +64,10 @@ namespace z0 {
         ubo.view = camera.getView();
         ubo.inverseView = camera.getInverseView();
 
-        //ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.model = glm::rotate(glm::mat4(1.0f),
+        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 1.0f));
+        /*ubo.model = glm::rotate(glm::mat4(1.0f),
                                 glm::radians(0.0f),
-                                glm::vec3(0.0f, 0.0f, 1.0f));
+                                glm::vec3(0.0f, 0.0f, 1.0f));*/
         /*ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f),
                                glm::vec3(0.0f, 0.0f, 0.0f),
                                glm::vec3(0.0f, 0.0f, 1.0f));
@@ -336,7 +336,6 @@ namespace z0 {
         }
     }
 
-    //region Shared Objects
     void VulkanRenderer::createShaders() {
         auto vertCode = readFile("triangle.vert");
         vertShader = std::make_unique<VulkanShader>(
@@ -394,7 +393,6 @@ namespace z0 {
     void VulkanRenderer::bindShader(VkCommandBuffer commandBuffer, VulkanShader& shader) {
         vkCmdBindShadersEXT(commandBuffer, 1, shader.getStage(), shader.getShader());
     }
-    //endregion
 
     //region Dynamic Rendering
     // https://lesleylai.info/en/vk-khr-dynamic-rendering/
@@ -416,7 +414,7 @@ namespace z0 {
                                            VK_IMAGE_LAYOUT_UNDEFINED,
                                            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
         // Color attachement : where the rendering is done
-        const VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+        const VkClearValue clearColor = {{{0.5f, 0.5f, 0.5f, 1.0f}}};
         const VkRenderingAttachmentInfo colorAttachmentInfo{
                 .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
                 .imageView = vulkanDevice.getColorImageView(),

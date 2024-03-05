@@ -8,10 +8,15 @@ namespace z0 {
 
     class Application: public Object {
     public:
-        Application(int w, int h, const std::string& name, const std::string &appdir);
+        Application(int w, int h, const std::string& name, const std::string appdir);
 
-    protected:
+        const std::string& getApplicationDirectory() const { return appdir; }
+
+        static Application& getApp();
+
+    private:
         Viewport viewport;
+        const std::string appdir;
     };
 
 }

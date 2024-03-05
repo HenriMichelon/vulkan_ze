@@ -15,9 +15,9 @@ namespace z0 {
                      const VkPushConstantRange   *pPushConstantRange);
         ~VulkanShader();
 
-        [[nodiscard]] VkShaderCreateInfoEXT getShaderCreateInfo() const { return shaderCreateInfo; };
-        [[nodiscard]] VkShaderStageFlagBits* getStage() { return &stage; };
-        [[nodiscard]] VkShaderEXT* getShader() { return &shader; };
+        VkShaderCreateInfoEXT getShaderCreateInfo() const { return shaderCreateInfo; };
+        VkShaderStageFlagBits* getStage() { return &stage; };
+        VkShaderEXT* getShader() { return &shader; };
 
         void setShader(VkShaderEXT _shader) { shader = _shader; };
 

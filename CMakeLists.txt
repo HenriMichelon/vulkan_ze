@@ -40,6 +40,7 @@ add_executable(${PROJECT_NAME}
         engine/src/object.cpp
         engine/include/z0/viewport.hpp
         engine/src/viewport.cpp
+        engine/src/mesh.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC ${Z0_ENGINE_DIR}/include)
 
