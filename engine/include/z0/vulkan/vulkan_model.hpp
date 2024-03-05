@@ -2,19 +2,28 @@
 
 #include "z0/vulkan/vulkan_device.hpp"
 #include "z0/vulkan/vulkan_buffer.hpp"
-
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm/glm.hpp>
+#include "z0/mesh.hpp"
 
 #include <memory>
 #include <vector>
 
 namespace z0 {
+
+    struct Vertex {
+        glm::vec3 position{};
+        glm::vec3 color{};
+        glm::vec3 normal{};
+        glm::vec2 uv{};
+
+        bool operator==(const Vertex&other) const {
+            return position == other.position && color == other.color && normal == other.normal && uv == other.uv;
+        }
+    };
+
     class VulkanModel {
     public:
 
-        struct Vertex {
+        /*struct Vertex {
             glm::vec3 position{};
             glm::vec3 color{};
             glm::vec3 normal{};
@@ -26,8 +35,7 @@ namespace z0 {
             bool operator==(const Vertex&other) const {
                 return position == other.position && color == other.color && normal == other.normal && uv == other.uv;
             }
-        };
-
+        };*/
         struct Builder {
             std::vector<Vertex> vertices{};
             std::vector<uint32_t> indices{};
@@ -43,14 +51,12 @@ namespace z0 {
         void draw(VkCommandBuffer commandBuffer);
 
     private:
-        VulkanDevice& device;
-
-        std::unique_ptr<VulkanBuffer> vertexBuffer;
-        uint32_t vertexCount{0};
-
         bool hasIndexBuffer {false};
-        std::unique_ptr<VulkanBuffer> indexBuffer;
+        uint32_t vertexCount{0};
         uint32_t indexCount{0};
+        VulkanDevice& device;
+        std::unique_ptr<VulkanBuffer> vertexBuffer;
+        std::unique_ptr<VulkanBuffer> indexBuffer;
 
         void createVertexBuffers(const std::vector<Vertex> &vertices);
         void createIndexBuffers(const std::vector<uint32_t> &indices);

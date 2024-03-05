@@ -2,13 +2,16 @@
 
 #include "z0/vulkan/window_helper.hpp"
 
-#include <string>
+#include "viewport.hpp"
 
 namespace z0 {
-    class Application {
+
+    class Application: public Object {
     public:
-        Application(int w, int h, const std::string& name);
-    private:
-        WindowHelper window;
+        Application(int w, int h, const std::string& name, const std::string &appdir);
+
+    protected:
+        Viewport viewport;
     };
+
 }

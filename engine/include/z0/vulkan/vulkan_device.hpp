@@ -28,24 +28,25 @@ namespace z0 {
         explicit VulkanDevice(WindowHelper &window);
         ~VulkanDevice();
 
-        [[nodiscard]] VkDevice getDevice() { return device; }
-        [[nodiscard]] VkSurfaceKHR getSurface() { return surface; }
-        [[nodiscard]] VkSwapchainKHR getSwapChain() { return swapChain; }
-        [[nodiscard]] VkPhysicalDevice getPhysicalDevice() { return physicalDevice; }
-        [[nodiscard]] VkQueue getGraphicsQueue() { return graphicsQueue; }
-        [[nodiscard]] VkQueue getPresentQueue() { return presentQueue; }
-        [[nodiscard]] VkCommandPool getCommandPool() { return commandPool; }
-        [[nodiscard]] VkFormat getDepthFormat() { return depthFormat; }
-        [[nodiscard]] VkImage getDepthImage() { return depthImage; }
-        [[nodiscard]] VkImageView getDepthImageView() { return depthImageView; }
-        [[nodiscard]] VkImage getColorImage() { return colorImage; }
-        [[nodiscard]] VkImageView getColorImageView() { return colorImageView; }
-        [[nodiscard]] VkSampleCountFlagBits getSamples() { return samples; }
-        [[nodiscard]] const VkExtent2D& getSwapChainExtent() const { return swapChainExtent;}
-        [[nodiscard]] VkFormat getSwapChainImageFormat() const { return swapChainImageFormat; }
-        [[nodiscard]] std::vector<VkImageView>& getSwapChainImageViews() { return swapChainImageViews; }
-        [[nodiscard]] std::vector<VkImage>& getSwapChainImages() { return swapChainImages; }
-        [[nodiscard]] float getAspectRatio() const;
+        VkDevice getDevice() { return device; }
+        VkSurfaceKHR getSurface() { return surface; }
+        VkSwapchainKHR getSwapChain() { return swapChain; }
+        VkPhysicalDevice getPhysicalDevice() { return physicalDevice; }
+        VkQueue getGraphicsQueue() { return graphicsQueue; }
+        VkQueue getPresentQueue() { return presentQueue; }
+        VkCommandPool getCommandPool() { return commandPool; }
+        VkFormat getDepthFormat() { return depthFormat; }
+        VkImage getDepthImage() { return depthImage; }
+        VkImageView getDepthImageView() { return depthImageView; }
+        VkImage getColorImage() { return colorImage; }
+        VkImageView getColorImageView() { return colorImageView; }
+        VkSampleCountFlagBits getSamples() { return samples; }
+        const VkExtent2D& getSwapChainExtent() const { return swapChainExtent;}
+        VkFormat getSwapChainImageFormat() const { return swapChainImageFormat; }
+        std::vector<VkImageView>& getSwapChainImageViews() { return swapChainImageViews; }
+        std::vector<VkImage>& getSwapChainImages() { return swapChainImages; }
+        float getAspectRatio() const;
+        VkSampleCountFlagBits getSamples() const { return samples; }
 
         void recreateSwapChain();
         void presentToSwapChain(VkCommandBuffer commandBuffer, uint32_t imageIndex);

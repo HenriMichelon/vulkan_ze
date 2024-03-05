@@ -6,6 +6,7 @@ cmake_minimum_required(VERSION 3.27)
 project(ZeroZero)
 
 set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
 set(Z0_ENGINE_DIR engine)
 
 add_executable(${PROJECT_NAME}
@@ -22,6 +23,7 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/include/z0/application.hpp
         ${Z0_ENGINE_DIR}/include/z0/log.hpp
         ${Z0_ENGINE_DIR}/include/z0/camera.hpp
+        ${Z0_ENGINE_DIR}/include/z0/node.hpp
         ${Z0_ENGINE_DIR}/src/vulkan/window_helper.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_device.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_buffer.cpp
@@ -32,8 +34,12 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_texture.cpp
         ${Z0_ENGINE_DIR}/src/application.cpp
         ${Z0_ENGINE_DIR}/src/camera.cpp
-        engine/include/z0/node.hpp
-        engine/src/node.cpp
+        ${Z0_ENGINE_DIR}/src/node.cpp
+        engine/include/z0/mesh.hpp
+        engine/include/z0/object.hpp
+        engine/src/object.cpp
+        engine/include/z0/viewport.hpp
+        engine/src/viewport.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC ${Z0_ENGINE_DIR}/include)
 

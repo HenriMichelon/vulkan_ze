@@ -3,12 +3,12 @@
 #include "z0/vulkan/vulkan_renderer.hpp"
 
 namespace z0 {
-    Application::Application(int w, int h, const std::string &name): window{w, h, name} {
-        VulkanDevice vulkanDevice{window};
-        VulkanRenderer vulkanRenderer{vulkanDevice, "../shaders"};
-        while (!window.shouldClose()) {
-            window.process();
-            vulkanRenderer.drawFrame();
+
+    Application::Application(int w, int h, const std::string &name, const std::string &appdir):
+            viewport{w, h, name, appdir}
+    {
+        while (!viewport.shouldClose()) {
+            viewport.process();
         }
     }
 }
