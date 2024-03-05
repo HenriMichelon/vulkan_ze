@@ -9,6 +9,7 @@
 #include <fstream>
 #include <utility>
 #include <filesystem>
+#include <array>
 
 namespace z0 {
 
@@ -28,9 +29,19 @@ namespace z0 {
         createDescriptorSetLayout();
         createPipelineLayout();
         createShaders();
+
+        vulkanDevice.createImage(vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height,
+                                 1, VK_SAMPLE_COUNT_1_BIT, vulkanDevice.getSwapChainImageFormat(),
+                                 VK_IMAGE_TILING_OPTIMAL,
+                                 VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                 stagingImage, stagingImageMemory);
     }
 
     VulkanRenderer::~VulkanRenderer() {
+        vkDestroyImage(device, stagingImage, nullptr);
+        vkFreeMemory(device, stagingImageMemory, nullptr);
+
         vkDeviceWaitIdle(device);
         fragShader.reset();
         fragShader.reset();
@@ -300,6 +311,7 @@ namespace z0 {
         // Use RGBA color write mask
         VkColorComponentFlags color_component_flags[] = {VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_A_BIT};
         vkCmdSetColorWriteMaskEXT(commandBuffer, 0, 1, color_component_flags);
+
     }
 
     void VulkanRenderer::createDescriptorSetLayout() {
@@ -401,24 +413,51 @@ namespace z0 {
                 vulkanDevice.getSwapChainImages()[imageIndex],
                 VK_FORMAT_UNDEFINED,
                 VK_IMAGE_LAYOUT_UNDEFINED,
-                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
         vulkanDevice.transitionImageLayout(commandBuffer,
                                            vulkanDevice.getDepthImage(),
                                            vulkanDevice.getDepthFormat(),
                                            VK_IMAGE_LAYOUT_UNDEFINED,
                                            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+        vulkanDevice.transitionImageLayout(commandBuffer,
+                                           vulkanDevice.getColorImage(),
+                                           vulkanDevice.getSwapChainImageFormat(),
+                                           VK_IMAGE_LAYOUT_UNDEFINED,
+                                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+        // Color attachement : where the rendering is done
         const VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
-        const VkRenderingAttachmentInfoKHR colorAttachmentInfo{
-            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
-            .imageView = vulkanDevice.getSwapChainImageViews()[imageIndex],
-            .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR,
-            .resolveMode = VK_RESOLVE_MODE_NONE,
-            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-            .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-            .clearValue = clearColor,
+        const VkRenderingAttachmentInfo colorAttachmentInfo{
+                .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
+                .imageView = vulkanDevice.getColorImageView(),
+                .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                .resolveMode = VK_RESOLVE_MODE_NONE,
+                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+                .clearValue = clearColor,
         };
+        /*const VkRenderingAttachmentInfo colorAttachmentInfo{
+                .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
+                .imageView = vulkanDevice.getSwapChainImageViews()[imageIndex],
+                .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, // MSAA
+                .resolveMode = VK_RESOLVE_MODE_NONE, // MSAAA
+                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+                .clearValue = clearColor,
+        };
+        const VkRenderingAttachmentInfo multisamplingColorAttachmentInfo{
+                .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
+                .imageView = vulkanDevice.getSwapChainImageViews()[imageIndex],
+                .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, // MSAA
+                .resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT, // MSAAA
+                .resolveImageView = vulkanDevice.getColorImageView(),
+                .resolveImageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
+                .loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+                .clearValue = clearColor,
+        };*/
+        // made it instance wide ?
         const VkClearValue depthClearValue{ .depthStencil = {1.0f, 0} };
-        const VkRenderingAttachmentInfoKHR depthAttachmentInfo{
+        const VkRenderingAttachmentInfo depthAttachmentInfo{
             .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
             .imageView = vulkanDevice.getDepthImageView(),
             .imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
@@ -427,28 +466,90 @@ namespace z0 {
             .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
             .clearValue = depthClearValue,
         };
+        std::array<VkRenderingAttachmentInfo, 1> renderingAttachmentInfo = { colorAttachmentInfo };
         const VkRect2D renderArea{
             {0, 0},
             vulkanDevice.getSwapChainExtent()};
-        const VkRenderingInfoKHR renderingInfo{
+        const VkRenderingInfo renderingInfo{
             .sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR,
+            .pNext = nullptr,
             .renderArea = renderArea,
             .layerCount = 1,
-            .colorAttachmentCount = 1,
-            .pColorAttachments = &colorAttachmentInfo,
+            .colorAttachmentCount = renderingAttachmentInfo.size(),
+            .pColorAttachments = renderingAttachmentInfo.data(),
             .pDepthAttachment = &depthAttachmentInfo,
             .pStencilAttachment = nullptr
         };
-        vkCmdBeginRenderingKHR(commandBuffer, &renderingInfo);
+        vkCmdSetRasterizationSamplesEXT(commandBuffer, VK_SAMPLE_COUNT_4_BIT);
+        vkCmdBeginRendering(commandBuffer, &renderingInfo);
     }
 
     void VulkanRenderer::endRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
-        vkCmdEndRenderingKHR(commandBuffer);
+        vkCmdEndRendering(commandBuffer);
+
+
+       /* vulkanDevice.transitionImageLayout(commandBuffer,
+                                           stagingImage,
+                                           vulkanDevice.getSwapChainImageFormat(),
+                                           VK_IMAGE_LAYOUT_UNDEFINED,
+                                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);*/
+
+        const VkImageResolve imageResolve {
+            .srcSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 },
+            .srcOffset = { 0, 0, 0},
+            .dstSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 },
+            .dstOffset = { 0, 0, 0},
+            .extent = { vulkanDevice.getSwapChainExtent().width,vulkanDevice.getSwapChainExtent().height, 1 }
+        };
+        /*const VkResolveImageInfo2 resolveImageInfo {
+                .sType = VK_STRUCTURE_TYPE_RESOLVE_IMAGE_INFO_2,
+                .srcImage = vulkanDevice.getColorImage(),
+                .srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                .dstImage = vulkanDevice.getSwapChainImages()[imageIndex],
+                .dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                .regionCount = 1,
+                .pRegions = &imageResolve
+        };*/
+        vkCmdResolveImage (commandBuffer,
+                           vulkanDevice.getColorImage(),
+                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                           vulkanDevice.getSwapChainImages()[imageIndex],
+                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                            1,
+                           &imageResolve);
+
+
+        /*vulkanDevice.transitionImageLayout(commandBuffer,
+                                           stagingImage,
+                                           vulkanDevice.getSwapChainImageFormat(),
+                                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);*/
+        /*VkImageBlit blit{};
+        blit.srcOffsets[0] = { 0, 0, 0 };
+        blit.srcOffsets[1] = { static_cast<int32_t>(vulkanDevice.getSwapChainExtent().width), static_cast<int32_t>(vulkanDevice.getSwapChainExtent().height), 1 };
+        blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        blit.srcSubresource.mipLevel = 0;
+        blit.srcSubresource.baseArrayLayer = 0;
+        blit.srcSubresource.layerCount = 1;
+        blit.dstOffsets[0] = { 0, 0, 0 };
+        blit.dstOffsets[1] = { static_cast<int32_t>(vulkanDevice.getSwapChainExtent().width), static_cast<int32_t>(vulkanDevice.getSwapChainExtent().height), 1 };
+        blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        blit.dstSubresource.mipLevel = 0;
+        blit.dstSubresource.baseArrayLayer = 0;
+        blit.dstSubresource.layerCount = 1;
+        vkCmdBlitImage(commandBuffer,
+                       vulkanDevice.getColorImage(),
+                       VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                       vulkanDevice.getSwapChainImages()[imageIndex],
+                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                       1,
+                       &blit,
+                       VK_FILTER_LINEAR );*/
         vulkanDevice.transitionImageLayout(
                 commandBuffer,
                 vulkanDevice.getSwapChainImages()[imageIndex],
                 VK_FORMAT_UNDEFINED,
-                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
     }
 

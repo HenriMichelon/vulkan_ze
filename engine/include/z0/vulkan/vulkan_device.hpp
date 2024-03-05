@@ -38,6 +38,8 @@ namespace z0 {
         [[nodiscard]] VkFormat getDepthFormat() { return depthFormat; }
         [[nodiscard]] VkImage getDepthImage() { return depthImage; }
         [[nodiscard]] VkImageView getDepthImageView() { return depthImageView; }
+        [[nodiscard]] VkImage getColorImage() { return colorImage; }
+        [[nodiscard]] VkImageView getColorImageView() { return colorImageView; }
         [[nodiscard]] const VkExtent2D& getSwapChainExtent() const { return swapChainExtent;}
         [[nodiscard]] VkFormat getSwapChainImageFormat() const { return swapChainImageFormat; }
         [[nodiscard]] std::vector<VkImageView>& getSwapChainImageViews() { return swapChainImageViews; }
@@ -57,7 +59,8 @@ namespace z0 {
         void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
         void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples,
                          VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
-                         VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+                         VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory,
+                         VkImageCreateFlags flags = 0);
         VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
         void transitionImageLayout(VkImage image, VkFormat format,
                                    VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels = 1);
@@ -99,11 +102,11 @@ namespace z0 {
         void createDepthResources();
 
         // MSAA
-        VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
+        VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_4_BIT;
         VkImage colorImage;
         VkDeviceMemory colorImageMemory;
         VkImageView colorImageView;
-        VkSampleCountFlagBits getMaxUsableMSAASampleCount();
+        //VkSampleCountFlagBits getMaxUsableMSAASampleCount();
         void createColorResources();
 
         static bool checkLayerSupport();

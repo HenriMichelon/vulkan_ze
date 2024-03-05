@@ -20,7 +20,7 @@ namespace z0 {
         // https://docs.vulkan.org/samples/latest/samples/extensions/dynamic_rendering/README.html
         VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
         // https://docs.vulkan.org/samples/latest/samples/extensions/shader_object/README.html
-        VK_EXT_SHADER_OBJECT_EXTENSION_NAME
+        VK_EXT_SHADER_OBJECT_EXTENSION_NAME,
     };
 
 #ifdef GLFW_VERSION_MAJOR
@@ -59,7 +59,7 @@ namespace z0 {
         // Check if the best candidate is suitable at all
         if (candidates.rbegin()->first > 0) {
             physicalDevice = candidates.rbegin()->second;
-            msaaSamples = getMaxUsableMSAASampleCount();
+            //msaaSamples = getMaxUsableMSAASampleCount();
         } else {
             die("Failed to find a suitable GPU!");
         }
@@ -97,30 +97,30 @@ namespace z0 {
         {
             // https://docs.vulkan.org/samples/latest/samples/extensions/shader_object/README.html
             VkPhysicalDeviceShaderObjectFeaturesEXT deviceShaderObjectFeatures{
-                    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT,
-                    .shaderObject  = VK_TRUE,
+                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT,
+                .shaderObject  = VK_TRUE,
             };
 
             // https://lesleylai.info/en/vk-khr-dynamic-rendering/
             const VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeature{
-                    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR,
-                    .pNext = &deviceShaderObjectFeatures,
-                    .dynamicRendering = VK_TRUE,
+                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR,
+                .pNext = &deviceShaderObjectFeatures,
+                .dynamicRendering = VK_TRUE,
             };
 
             const VkPhysicalDeviceFeatures deviceFeatures{
-                    .samplerAnisotropy = VK_TRUE
+                .samplerAnisotropy = VK_TRUE
             };
             VkDeviceCreateInfo createInfo{
-                    .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-                    .pNext = &dynamicRenderingFeature,
-                    .queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size()),
-                    .pQueueCreateInfos = queueCreateInfos.data(),
-                    .enabledLayerCount = static_cast<uint32_t>(requestedLayers.size()),
-                    .ppEnabledLayerNames = requestedLayers.data(),
-                    .enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size()),
-                    .ppEnabledExtensionNames = deviceExtensions.data(),
-                    .pEnabledFeatures = &deviceFeatures,
+                .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+                .pNext = &dynamicRenderingFeature,
+                .queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size()),
+                .pQueueCreateInfos = queueCreateInfos.data(),
+                .enabledLayerCount = static_cast<uint32_t>(requestedLayers.size()),
+                .ppEnabledLayerNames = requestedLayers.data(),
+                .enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size()),
+                .ppEnabledExtensionNames = deviceExtensions.data(),
+                .pEnabledFeatures = &deviceFeatures,
             };
 
             if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
@@ -183,7 +183,7 @@ namespace z0 {
                 .imageColorSpace = surfaceFormat.colorSpace,
                 .imageExtent = extent,
                 .imageArrayLayers = 1,
-                .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                 .preTransform = swapChainSupport.capabilities.currentTransform,
                 .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
                 .presentMode = presentMode,
@@ -503,7 +503,7 @@ namespace z0 {
         return candidates.at(0);
     }
 
-    VkSampleCountFlagBits VulkanDevice::getMaxUsableMSAASampleCount() {
+    /*VkSampleCountFlagBits VulkanDevice::getMaxUsableMSAASampleCount() {
         VkPhysicalDeviceProperties physicalDeviceProperties;
         vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
 
@@ -516,7 +516,7 @@ namespace z0 {
         if (counts & VK_SAMPLE_COUNT_2_BIT) { return VK_SAMPLE_COUNT_2_BIT; }
 
         return VK_SAMPLE_COUNT_1_BIT;
-    }
+    }*/
 
     VkImageView VulkanDevice::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels) {
         VkImageViewCreateInfo viewInfo{};
@@ -540,7 +540,7 @@ namespace z0 {
     void VulkanDevice::createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples,
                                    VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
                                    VkMemoryPropertyFlags properties, VkImage &image,
-                                   VkDeviceMemory &imageMemory) {
+                                   VkDeviceMemory &imageMemory, VkImageCreateFlags flags) {
         VkImageCreateInfo imageInfo{};
         imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -555,6 +555,7 @@ namespace z0 {
         imageInfo.usage = usage;
         imageInfo.samples = numSamples;
         imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        imageInfo.flags = flags;
 
         if (vkCreateImage(device, &imageInfo, nullptr, &image) != VK_SUCCESS) {
             throw std::runtime_error("failed to create image!");
@@ -580,7 +581,7 @@ namespace z0 {
         createImage(swapChainExtent.width, swapChainExtent.height,
                     1, msaaSamples, colorFormat,
                     VK_IMAGE_TILING_OPTIMAL,
-                    VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                     colorImage, colorImageMemory);
         colorImageView = createImageView(colorImage, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
@@ -655,7 +656,17 @@ namespace z0 {
             imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
             sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
             destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        } else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
+            imageMemoryBarrier.srcAccessMask = 0;
+            imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
         } else if (oldLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
+            imageMemoryBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            imageMemoryBarrier.dstAccessMask = 0;
+            sourceStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            destinationStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        } else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
             imageMemoryBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
             imageMemoryBarrier.dstAccessMask = 0;
             sourceStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -668,6 +679,11 @@ namespace z0 {
         } else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
             imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
             imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+            destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        } else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
+            imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            imageMemoryBarrier.dstAccessMask = 0;
             sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
             destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
         } else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL) {
