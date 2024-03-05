@@ -162,6 +162,10 @@ namespace z0 {
         }
     }
 
+    float VulkanDevice::getAspectRatio() const {
+        return static_cast<float>(swapChainExtent.width) / static_cast<float>(swapChainExtent.height);
+    }
+
     void VulkanDevice::createSwapChain() {
         const SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice, surface);
         const VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);

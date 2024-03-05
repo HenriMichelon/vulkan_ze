@@ -45,6 +45,7 @@ namespace z0 {
         [[nodiscard]] VkFormat getSwapChainImageFormat() const { return swapChainImageFormat; }
         [[nodiscard]] std::vector<VkImageView>& getSwapChainImageViews() { return swapChainImageViews; }
         [[nodiscard]] std::vector<VkImage>& getSwapChainImages() { return swapChainImages; }
+        [[nodiscard]] float getAspectRatio() const;
 
         void recreateSwapChain();
         void presentToSwapChain(VkCommandBuffer commandBuffer, uint32_t imageIndex);

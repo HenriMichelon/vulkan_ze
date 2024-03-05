@@ -3,6 +3,8 @@
 #include "z0/vulkan/vulkan_descriptors.hpp"
 #include "z0/vulkan/vulkan_ubo.hpp"
 #include "z0/log.hpp"
+#include "z0/node.hpp"
+#include "z0/camera.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -21,8 +23,8 @@ namespace z0 {
                 .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT)
                 .build();
 
-        texture = std::make_unique<VulkanTexture>(vulkanDevice, "../models/viking_room.png");
-        model = VulkanModel::createModelFromFile(vulkanDevice, "../models/viking_room.obj");
+        texture = std::make_unique<VulkanTexture>(vulkanDevice, "../models/cube_diffuse.png");
+        model = VulkanModel::createModelFromFile(vulkanDevice, "../models/cube.obj");
 
         createCommandBuffers();
         createSyncObjects();
@@ -47,18 +49,32 @@ namespace z0 {
         static auto startTime = std::chrono::high_resolution_clock::now();
         auto currentTime = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+        Camera camera{};
+        auto cameraNode = Node::create();
+        cameraNode.transform.translation.z = -3.0f;
+        cameraNode.transform.translation.y = -1.5f;
+        cameraNode.transform.rotation.x = -0.5f;
+        camera.setViewYXZ(cameraNode.transform.translation, cameraNode.transform.rotation);
+        float aspect = vulkanDevice.getAspectRatio();
+        camera.setPerspectiveProjection(glm::radians(50.0f), aspect, 0.1f, 100.0f);
+
         UniformBufferObject ubo{};
+        ubo.projection = camera.getProjection();
+        ubo.view = camera.getView();
+        ubo.inverseView = camera.getInverseView();
+
         //ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.model = glm::rotate(glm::mat4(1.0f),
-                                glm::radians(30.0f),
+                                glm::radians(0.0f),
                                 glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f),
+        /*ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f),
                                glm::vec3(0.0f, 0.0f, 0.0f),
                                glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.proj = glm::perspective(glm::radians(45.0f),
                                     vulkanDevice.getSwapChainExtent().width / (float) vulkanDevice.getSwapChainExtent().height,
                                     0.1f, 10.0f);
-        ubo.proj[1][1] *= -1;
+        ubo.proj[1][1] *= -1;*/
         uboBuffers[frameIndex]->writeToBuffer(&ubo);
         uboBuffers[frameIndex]->flush();
     }

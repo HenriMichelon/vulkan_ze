@@ -18,8 +18,10 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_shader.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_descriptors.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_ubo.hpp
+        ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_texture.hpp
         ${Z0_ENGINE_DIR}/include/z0/application.hpp
         ${Z0_ENGINE_DIR}/include/z0/log.hpp
+        ${Z0_ENGINE_DIR}/include/z0/camera.hpp
         ${Z0_ENGINE_DIR}/src/vulkan/window_helper.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_device.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_buffer.cpp
@@ -27,9 +29,11 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_renderer.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_shader.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_descriptors.cpp
+        ${Z0_ENGINE_DIR}/src/vulkan/vulkan_texture.cpp
         ${Z0_ENGINE_DIR}/src/application.cpp
-        engine/include/z0/vulkan/vulkan_texture.hpp
-        engine/src/vulkan/vulkan_texture.cpp
+        ${Z0_ENGINE_DIR}/src/camera.cpp
+        engine/include/z0/node.hpp
+        engine/src/node.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC ${Z0_ENGINE_DIR}/include)
 
