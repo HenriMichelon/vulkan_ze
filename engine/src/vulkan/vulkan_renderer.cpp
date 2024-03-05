@@ -20,7 +20,7 @@ namespace z0 {
                 .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT)
                 .build();
 
-        texture = std::make_unique<VulkanTexture>(vulkanDevice, "../texture.jpg");
+        texture = std::make_unique<VulkanTexture>(vulkanDevice, "../textures/texture.jpg");
         const std::vector<VulkanModel::Vertex> vertices = {
                 {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
                 {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},

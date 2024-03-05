@@ -1,4 +1,7 @@
-// https://github.com/blurrypiano/littleVulkanEngine
+/*
+ * Derived from
+ * https://github.com/blurrypiano/littleVulkanEngine
+*/
 #include "z0/vulkan/vulkan_descriptors.hpp"
 #include "z0/log.hpp"
 
