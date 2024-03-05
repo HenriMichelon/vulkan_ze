@@ -59,7 +59,7 @@ namespace z0 {
         // Check if the best candidate is suitable at all
         if (candidates.rbegin()->first > 0) {
             physicalDevice = candidates.rbegin()->second;
-            //msaaSamples = getMaxUsableMSAASampleCount();
+            //samples = getMaxUsableMSAASampleCount();
         } else {
             die("Failed to find a suitable GPU!");
         }
@@ -503,7 +503,7 @@ namespace z0 {
         return candidates.at(0);
     }
 
-    /*VkSampleCountFlagBits VulkanDevice::getMaxUsableMSAASampleCount() {
+    VkSampleCountFlagBits VulkanDevice::getMaxUsableMSAASampleCount() {
         VkPhysicalDeviceProperties physicalDeviceProperties;
         vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
 
@@ -516,7 +516,7 @@ namespace z0 {
         if (counts & VK_SAMPLE_COUNT_2_BIT) { return VK_SAMPLE_COUNT_2_BIT; }
 
         return VK_SAMPLE_COUNT_1_BIT;
-    }*/
+    }
 
     VkImageView VulkanDevice::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels) {
         VkImageViewCreateInfo viewInfo{};
@@ -579,7 +579,7 @@ namespace z0 {
     void VulkanDevice::createColorResources() {
         VkFormat colorFormat = swapChainImageFormat;
         createImage(swapChainExtent.width, swapChainExtent.height,
-                    1, msaaSamples, colorFormat,
+                    1, samples, colorFormat,
                     VK_IMAGE_TILING_OPTIMAL,
                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -594,7 +594,7 @@ namespace z0 {
                 VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
         );
         createImage(swapChainExtent.width, swapChainExtent.height,
-                    1, msaaSamples,
+                    1, samples,
                     depthFormat,
                     VK_IMAGE_TILING_OPTIMAL,
                     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,

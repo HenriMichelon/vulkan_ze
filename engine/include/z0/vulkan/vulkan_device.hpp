@@ -40,6 +40,7 @@ namespace z0 {
         [[nodiscard]] VkImageView getDepthImageView() { return depthImageView; }
         [[nodiscard]] VkImage getColorImage() { return colorImage; }
         [[nodiscard]] VkImageView getColorImageView() { return colorImageView; }
+        [[nodiscard]] VkSampleCountFlagBits getSamples() { return samples; }
         [[nodiscard]] const VkExtent2D& getSwapChainExtent() const { return swapChainExtent;}
         [[nodiscard]] VkFormat getSwapChainImageFormat() const { return swapChainImageFormat; }
         [[nodiscard]] std::vector<VkImageView>& getSwapChainImageViews() { return swapChainImageViews; }
@@ -102,11 +103,11 @@ namespace z0 {
         void createDepthResources();
 
         // MSAA
-        VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_4_BIT;
+        VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT;
         VkImage colorImage;
         VkDeviceMemory colorImageMemory;
         VkImageView colorImageView;
-        //VkSampleCountFlagBits getMaxUsableMSAASampleCount();
+        VkSampleCountFlagBits getMaxUsableMSAASampleCount();
         void createColorResources();
 
         static bool checkLayerSupport();

@@ -31,7 +31,9 @@ namespace z0 {
         createShaders();
 
         vulkanDevice.createImage(vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height,
-                                 1, VK_SAMPLE_COUNT_1_BIT, vulkanDevice.getSwapChainImageFormat(),
+                                 1,
+                                 VK_SAMPLE_COUNT_1_BIT,
+                                 vulkanDevice.getSwapChainImageFormat(),
                                  VK_IMAGE_TILING_OPTIMAL,
                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -221,21 +223,6 @@ namespace z0 {
         }
     }
 
-    std::vector<char> VulkanRenderer::readFile(const std::string &fileName) {
-        std::filesystem::path filepath = shaderDirectory;
-        filepath /= fileName;
-        filepath += ".spv";
-        std::ifstream file{filepath, std::ios::ate | std::ios::binary};
-        if (!file.is_open()) {
-            die("failed to open file : ", fileName);
-        }
-        size_t fileSize = static_cast<size_t>(file.tellg());
-        std::vector<char> buffer(fileSize);
-        file.seekg(0);
-        file.read(buffer.data(), fileSize);
-        file.close();
-        return buffer;
-    }
 
     void VulkanRenderer::setInitialState(VkCommandBuffer commandBuffer)
     {
@@ -278,16 +265,16 @@ namespace z0 {
                                vertexAttribute.size(),
                                vertexAttribute.data());
 
-        // Set the topology to triangles, don't restart primitives, set samples to only 1 per pixel
+        // Set the topology to triangles, don't restart primitives
         vkCmdSetPrimitiveTopologyEXT(commandBuffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
         vkCmdSetPrimitiveRestartEnableEXT(commandBuffer, VK_FALSE);
-        vkCmdSetRasterizationSamplesEXT(commandBuffer, VK_SAMPLE_COUNT_1_BIT);
+        vkCmdSetRasterizationSamplesEXT(commandBuffer, vulkanDevice.getSamples());
 
-        const VkSampleMask sample_mask = 0x1;
-        vkCmdSetSampleMaskEXT(commandBuffer, VK_SAMPLE_COUNT_1_BIT, &sample_mask);
+        const VkSampleMask sample_mask = 0xffffffff;
+        vkCmdSetSampleMaskEXT(commandBuffer, vulkanDevice.getSamples(), &sample_mask);
 
         // Do not use alpha to coverage or alpha to one because not using MSAA
-        vkCmdSetAlphaToCoverageEnableEXT(commandBuffer, VK_FALSE);
+        vkCmdSetAlphaToCoverageEnableEXT(commandBuffer, VK_TRUE);
 
         vkCmdSetPolygonModeEXT(commandBuffer, VK_POLYGON_MODE_FILL);
 
@@ -435,26 +422,6 @@ namespace z0 {
                 .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
                 .clearValue = clearColor,
         };
-        /*const VkRenderingAttachmentInfo colorAttachmentInfo{
-                .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
-                .imageView = vulkanDevice.getSwapChainImageViews()[imageIndex],
-                .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, // MSAA
-                .resolveMode = VK_RESOLVE_MODE_NONE, // MSAAA
-                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-                .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-                .clearValue = clearColor,
-        };
-        const VkRenderingAttachmentInfo multisamplingColorAttachmentInfo{
-                .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
-                .imageView = vulkanDevice.getSwapChainImageViews()[imageIndex],
-                .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, // MSAA
-                .resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT, // MSAAA
-                .resolveImageView = vulkanDevice.getColorImageView(),
-                .resolveImageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-                .loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-                .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-                .clearValue = clearColor,
-        };*/
         // made it instance wide ?
         const VkClearValue depthClearValue{ .depthStencil = {1.0f, 0} };
         const VkRenderingAttachmentInfo depthAttachmentInfo{
@@ -480,71 +447,51 @@ namespace z0 {
             .pDepthAttachment = &depthAttachmentInfo,
             .pStencilAttachment = nullptr
         };
-        vkCmdSetRasterizationSamplesEXT(commandBuffer, VK_SAMPLE_COUNT_4_BIT);
         vkCmdBeginRendering(commandBuffer, &renderingInfo);
     }
 
     void VulkanRenderer::endRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
         vkCmdEndRendering(commandBuffer);
 
-
-       /* vulkanDevice.transitionImageLayout(commandBuffer,
-                                           stagingImage,
-                                           vulkanDevice.getSwapChainImageFormat(),
-                                           VK_IMAGE_LAYOUT_UNDEFINED,
-                                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);*/
-
-        const VkImageResolve imageResolve {
-            .srcSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 },
-            .srcOffset = { 0, 0, 0},
-            .dstSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 },
-            .dstOffset = { 0, 0, 0},
-            .extent = { vulkanDevice.getSwapChainExtent().width,vulkanDevice.getSwapChainExtent().height, 1 }
-        };
-        /*const VkResolveImageInfo2 resolveImageInfo {
-                .sType = VK_STRUCTURE_TYPE_RESOLVE_IMAGE_INFO_2,
-                .srcImage = vulkanDevice.getColorImage(),
-                .srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                .dstImage = vulkanDevice.getSwapChainImages()[imageIndex],
-                .dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                .regionCount = 1,
-                .pRegions = &imageResolve
-        };*/
-        vkCmdResolveImage (commandBuffer,
+        if (vulkanDevice.getSamples() == VK_SAMPLE_COUNT_1_BIT) {
+            VkImageBlit blit{};
+            blit.srcOffsets[0] = { 0, 0, 0 };
+            blit.srcOffsets[1] = { static_cast<int32_t>(vulkanDevice.getSwapChainExtent().width), static_cast<int32_t>(vulkanDevice.getSwapChainExtent().height), 1 };
+            blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            blit.srcSubresource.mipLevel = 0;
+            blit.srcSubresource.baseArrayLayer = 0;
+            blit.srcSubresource.layerCount = 1;
+            blit.dstOffsets[0] = { 0, 0, 0 };
+            blit.dstOffsets[1] = { static_cast<int32_t>(vulkanDevice.getSwapChainExtent().width), static_cast<int32_t>(vulkanDevice.getSwapChainExtent().height), 1 };
+            blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            blit.dstSubresource.mipLevel = 0;
+            blit.dstSubresource.baseArrayLayer = 0;
+            blit.dstSubresource.layerCount = 1;
+            vkCmdBlitImage(commandBuffer,
                            vulkanDevice.getColorImage(),
                            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                            vulkanDevice.getSwapChainImages()[imageIndex],
                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                            1,
-                           &imageResolve);
+                           1,
+                           &blit,
+                           VK_FILTER_LINEAR );
+        } else {
+            const VkImageResolve imageResolve{
+                    .srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+                    .srcOffset = {0, 0, 0},
+                    .dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+                    .dstOffset = {0, 0, 0},
+                    .extent = {vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height, 1}
+            };
+            vkCmdResolveImage(commandBuffer,
+                              vulkanDevice.getColorImage(),
+                              VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                              vulkanDevice.getSwapChainImages()[imageIndex],
+                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                              1,
+                              &imageResolve);
+        }
 
-
-        /*vulkanDevice.transitionImageLayout(commandBuffer,
-                                           stagingImage,
-                                           vulkanDevice.getSwapChainImageFormat(),
-                                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);*/
-        /*VkImageBlit blit{};
-        blit.srcOffsets[0] = { 0, 0, 0 };
-        blit.srcOffsets[1] = { static_cast<int32_t>(vulkanDevice.getSwapChainExtent().width), static_cast<int32_t>(vulkanDevice.getSwapChainExtent().height), 1 };
-        blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        blit.srcSubresource.mipLevel = 0;
-        blit.srcSubresource.baseArrayLayer = 0;
-        blit.srcSubresource.layerCount = 1;
-        blit.dstOffsets[0] = { 0, 0, 0 };
-        blit.dstOffsets[1] = { static_cast<int32_t>(vulkanDevice.getSwapChainExtent().width), static_cast<int32_t>(vulkanDevice.getSwapChainExtent().height), 1 };
-        blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        blit.dstSubresource.mipLevel = 0;
-        blit.dstSubresource.baseArrayLayer = 0;
-        blit.dstSubresource.layerCount = 1;
-        vkCmdBlitImage(commandBuffer,
-                       vulkanDevice.getColorImage(),
-                       VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                       vulkanDevice.getSwapChainImages()[imageIndex],
-                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                       1,
-                       &blit,
-                       VK_FILTER_LINEAR );*/
         vulkanDevice.transitionImageLayout(
                 commandBuffer,
                 vulkanDevice.getSwapChainImages()[imageIndex],
@@ -554,5 +501,21 @@ namespace z0 {
     }
 
     //endregion
+
+    std::vector<char> VulkanRenderer::readFile(const std::string &fileName) {
+        std::filesystem::path filepath = shaderDirectory;
+        filepath /= fileName;
+        filepath += ".spv";
+        std::ifstream file{filepath, std::ios::ate | std::ios::binary};
+        if (!file.is_open()) {
+            die("failed to open file : ", fileName);
+        }
+        size_t fileSize = static_cast<size_t>(file.tellg());
+        std::vector<char> buffer(fileSize);
+        file.seekg(0);
+        file.read(buffer.data(), fileSize);
+        file.close();
+        return buffer;
+    }
 
 }
