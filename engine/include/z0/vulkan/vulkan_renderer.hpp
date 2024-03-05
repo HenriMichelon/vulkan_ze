@@ -34,9 +34,6 @@ namespace z0 {
         std::unique_ptr<VulkanModel> model;
         std::unique_ptr<VulkanTexture> texture;
 
-        VkImage stagingImage;
-        VkDeviceMemory stagingImageMemory;
-
         void createPipelineLayout();
         void createCommandBuffers();
         void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);

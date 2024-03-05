@@ -47,6 +47,7 @@ namespace z0 {
         [[nodiscard]] std::vector<VkImage>& getSwapChainImages() { return swapChainImages; }
 
         void recreateSwapChain();
+        void presentToSwapChain(VkCommandBuffer commandBuffer, uint32_t imageIndex);
         bool framebufferResized = false;
 
         void createBuffer(
@@ -108,6 +109,8 @@ namespace z0 {
         VkDeviceMemory colorImageMemory;
         VkImageView colorImageView;
         VkSampleCountFlagBits getMaxUsableMSAASampleCount();
+        VkImageBlit colorImageBlit{};
+        VkImageResolve colorImageResolve{};
         void createColorResources();
 
         static bool checkLayerSupport();

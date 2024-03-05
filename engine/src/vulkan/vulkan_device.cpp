@@ -59,7 +59,7 @@ namespace z0 {
         // Check if the best candidate is suitable at all
         if (candidates.rbegin()->first > 0) {
             physicalDevice = candidates.rbegin()->second;
-            //samples = getMaxUsableMSAASampleCount();
+            samples = getMaxUsableMSAASampleCount();
         } else {
             die("Failed to find a suitable GPU!");
         }
@@ -585,6 +585,53 @@ namespace z0 {
                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                     colorImage, colorImageMemory);
         colorImageView = createImageView(colorImage, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+
+        colorImageBlit.srcOffsets[0] = {0, 0, 0 };
+        colorImageBlit.srcOffsets[1] = {static_cast<int32_t>(swapChainExtent.width), static_cast<int32_t>(swapChainExtent.height), 1 };
+        colorImageBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        colorImageBlit.srcSubresource.mipLevel = 0;
+        colorImageBlit.srcSubresource.baseArrayLayer = 0;
+        colorImageBlit.srcSubresource.layerCount = 1;
+        colorImageBlit.dstOffsets[0] = {0, 0, 0 };
+        colorImageBlit.dstOffsets[1] = {static_cast<int32_t>(swapChainExtent.width), static_cast<int32_t>(swapChainExtent.height), 1 };
+        colorImageBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        colorImageBlit.dstSubresource.mipLevel = 0;
+        colorImageBlit.dstSubresource.baseArrayLayer = 0;
+        colorImageBlit.dstSubresource.layerCount = 1;
+
+        colorImageResolve.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+        colorImageResolve.srcOffset = {0, 0, 0};
+        colorImageResolve.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+        colorImageResolve.dstOffset = {0, 0, 0};
+        colorImageResolve.extent = {swapChainExtent.width, swapChainExtent.height, 1};
+    }
+
+    void VulkanDevice::presentToSwapChain(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
+        if (samples == VK_SAMPLE_COUNT_1_BIT) {
+            vkCmdBlitImage(commandBuffer,
+                           colorImage,
+                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                           swapChainImages[imageIndex],
+                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                           1,
+                           &colorImageBlit,
+                           VK_FILTER_LINEAR );
+        } else {
+            const VkImageResolve imageResolve{
+                    .srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+                    .srcOffset = {0, 0, 0},
+                    .dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+                    .dstOffset = {0, 0, 0},
+                    .extent = {swapChainExtent.width, swapChainExtent.height, 1}
+            };
+            vkCmdResolveImage(commandBuffer,
+                              colorImage,
+                              VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                              swapChainImages[imageIndex],
+                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                              1,
+                              &imageResolve);
+        }
     }
 
     void VulkanDevice::createDepthResources() {

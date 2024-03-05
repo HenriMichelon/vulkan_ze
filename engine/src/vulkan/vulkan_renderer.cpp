@@ -29,21 +29,9 @@ namespace z0 {
         createDescriptorSetLayout();
         createPipelineLayout();
         createShaders();
-
-        vulkanDevice.createImage(vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height,
-                                 1,
-                                 VK_SAMPLE_COUNT_1_BIT,
-                                 vulkanDevice.getSwapChainImageFormat(),
-                                 VK_IMAGE_TILING_OPTIMAL,
-                                 VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                 stagingImage, stagingImageMemory);
     }
 
     VulkanRenderer::~VulkanRenderer() {
-        vkDestroyImage(device, stagingImage, nullptr);
-        vkFreeMemory(device, stagingImageMemory, nullptr);
-
         vkDeviceWaitIdle(device);
         fragShader.reset();
         fragShader.reset();
@@ -452,46 +440,7 @@ namespace z0 {
 
     void VulkanRenderer::endRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
         vkCmdEndRendering(commandBuffer);
-
-        if (vulkanDevice.getSamples() == VK_SAMPLE_COUNT_1_BIT) {
-            VkImageBlit blit{};
-            blit.srcOffsets[0] = { 0, 0, 0 };
-            blit.srcOffsets[1] = { static_cast<int32_t>(vulkanDevice.getSwapChainExtent().width), static_cast<int32_t>(vulkanDevice.getSwapChainExtent().height), 1 };
-            blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            blit.srcSubresource.mipLevel = 0;
-            blit.srcSubresource.baseArrayLayer = 0;
-            blit.srcSubresource.layerCount = 1;
-            blit.dstOffsets[0] = { 0, 0, 0 };
-            blit.dstOffsets[1] = { static_cast<int32_t>(vulkanDevice.getSwapChainExtent().width), static_cast<int32_t>(vulkanDevice.getSwapChainExtent().height), 1 };
-            blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            blit.dstSubresource.mipLevel = 0;
-            blit.dstSubresource.baseArrayLayer = 0;
-            blit.dstSubresource.layerCount = 1;
-            vkCmdBlitImage(commandBuffer,
-                           vulkanDevice.getColorImage(),
-                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                           vulkanDevice.getSwapChainImages()[imageIndex],
-                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                           1,
-                           &blit,
-                           VK_FILTER_LINEAR );
-        } else {
-            const VkImageResolve imageResolve{
-                    .srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-                    .srcOffset = {0, 0, 0},
-                    .dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-                    .dstOffset = {0, 0, 0},
-                    .extent = {vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height, 1}
-            };
-            vkCmdResolveImage(commandBuffer,
-                              vulkanDevice.getColorImage(),
-                              VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                              vulkanDevice.getSwapChainImages()[imageIndex],
-                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                              1,
-                              &imageResolve);
-        }
-
+        vulkanDevice.presentToSwapChain(commandBuffer, imageIndex);
         vulkanDevice.transitionImageLayout(
                 commandBuffer,
                 vulkanDevice.getSwapChainImages()[imageIndex],
