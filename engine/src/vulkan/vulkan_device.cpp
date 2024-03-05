@@ -241,7 +241,8 @@ namespace z0 {
     void VulkanDevice::createImageViews() {
         swapChainImageViews.resize(swapChainImages.size());
         for (uint32_t i = 0; i < swapChainImages.size(); i++) {
-            swapChainImageViews[i] = createImageView(swapChainImages[i], swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+            swapChainImageViews[i] = createImageView(swapChainImages[i], swapChainImageFormat,
+                                                     VK_IMAGE_ASPECT_COLOR_BIT, 1);
         }
     }
 
@@ -496,7 +497,7 @@ namespace z0 {
         return candidates.at(0);
     }
 
-    VkImageView VulkanDevice::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) {
+    VkImageView VulkanDevice::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels) {
         VkImageViewCreateInfo viewInfo{};
         viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         viewInfo.image = image;
@@ -504,7 +505,7 @@ namespace z0 {
         viewInfo.format = format;
         viewInfo.subresourceRange.aspectMask = aspectFlags;
         viewInfo.subresourceRange.baseMipLevel = 0;
-        viewInfo.subresourceRange.levelCount = 1;
+        viewInfo.subresourceRange.levelCount = mipLevels;
         viewInfo.subresourceRange.baseArrayLayer = 0;
         viewInfo.subresourceRange.layerCount = 1;
 
@@ -515,8 +516,9 @@ namespace z0 {
         return imageView;
     }
 
-    void VulkanDevice::createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
-                                   VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage &image,
+    void VulkanDevice::createImage(uint32_t width, uint32_t height, uint32_t mipLevels,
+                                   VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
+                                   VkMemoryPropertyFlags properties, VkImage &image,
                                    VkDeviceMemory &imageMemory) {
         VkImageCreateInfo imageInfo{};
         imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -524,7 +526,7 @@ namespace z0 {
         imageInfo.extent.width = width;
         imageInfo.extent.height = height;
         imageInfo.extent.depth = 1;
-        imageInfo.mipLevels = 1;
+        imageInfo.mipLevels = mipLevels;
         imageInfo.arrayLayers = 1;
         imageInfo.format = format;
         imageInfo.tiling = tiling;
@@ -558,27 +560,28 @@ namespace z0 {
                 VK_IMAGE_TILING_OPTIMAL,
                 VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
         );
-        createImage(swapChainExtent.width, swapChainExtent.height,
+        createImage(swapChainExtent.width, swapChainExtent.height, 1,
                     depthFormat,
                     VK_IMAGE_TILING_OPTIMAL,
                     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                     depthImage, depthImageMemory);
-        depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+        depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
     }
 
     bool VulkanDevice::hasStencilComponent(VkFormat format) {
         return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
     }
 
-    void VulkanDevice::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
+    void VulkanDevice::transitionImageLayout(VkImage image, VkFormat format,
+                                             VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels) {
         VkCommandBuffer commandBuffer = beginSingleTimeCommands();
-        transitionImageLayout(commandBuffer, image, format, oldLayout, newLayout);
+        transitionImageLayout(commandBuffer, image, format, oldLayout, newLayout, mipLevels);
         endSingleTimeCommands(commandBuffer);
     }
 
     void VulkanDevice::transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format,
-                                             VkImageLayout oldLayout, VkImageLayout newLayout) {
+                                             VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels) {
         VkImageMemoryBarrier imageMemoryBarrier{
                 .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
                 .srcAccessMask = 0,
@@ -591,7 +594,7 @@ namespace z0 {
                 .subresourceRange = {
                         .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
                         .baseMipLevel = 0,
-                        .levelCount = 1,
+                        .levelCount = mipLevels,
                         .baseArrayLayer = 0,
                         .layerCount = 1,
                 },

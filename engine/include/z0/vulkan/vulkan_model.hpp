@@ -17,27 +17,27 @@ namespace z0 {
         struct Vertex {
             glm::vec3 position{};
             glm::vec3 color{};
-            //glm::vec3 normal{};
+            glm::vec3 normal{};
             glm::vec2 uv{};
 
             static std::vector<VkVertexInputBindingDescription2EXT> getBindingDescription();
             static std::vector<VkVertexInputAttributeDescription2EXT> getAttributeDescription();
 
             bool operator==(const Vertex&other) const {
-                return position == other.position && color == other.color; // && normal == other.normal && uv == other.uv;
+                return position == other.position && color == other.color && normal == other.normal && uv == other.uv;
             }
         };
 
         struct Builder {
             std::vector<Vertex> vertices{};
             std::vector<uint32_t> indices{};
-            //void loadModel(const std::string &filepath);
+            void loadModel(const std::string &filepath);
         };
 
         VulkanModel(VulkanDevice &device, const VulkanModel::Builder &builder);
         ~VulkanModel();
 
-        //static std::unique_ptr<VulkanModel> createModelFromFile(VulkanDevice &device, const std::string &filename);
+        static std::unique_ptr<VulkanModel> createModelFromFile(VulkanDevice &device, const std::string &filename);
 
         void bind(VkCommandBuffer commandBuffer);
         void draw(VkCommandBuffer commandBuffer);

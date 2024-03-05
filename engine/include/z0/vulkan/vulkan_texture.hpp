@@ -13,6 +13,7 @@ namespace z0 {
 
     private:
         VulkanDevice& vulkanDevice;
+        uint32_t mipLevels;
         VkImage textureImage;
         VkDeviceMemory textureImageMemory;
         VkImageView textureImageView;
@@ -20,7 +21,7 @@ namespace z0 {
 
         void createTextureImage(std::string filepath);
         void createTextureSampler();
-
+        void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
         void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
     };

@@ -20,24 +20,8 @@ namespace z0 {
                 .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT)
                 .build();
 
-        texture = std::make_unique<VulkanTexture>(vulkanDevice, "../textures/texture.jpg");
-        const std::vector<VulkanModel::Vertex> vertices = {
-                {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-                {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-                {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-                {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
-
-                {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-                {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-                {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-                {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
-        };
-        const std::vector<uint32_t> indices = {
-                0, 1, 2, 2, 3, 0,
-                4, 5, 6, 6, 7, 4
-        };
-        VulkanModel::Builder builder{vertices, indices};
-        model = std::make_unique<VulkanModel>(vulkanDevice, builder);
+        texture = std::make_unique<VulkanTexture>(vulkanDevice, "../models/viking_room.png");
+        model = VulkanModel::createModelFromFile(vulkanDevice, "../models/viking_room.obj");
 
         createCommandBuffers();
         createSyncObjects();
@@ -63,7 +47,8 @@ namespace z0 {
         auto currentTime = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
         UniformBufferObject ubo{};
-        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        //ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(30.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.proj = glm::perspective(glm::radians(45.0f), vulkanDevice.getSwapChainExtent().width / (float) vulkanDevice.getSwapChainExtent().height, 0.1f, 10.0f);
         ubo.proj[1][1] *= -1;

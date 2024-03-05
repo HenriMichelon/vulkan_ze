@@ -1,5 +1,7 @@
-// https://docs.vulkan.org/samples/latest/samples/extensions/shader_object/README.html
-
+/*
+ * Derived from
+ * https://docs.vulkan.org/samples/latest/samples/extensions/shader_object/README.html
+ */
 #include "z0/vulkan/vulkan_shader.hpp"
 #include "z0/log.hpp"
 

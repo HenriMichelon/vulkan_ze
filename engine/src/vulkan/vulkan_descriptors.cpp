@@ -1,6 +1,8 @@
 /*
  * Derived from
  * https://github.com/blurrypiano/littleVulkanEngine
+ * and
+ * https://vulkan-tutorial.com/Uniform_buffers/Descriptor_layout_and_buffer
 */
 #include "z0/vulkan/vulkan_descriptors.hpp"
 #include "z0/log.hpp"

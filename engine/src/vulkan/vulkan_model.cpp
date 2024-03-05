@@ -1,6 +1,8 @@
 /*
  * Derived from
  * https://github.com/blurrypiano/littleVulkanEngine
+ * and
+ * https://vulkan-tutorial.com/Loading_models
 */
 #include "z0/vulkan/vulkan_model.hpp"
 
@@ -45,11 +47,11 @@ namespace  z0 {
     VulkanModel::~VulkanModel() {
     }
 
-    /*std::unique_ptr<VulkanModel> VulkanModel::createModelFromFile(VulkanDevice &device, const std::string &filepath) {
+    std::unique_ptr<VulkanModel> VulkanModel::createModelFromFile(VulkanDevice &device, const std::string &filepath) {
         Builder builder{};
         builder.loadModel(filepath);
         return std::make_unique<VulkanModel>(device, builder);
-    }*/
+    }
 
     void VulkanModel::createVertexBuffers(const std::vector<Vertex> &vertices) {
         vertexCount = static_cast<uint32_t>(vertices.size());
@@ -156,13 +158,21 @@ namespace  z0 {
                 nullptr,
                 2,
                 0,
+                VK_FORMAT_R32G32B32_SFLOAT,
+                offsetof(Vertex, normal)
+        });
+        attributeDescriptions.push_back({
+                VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT,
+                nullptr,
+                3,
+                0,
                 VK_FORMAT_R32G32_SFLOAT,
                 offsetof(Vertex, uv)
         });
         return attributeDescriptions;
     }
 
-    /*void VulkanModel::Builder::loadModel(const std::string &filepath) {
+    void VulkanModel::Builder::loadModel(const std::string &filepath) {
         tinyobj::attrib_t attrib;
         std::vector<tinyobj::shape_t> shapes;
         std::vector<tinyobj::material_t> materials;
@@ -201,8 +211,8 @@ namespace  z0 {
                 }
                 if (index.texcoord_index >= 0) {
                     vertex.uv = {
-                            attrib.texcoords[3 * index.texcoord_index + 0],
-                            attrib.texcoords[3 * index.texcoord_index + 1],
+                            attrib.texcoords[2 * index.texcoord_index + 0],
+                            1.0f - attrib.texcoords[2 * index.texcoord_index + 1],
                     };
                 }
 
@@ -213,7 +223,7 @@ namespace  z0 {
                 indices.push_back(uniqueVertices[vertex]);
             }
         }
-    }*/
+    }
 }
 
 

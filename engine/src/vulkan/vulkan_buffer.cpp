@@ -1,8 +1,8 @@
 /*
  * Derived from
  * https://github.com/blurrypiano/littleVulkanEngine
- *
- * Encapsulates a vulkan buffer
+ * and
+ * https://vulkan-tutorial.com/Vertex_buffers/Vertex_buffer_creation
  *
  * Initially based off VulkanBuffer by Sascha Willems -
  * https://github.com/SaschaWillems/Vulkan/blob/master/base/VulkanBuffer.h
