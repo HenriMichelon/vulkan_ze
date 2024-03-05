@@ -27,8 +27,8 @@ namespace  z0 {
 
 namespace std {
     template<>
-    struct hash<z0::VulkanModel::Vertex>{
-        size_t operator()(z0::VulkanModel::Vertex const &vertex) const {
+    struct hash<z0::Vertex>{
+        size_t operator()(z0::Vertex const &vertex) const {
             size_t seed = 0;
             z0::hashCombine(seed, vertex.position); //, vertex.color, vertex.normal, vertex.uv);
             return seed;
@@ -125,7 +125,7 @@ namespace  z0 {
         }
     }
 
-    std::vector<VkVertexInputBindingDescription2EXT> VulkanModel::Vertex::getBindingDescription() {
+    std::vector<VkVertexInputBindingDescription2EXT> VulkanModel::getBindingDescription() {
         std::vector<VkVertexInputBindingDescription2EXT> bindingDescriptions(1);
         bindingDescriptions[0].sType = VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT;
         bindingDescriptions[0].binding = 0;
@@ -135,7 +135,7 @@ namespace  z0 {
         return bindingDescriptions;
     }
 
-    std::vector<VkVertexInputAttributeDescription2EXT> VulkanModel::Vertex::getAttributeDescription() {
+    std::vector<VkVertexInputAttributeDescription2EXT> VulkanModel::getAttributeDescription() {
         std::vector<VkVertexInputAttributeDescription2EXT> attributeDescriptions{};
         attributeDescriptions.push_back({
             VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT,

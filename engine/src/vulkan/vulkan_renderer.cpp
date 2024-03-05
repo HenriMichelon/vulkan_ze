@@ -261,8 +261,8 @@ namespace z0 {
             vkCmdSetColorBlendEquationEXT(commandBuffer, 0, 1, &colorBlendEquation);
         }
 
-        std::vector<VkVertexInputBindingDescription2EXT> vertexBinding = VulkanModel::Vertex::getBindingDescription();
-        std::vector<VkVertexInputAttributeDescription2EXT> vertexAttribute = VulkanModel::Vertex::getAttributeDescription();
+        std::vector<VkVertexInputBindingDescription2EXT> vertexBinding = VulkanModel::getBindingDescription();
+        std::vector<VkVertexInputAttributeDescription2EXT> vertexAttribute = VulkanModel::getAttributeDescription();
         vkCmdSetVertexInputEXT(commandBuffer,
                                vertexBinding.size(),
                                vertexBinding.data(),
