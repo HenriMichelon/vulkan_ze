@@ -17,30 +17,39 @@ namespace z0 {
         glfwInit();
 
         // Create the GLW Window on the primary monitor
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         GLFWmonitor* monitor = glfwGetPrimaryMonitor();
         const GLFWvidmode* vidmod = glfwGetVideoMode(monitor);
-        if (mode != WINDOW_MODE_WINDOWED_FULLSCREEN) {
-            // ignore the requested window size
-            width = vidmod->width;
-            height = vidmod->height;
-        }
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API); // disable OpenGL API support
         glfwWindowHint(GLFW_RESIZABLE, mode == WINDOW_MODE_WINDOWED || mode == WINDOW_MODE_WINDOWED_MAXIMIZED);
         glfwWindowHint(GLFW_MAXIMIZED, mode == WINDOW_MODE_WINDOWED_MAXIMIZED);
         windowHandle = glfwCreateWindow(
             width,
             height,
             windowName.c_str(),
-            mode == WINDOW_MODE_FULLSCREEN || mode == WINDOW_MODE_FULLSCREEN_EXCLUSIVE ?monitor : nullptr,
+            mode == WINDOW_MODE_FULLSCREEN || mode == WINDOW_MODE_FULLSCREEN_EXCLUSIVE ? monitor : nullptr,
             nullptr);
 
         if (mode == WINDOW_MODE_WINDOWED) {
             // Center the window on the screen
             glfwSetWindowPos(windowHandle, (vidmod->width - width) / 2, (vidmod->height - height) / 2);
         } else if (mode == WINDOW_MODE_WINDOWED_FULLSCREEN) {
+            // switch in "window fullscreen" mode
             glfwSetWindowMonitor(windowHandle, monitor, 0, 0,
                                  vidmod->width, vidmod->height, vidmod->refreshRate);
         }
+
+#ifdef _WIN64
+        // Clean window background
+        HWND hWnd = glfwGetWin32Window(windowHandle);
+        PAINTSTRUCT ps2;
+        HDC hdc = BeginPaint(hWnd, &ps2);
+        HBRUSH brush = CreateSolidBrush(RGB(WINDOW_CLEAR_COLOR[0], WINDOW_CLEAR_COLOR[1], WINDOW_CLEAR_COLOR[2]));
+        RECT rect = { };
+        GetClientRect(hWnd, &rect);
+        FillRect(hdc, &rect, brush);
+        DeleteObject(brush);
+        EndPaint(hWnd, &ps2);
+#endif
 
         // Set callback for window resize/minimize
         glfwSetWindowUserPointer(windowHandle, this);

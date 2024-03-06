@@ -1,10 +1,10 @@
 #pragma once
 
 #include "z0/vulkan/vulkan_device.hpp"
-#include "vulkan_shader.hpp"
-#include "vulkan_model.hpp"
-#include "vulkan_descriptors.hpp"
-#include "vulkan_texture.hpp"
+#include "z0/vulkan/vulkan_shader.hpp"
+#include "z0/vulkan/vulkan_model.hpp"
+#include "z0/vulkan/vulkan_descriptors.hpp"
+#include "z0/vulkan/vulkan_texture.hpp"
 
 namespace z0 {
     class VulkanRenderer {
