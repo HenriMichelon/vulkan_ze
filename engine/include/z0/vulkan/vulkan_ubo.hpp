@@ -10,5 +10,6 @@ namespace z0 {
         glm::mat4 projection{1.0f};
         glm::mat4 view{1.0f};
         glm::mat4 inverseView{1.0f};
+        uint32_t textureBinding;
     };
 }

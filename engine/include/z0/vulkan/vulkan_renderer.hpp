@@ -21,7 +21,9 @@ namespace z0 {
         VkPipelineLayout pipelineLayout;
         std::unique_ptr<VulkanDescriptorSetLayout> globalSetLayout;
         std::unique_ptr<VulkanDescriptorPool> globalPool{};
+
         std::vector<VkDescriptorSet> globalDescriptorSets{2}; // MAX_FRAMES_IN_FLIGHT
+        std::vector<std::unique_ptr<VulkanBuffer>> uboBuffers{2}; // MAX_FRAMES_IN_FLIGHT
 
         const int MAX_FRAMES_IN_FLIGHT = 2;
         uint32_t currentFrame = 0;
@@ -29,10 +31,11 @@ namespace z0 {
         std::vector<VkSemaphore> imageAvailableSemaphores;
         std::vector<VkSemaphore> renderFinishedSemaphores;
         std::vector<VkFence> inFlightFences;
-        std::vector<std::unique_ptr<VulkanBuffer>> uboBuffers{2}; // MAX_FRAMES_IN_FLIGHT
 
         std::unique_ptr<VulkanModel> model;
         std::unique_ptr<VulkanTexture> texture;
+        std::unique_ptr<VulkanModel> model1;
+        std::unique_ptr<VulkanTexture> texture1;
 
         void createPipelineLayout();
         void createCommandBuffers();

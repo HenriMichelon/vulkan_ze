@@ -137,18 +137,15 @@ namespace z0 {
         assert(setLayout.bindings.count(binding) == 1 && "Layout does not contain specified binding");
 
         auto &bindingDescription = setLayout.bindings[binding];
-
-        assert(
+        /*assert(
                 bindingDescription.descriptorCount == 1 &&
-                "Binding single descriptor info, but binding expects multiple");
-
+                "Binding single descriptor info, but binding expects multiple");*/
         VkWriteDescriptorSet write{};
         write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         write.descriptorType = bindingDescription.descriptorType;
         write.dstBinding = binding;
         write.pBufferInfo = bufferInfo;
-        write.descriptorCount = 1;
-
+        write.descriptorCount = bindingDescription.descriptorCount;
         writes.push_back(write);
         return *this;
     }
@@ -156,20 +153,16 @@ namespace z0 {
     VulkanDescriptorWriter &VulkanDescriptorWriter::writeImage(
             uint32_t binding, VkDescriptorImageInfo *imageInfo) {
         assert(setLayout.bindings.count(binding) == 1 && "Layout does not contain specified binding");
-
         auto &bindingDescription = setLayout.bindings[binding];
-
-        assert(
-                bindingDescription.descriptorCount == 1 &&
-                "Binding single descriptor info, but binding expects multiple");
+        /*assert(bindingDescription.descriptorCount == 1 &&
+                "Binding single descriptor info, but binding expects multiple");*/
 
         VkWriteDescriptorSet write{};
         write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         write.descriptorType = bindingDescription.descriptorType;
         write.dstBinding = binding;
         write.pImageInfo = imageInfo;
-        write.descriptorCount = 1;
-
+        write.descriptorCount = bindingDescription.descriptorCount;
         writes.push_back(write);
         return *this;
     }
