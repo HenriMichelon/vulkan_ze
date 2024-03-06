@@ -39,12 +39,10 @@ namespace z0 {
         for (auto kv : bindings) {
             setLayoutBindings.push_back(kv.second);
         }
-
         VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo{};
         descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
         descriptorSetLayoutInfo.bindingCount = static_cast<uint32_t>(setLayoutBindings.size());
         descriptorSetLayoutInfo.pBindings = setLayoutBindings.data();
-
         if (vkCreateDescriptorSetLayout(
                 vulkanDevice.getDevice(),
                 &descriptorSetLayoutInfo,
@@ -69,6 +67,7 @@ namespace z0 {
         poolFlags = flags;
         return *this;
     }
+
     VulkanDescriptorPool::Builder &VulkanDescriptorPool::Builder::setMaxSets(uint32_t count) {
         maxSets = count;
         return *this;
@@ -135,11 +134,7 @@ namespace z0 {
     VulkanDescriptorWriter &VulkanDescriptorWriter::writeBuffer(
             uint32_t binding, VkDescriptorBufferInfo *bufferInfo) {
         assert(setLayout.bindings.count(binding) == 1 && "Layout does not contain specified binding");
-
         auto &bindingDescription = setLayout.bindings[binding];
-        /*assert(
-                bindingDescription.descriptorCount == 1 &&
-                "Binding single descriptor info, but binding expects multiple");*/
         VkWriteDescriptorSet write{};
         write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         write.descriptorType = bindingDescription.descriptorType;
@@ -154,9 +149,6 @@ namespace z0 {
             uint32_t binding, VkDescriptorImageInfo *imageInfo) {
         assert(setLayout.bindings.count(binding) == 1 && "Layout does not contain specified binding");
         auto &bindingDescription = setLayout.bindings[binding];
-        /*assert(bindingDescription.descriptorCount == 1 &&
-                "Binding single descriptor info, but binding expects multiple");*/
-
         VkWriteDescriptorSet write{};
         write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         write.descriptorType = bindingDescription.descriptorType;

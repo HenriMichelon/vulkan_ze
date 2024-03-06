@@ -6,6 +6,8 @@
 
 namespace z0 {
 
+    // https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Instance
+    // https://github.com/zeux/volk
     VulkanInstance::VulkanInstance() {
         if (volkInitialize() != VK_SUCCESS) {
             die("Failed to initialize Volk");
