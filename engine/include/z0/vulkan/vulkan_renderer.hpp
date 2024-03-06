@@ -12,7 +12,6 @@ namespace z0 {
 
     class VulkanRenderer {
     public:
-        explicit VulkanRenderer(VulkanDevice& device, std::string shaderDirectory);
         ~VulkanRenderer();
 
         void loadResources();
@@ -28,9 +27,9 @@ namespace z0 {
         std::vector<VkDescriptorSet> globalDescriptorSets{MAX_FRAMES_IN_FLIGHT};
         std::vector<std::unique_ptr<VulkanBuffer>> uboBuffers{MAX_FRAMES_IN_FLIGHT};
 
-        void buildShader(VulkanShader& shader);
+        VulkanRenderer(VulkanDevice& device, std::string shaderDirectory);
         void bindShader(VkCommandBuffer commandBuffer, VulkanShader& shader);
-        std::shared_ptr<VulkanShader> createShader(const std::string& filename,
+        std::unique_ptr<VulkanShader> createShader(const std::string& filename,
                                                    VkShaderStageFlagBits stage,
                                                    VkShaderStageFlags next_stage);
 
@@ -40,17 +39,19 @@ namespace z0 {
         std::vector<VkSemaphore> imageAvailableSemaphores;
         std::vector<VkSemaphore> renderFinishedSemaphores;
         std::vector<VkFence> inFlightFences;
-        std::vector<std::shared_ptr<VulkanShader>> shaders {};
 
-        void createCommandBuffers();
-        void createSyncObjects();
-        void createPipelineLayout();
+        const VkClearValue clearColor = {{{
+          static_cast<float>(WINDOW_CLEAR_COLOR[0]) / 256.0f,
+          static_cast<float>(WINDOW_CLEAR_COLOR[1]) / 256.0f,
+          static_cast<float>(WINDOW_CLEAR_COLOR[2]) / 256.0f,
+          1.0f}}};
+        const VkClearValue depthClearValue{ .depthStencil = {1.0f, 0} };
+
         void setInitialState(VkCommandBuffer commandBuffer);
-        void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
         void beginRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex);
         void endRendering(VkCommandBuffer commandBuffer,uint32_t imageIndex);
         void updateFrame();
-        //void buildLinkedShaders(VulkanShader& vert, VulkanShader& frag);
+        void buildShader(VulkanShader& shader);
         std::vector<char> readFile(const std::string& fileName);
 
         virtual void update(float delta) = 0;

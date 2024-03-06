@@ -4,15 +4,14 @@
 
 namespace z0 {
 
-
     class DefaultRenderer: public VulkanRenderer {
     public:
         DefaultRenderer(VulkanDevice& device, const std::string& shaderDirectory);
         ~DefaultRenderer();
 
     private:
-        std::shared_ptr<VulkanShader> vertShader;
-        std::shared_ptr<VulkanShader> fragShader;
+        std::unique_ptr<VulkanShader> vertShader;
+        std::unique_ptr<VulkanShader> fragShader;
         std::unique_ptr<VulkanModel> model;
         std::unique_ptr<VulkanTexture> texture;
         std::unique_ptr<VulkanModel> model1;

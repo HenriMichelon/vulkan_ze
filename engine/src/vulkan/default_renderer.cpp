@@ -2,13 +2,10 @@
 #include "z0/log.hpp"
 #include "z0/node.hpp"
 #include "z0/camera.hpp"
-#include "z0/window.hpp"
 #include "z0/vulkan/vulkan_ubo.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <fstream>
-#include <utility>
 #include <filesystem>
 #include <array>
 
@@ -30,7 +27,6 @@ namespace z0 {
     void DefaultRenderer::loadShaders() {
         vertShader = createShader("triangle.vert", VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
         fragShader = createShader("triangle.frag", VK_SHADER_STAGE_FRAGMENT_BIT, 0);
-        //buildLinkedShaders(*vertShader, *fragShader);
     }
 
     void DefaultRenderer::update(float delta) {

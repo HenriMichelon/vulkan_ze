@@ -1,11 +1,7 @@
 #include "z0/vulkan/vulkan_renderer.hpp"
 #include "z0/vulkan/vulkan_model.hpp"
 #include "z0/vulkan/vulkan_descriptors.hpp"
-#include "z0/vulkan/vulkan_ubo.hpp"
 #include "z0/log.hpp"
-#include "z0/node.hpp"
-#include "z0/camera.hpp"
-#include "z0/window.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -17,20 +13,52 @@
 namespace z0 {
 
     VulkanRenderer::VulkanRenderer(VulkanDevice &dev, std::string sDir) :
-        vulkanDevice{dev}, device(dev.getDevice()), shaderDirectory(std::move(sDir)) {
+        vulkanDevice{dev}, device(dev.getDevice()), shaderDirectory(std::move(sDir))
+    {
         globalPool = VulkanDescriptorPool::Builder(vulkanDevice)
                 .setMaxSets(MAX_FRAMES_IN_FLIGHT)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, MAX_FRAMES_IN_FLIGHT)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT)
                 .build();
-        createCommandBuffers();
-        createSyncObjects();
+
+        // Create command buffers
+        // https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Command_buffers
+        {
+            commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+            const VkCommandBufferAllocateInfo allocInfo{
+                    .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+                    .commandPool = vulkanDevice.getCommandPool(),
+                    .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+                    .commandBufferCount = static_cast<uint32_t>(commandBuffers.size())
+            };
+            if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
+                die("failed to allocate command buffers!");
+            }
+        }
+
+        // Create sync objects
+        {
+            imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+            renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+            inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+            const VkSemaphoreCreateInfo semaphoreInfo{
+                    .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
+            };
+            const VkFenceCreateInfo fenceInfo{
+                    .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+                    .flags = VK_FENCE_CREATE_SIGNALED_BIT
+            };
+            for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+                if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
+                    vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
+                    vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
+                    die("failed to create semaphores!");
+                }
+            }
+        }
     }
 
     VulkanRenderer::~VulkanRenderer() {
-        for (auto shader : shaders) {
-            shader.reset();
-        }
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
             vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
@@ -41,7 +69,21 @@ namespace z0 {
 
     void VulkanRenderer::loadResources() {
         loadModels();
-        createPipelineLayout();
+        // Create Pipeline Layout
+        // https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Introduction
+        {
+            createDescriptorSetLayout();
+            const VkPipelineLayoutCreateInfo pipelineLayoutInfo{
+                    .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+                    .setLayoutCount = 1,
+                    .pSetLayouts = globalSetLayout->getDescriptorSetLayout(),
+                    .pushConstantRangeCount = 0,
+                    .pPushConstantRanges = nullptr
+            };
+            if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+                die("failed to create pipeline layout!");
+            }
+        }
         loadShaders();
     }
 
@@ -70,16 +112,31 @@ namespace z0 {
         }
         vkResetFences(device, 1, &inFlightFences[currentFrame]);
 
-        vkResetCommandBuffer(commandBuffers[currentFrame], 0);
-        recordCommandBuffer(commandBuffers[currentFrame], imageIndex);
+        // Record command buffer
+        {
+            vkResetCommandBuffer(commandBuffers[currentFrame], 0);
+            const VkCommandBufferBeginInfo beginInfo{
+                    .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+                    .flags = 0,
+                    .pInheritanceInfo = nullptr
+            };
+            if (vkBeginCommandBuffer(commandBuffers[currentFrame], &beginInfo) != VK_SUCCESS) {
+                die("failed to begin recording command buffer!");
+            }
+            setInitialState(commandBuffers[currentFrame]);
+            beginRendering(commandBuffers[currentFrame], imageIndex);
+            recordCommands(commandBuffers[currentFrame]);
+            endRendering(commandBuffers[currentFrame], imageIndex);
+            if (vkEndCommandBuffer(commandBuffers[currentFrame]) != VK_SUCCESS) {
+                die("failed to record command buffer!");
+            }
+        }
 
         const VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
         {
             const VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
             const VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-
             updateFrame();
-
             const VkSubmitInfo submitInfo{
                     .sType                  = VK_STRUCTURE_TYPE_SUBMIT_INFO,
                     .waitSemaphoreCount     = 1,
@@ -116,90 +173,23 @@ namespace z0 {
         currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     }
 
-
-    void VulkanRenderer::createSyncObjects() {
-        imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-        renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-        inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
-        const VkSemaphoreCreateInfo semaphoreInfo{
-            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
-        };
-        const VkFenceCreateInfo fenceInfo{
-            .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
-            .flags = VK_FENCE_CREATE_SIGNALED_BIT
-        };
-        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
-                vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
-                vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
-                die("failed to create semaphores!");
-            }
-        }
-    }
-
-    // https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Introduction
-    void VulkanRenderer::createPipelineLayout() {
-        createDescriptorSetLayout();
-        const VkPipelineLayoutCreateInfo pipelineLayoutInfo{
-                .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-                .setLayoutCount = 1,
-                .pSetLayouts = globalSetLayout->getDescriptorSetLayout(),
-                .pushConstantRangeCount = 0,
-                .pPushConstantRanges = nullptr
-        };
-        if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
-            die("failed to create pipeline layout!");
-        }
-    }
-
-    // https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Command_buffers
-    void VulkanRenderer::createCommandBuffers() {
-        commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-        const VkCommandBufferAllocateInfo allocInfo{
-            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-            .commandPool = vulkanDevice.getCommandPool(),
-            .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-            .commandBufferCount = static_cast<uint32_t>(commandBuffers.size())
-        };
-        if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
-            die("failed to allocate command buffers!");
-        }
-    }
-
-    void VulkanRenderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
-        const VkCommandBufferBeginInfo beginInfo{
-            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-            .flags = 0,
-            .pInheritanceInfo = nullptr
-        };
-        if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
-            die("failed to begin recording command buffer!");
-        }
-        setInitialState(commandBuffer);
-        beginRendering(commandBuffer, imageIndex);
-        recordCommands(commandBuffer);
-        endRendering(commandBuffer, imageIndex);
-        if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
-            die("failed to record command buffer!");
-        }
-    }
-
+    // https://github.com/KhronosGroup/Vulkan-Samples/blob/main/samples/extensions/shader_object/shader_object.cpp
     void VulkanRenderer::setInitialState(VkCommandBuffer commandBuffer)
     {
         {
             const VkExtent2D extent = vulkanDevice.getSwapChainExtent();
             const VkViewport viewport{
-                    .x = 0.0f,
-                    .y = 0.0f,
-                    .width = static_cast<float>(extent.width),
-                    .height = static_cast<float>(extent.height),
-                    .minDepth = 0.0f,
-                    .maxDepth = 1.0f
+                .x = 0.0f,
+                .y = 0.0f,
+                .width = static_cast<float>(extent.width),
+                .height = static_cast<float>(extent.height),
+                .minDepth = 0.0f,
+                .maxDepth = 1.0f
             };
             vkCmdSetViewportWithCount(commandBuffer, 1, &viewport);
             const VkRect2D scissor{
-                    .offset = {0, 0},
-                    .extent = extent
+                .offset = {0, 0},
+                .extent = extent
             };
             vkCmdSetScissorWithCount(commandBuffer, 1, &scissor);
         }
@@ -261,11 +251,11 @@ namespace z0 {
 
     }
 
-    std::shared_ptr<VulkanShader> VulkanRenderer::createShader(const std::string& filename,
+    std::unique_ptr<VulkanShader> VulkanRenderer::createShader(const std::string& filename,
                                                                VkShaderStageFlagBits stage,
                                                                VkShaderStageFlags next_stage) {
         auto code = readFile(filename);
-        std::shared_ptr<VulkanShader> shader  = std::make_shared<VulkanShader>(
+        std::unique_ptr<VulkanShader> shader  = std::make_unique<VulkanShader>(
                 vulkanDevice,
                 stage,
                 next_stage,
@@ -274,31 +264,10 @@ namespace z0 {
                 globalSetLayout->getDescriptorSetLayout(),
                 nullptr);
         buildShader(*shader);
-        shaders.push_back(shader);
         return shader;
     }
 
-   /* void VulkanRenderer::buildLinkedShaders(VulkanShader& vert, VulkanShader& frag)
-    {
-        VkShaderCreateInfoEXT shader_create_infos[2];
-        shader_create_infos[0] = vert.getShaderCreateInfo();
-        shader_create_infos[1] = frag.getShaderCreateInfo();
-        for (auto &shader_create : shader_create_infos){
-            shader_create.flags |= VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
-        }
-        VkShaderEXT shaderEXTs[2];
-        if (vkCreateShadersEXT(
-                device,
-                2,
-                shader_create_infos,
-                nullptr,
-                shaderEXTs) != VK_SUCCESS) {
-            die("vkCreateShadersEXT failed");
-        }
-        vert.setShader(shaderEXTs[0]);
-        frag.setShader(shaderEXTs[1]);
-    }*/
-
+    // https://docs.vulkan.org/samples/latest/samples/extensions/shader_object/README.html
     void VulkanRenderer::buildShader(VulkanShader& shader) {
         VkShaderEXT shaderEXT;
         VkShaderCreateInfoEXT shaderCreateInfo = shader.getShaderCreateInfo();
@@ -312,15 +281,8 @@ namespace z0 {
         vkCmdBindShadersEXT(commandBuffer, 1, shader.getStage(), shader.getShader());
     }
 
-    //region Dynamic Rendering
     // https://lesleylai.info/en/vk-khr-dynamic-rendering/
     void VulkanRenderer::beginRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
-        vulkanDevice.transitionImageLayout(
-                commandBuffer,
-                vulkanDevice.getSwapChainImages()[imageIndex],
-                VK_FORMAT_UNDEFINED,
-                VK_IMAGE_LAYOUT_UNDEFINED,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
         vulkanDevice.transitionImageLayout(commandBuffer,
                                            vulkanDevice.getDepthImage(),
                                            vulkanDevice.getDepthFormat(),
@@ -331,12 +293,7 @@ namespace z0 {
                                            vulkanDevice.getSwapChainImageFormat(),
                                            VK_IMAGE_LAYOUT_UNDEFINED,
                                            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-        // Color attachement : where the rendering is done
-        const VkClearValue clearColor = {{{
-              static_cast<float>(WINDOW_CLEAR_COLOR[0]) / 256.0f,
-              static_cast<float>(WINDOW_CLEAR_COLOR[1]) / 256.0f,
-              static_cast<float>(WINDOW_CLEAR_COLOR[2]) / 256.0f,
-              1.0f}}};
+        // Color attachement : where the rendering is done (multisampled memory image)
         const VkRenderingAttachmentInfo colorAttachmentInfo{
                 .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
                 .imageView = vulkanDevice.getColorImageView(),
@@ -346,8 +303,6 @@ namespace z0 {
                 .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
                 .clearValue = clearColor,
         };
-        // made it instance wide ?
-        const VkClearValue depthClearValue{ .depthStencil = {1.0f, 0} };
         const VkRenderingAttachmentInfo depthAttachmentInfo{
             .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
             .imageView = vulkanDevice.getDepthImageView(),
@@ -357,17 +312,14 @@ namespace z0 {
             .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
             .clearValue = depthClearValue,
         };
-        std::array<VkRenderingAttachmentInfo, 1> renderingAttachmentInfo = { colorAttachmentInfo };
-        const VkRect2D renderArea{
-            {0, 0},
-            vulkanDevice.getSwapChainExtent()};
+        const VkRect2D renderArea{{0, 0}, vulkanDevice.getSwapChainExtent()};
         const VkRenderingInfo renderingInfo{
             .sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR,
             .pNext = nullptr,
             .renderArea = renderArea,
             .layerCount = 1,
-            .colorAttachmentCount = renderingAttachmentInfo.size(),
-            .pColorAttachments = renderingAttachmentInfo.data(),
+            .colorAttachmentCount = 1,
+            .pColorAttachments = &colorAttachmentInfo,
             .pDepthAttachment = &depthAttachmentInfo,
             .pStencilAttachment = nullptr
         };
@@ -376,6 +328,12 @@ namespace z0 {
 
     void VulkanRenderer::endRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
         vkCmdEndRendering(commandBuffer);
+        vulkanDevice.transitionImageLayout(
+                commandBuffer,
+                vulkanDevice.getSwapChainImages()[imageIndex],
+                VK_FORMAT_UNDEFINED,
+                VK_IMAGE_LAYOUT_UNDEFINED,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
         vulkanDevice.presentToSwapChain(commandBuffer, imageIndex);
         vulkanDevice.transitionImageLayout(
                 commandBuffer,
@@ -384,8 +342,6 @@ namespace z0 {
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
     }
-
-    //endregion
 
     std::vector<char> VulkanRenderer::readFile(const std::string &fileName) {
         std::filesystem::path filepath = shaderDirectory;
