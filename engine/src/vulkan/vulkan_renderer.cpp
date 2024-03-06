@@ -23,8 +23,8 @@ namespace z0 {
                 .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT)
                 .build();
 
-        texture = std::make_unique<VulkanTexture>(vulkanDevice, "../models/cube_diffuse.png");
-        model = VulkanModel::createModelFromFile(vulkanDevice, "../models/cube.obj");
+        texture = std::make_unique<VulkanTexture>(vulkanDevice, "../models/sphere_diffuse.png");
+        model = VulkanModel::createModelFromFile(vulkanDevice, "../models/sphere.obj");
 
         createCommandBuffers();
         createSyncObjects();
@@ -52,7 +52,7 @@ namespace z0 {
 
         Camera camera{};
         auto cameraNode = Node::create();
-        cameraNode.transform.translation.z = -15.0f;
+        cameraNode.transform.translation.z = -5.0f;
         cameraNode.transform.translation.y = 0.0f;
         cameraNode.transform.rotation.x = 0.0f;
         camera.setViewYXZ(cameraNode.transform.translation, cameraNode.transform.rotation);
@@ -64,7 +64,7 @@ namespace z0 {
         ubo.view = camera.getView();
         ubo.inverseView = camera.getInverseView();
 
-        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 1.0f));
+        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f) / 2, glm::vec3(1.0f, 0.0f, 1.0f));
         /*ubo.model = glm::rotate(glm::mat4(1.0f),
                                 glm::radians(0.0f),
                                 glm::vec3(0.0f, 0.0f, 1.0f));*/
