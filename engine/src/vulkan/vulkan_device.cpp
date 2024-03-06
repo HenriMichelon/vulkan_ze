@@ -1,6 +1,7 @@
-// https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Base_code
-// https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Window_surface
-#include "z0/vulkan/vulkan_device.hpp"
+/*
+ * Derived from
+ * https://vulkan-tutorial.com/Drawing_a_triangle
+ */
 #include "z0/vulkan/vulkan_model.hpp"
 #include "z0/log.hpp"
 
@@ -9,12 +10,7 @@
 
 namespace z0 {
 
-    const std::vector<const char*> requestedLayers = {
-#ifndef NDEBUG
-        "VK_LAYER_KHRONOS_validation"
-#endif
-    };
-
+    // Requested device extensions
     const std::vector<const char*> deviceExtensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
         // https://docs.vulkan.org/samples/latest/samples/extensions/dynamic_rendering/README.html
@@ -24,50 +20,61 @@ namespace z0 {
     };
 
 #ifdef GLFW_VERSION_MAJOR
+    // Called by GLFW when the window is resized/minimized
     static void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
         auto device = reinterpret_cast<VulkanDevice*>(glfwGetWindowUserPointer(window));
         device->framebufferResized = true;
     }
 #endif
 
-    VulkanDevice::VulkanDevice(WindowHelper &w): window{w} {
-        if (volkInitialize() != VK_SUCCESS) {
-            die("Failed to initialize Volk");
-        }
-        createInstance();
-        volkLoadInstance(instance);
+    VulkanDevice::VulkanDevice(VulkanInstance& _instance, WindowHelper &_window):
+        vulkanInstance{_instance}, window{_window}
+    {
+        // Check for at least one supported Vulkan physical device
+        // https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Physical_devices_and_queue_families#page_Selecting-a-physical-device
         uint32_t deviceCount = 0;
-        vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+        vkEnumeratePhysicalDevices(vulkanInstance.getInstance(), &deviceCount, nullptr);
         if (deviceCount == 0) {
             die("Failed to find GPUs with Vulkan support!");
         }
+
+        // Get a VkSurface for drawing in the GLFW window, must be done before picking the better physical device
+        // since we need the VkSurface for vkGetPhysicalDeviceSurfaceCapabilitiesKHR
+        // https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Window_surface#page_Window-surface-creation
 #ifdef GLFW_VERSION_MAJOR
-        if (glfwCreateWindowSurface(instance, window.getWindowHandle(), nullptr, &surface) != VK_SUCCESS) {
+        if (glfwCreateWindowSurface(vulkanInstance.getInstance(), window.getWindowHandle(), nullptr, &surface) != VK_SUCCESS) {
             die("Failed to create window surface!");
         }
-        glfwSetWindowUserPointer(window.getWindowHandle(), this);
-        glfwSetFramebufferSizeCallback(window.getWindowHandle(), framebufferResizeCallback);
 #endif
+
+        // Use the better Vulkan physical device found
+        // https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Physical_devices_and_queue_families#page_Base-device-suitability-checks
         std::vector<VkPhysicalDevice> devices(deviceCount);
-        vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+        vkEnumeratePhysicalDevices(vulkanInstance.getInstance(), &deviceCount, devices.data());
         // Use an ordered map to automatically sort candidates by increasing score
         std::multimap<int, VkPhysicalDevice> candidates;
-        for (const auto& device : devices) {
-            int score = rateDeviceSuitability(device, surface);
-            candidates.insert(std::make_pair(score, device));
+        for (const auto& _device : devices) {
+            int score = rateDeviceSuitability(_device, surface);
+            candidates.insert(std::make_pair(score, _device));
         }
         // Check if the best candidate is suitable at all
         if (candidates.rbegin()->first > 0) {
+            // Select the better suitable device and get some useful properties
             physicalDevice = candidates.rbegin()->second;
             samples = getMaxUsableMSAASampleCount();
             vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
         } else {
             die("Failed to find a suitable GPU!");
         }
+
+        // Initiliaze window management for resizing/minimizing
+#ifdef GLFW_VERSION_MAJOR
+        glfwSetWindowUserPointer(window.getWindowHandle(), this);
+        glfwSetFramebufferSizeCallback(window.getWindowHandle(), framebufferResizeCallback);
+#endif
+
         createDevice();
         createSwapChain();
-        createImageViews();
-        createCommandPool();
         createColorResources();
         createDepthResources();
     }
@@ -76,39 +83,43 @@ namespace z0 {
         cleanupSwapChain();
         vkDestroyCommandPool(device, commandPool, nullptr);
         vkDestroyDevice(device, nullptr);
-        vkDestroySurfaceKHR(instance, surface, nullptr);
-        vkDestroyInstance(instance, nullptr);
+        vkDestroySurfaceKHR(vulkanInstance.getInstance(), surface, nullptr);
     }
 
     void VulkanDevice::createDevice() {
-        QueueFamilyIndices indices = findQueueFamilies(physicalDevice, surface);
-
-        float queuePriority = 1.0f;
+        // Find a graphical command queue and a presentation command queue
+        // https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Physical_devices_and_queue_families#page_Queue-families
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-        std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
-        for (uint32_t queueFamily : uniqueQueueFamilies) {
-            VkDeviceQueueCreateInfo queueCreateInfo{};
-            queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            queueCreateInfo.queueFamilyIndex = queueFamily;
-            queueCreateInfo.queueCount = 1;
-            queueCreateInfo.pQueuePriorities = &queuePriority;
-            queueCreateInfos.push_back(queueCreateInfo);
+        QueueFamilyIndices indices = findQueueFamilies(physicalDevice, surface);
+        {
+            float queuePriority = 1.0f;
+            std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+            for (uint32_t queueFamily: uniqueQueueFamilies) {
+                const VkDeviceQueueCreateInfo queueCreateInfo{
+                    .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+                    .queueFamilyIndex = queueFamily,
+                    .queueCount = 1,
+                    .pQueuePriorities = &queuePriority,
+                };
+                queueCreateInfos.push_back(queueCreateInfo);
+            }
         }
 
+        // Initialize device extensions and create a logical device
+        // https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Logical_device_and_queues#page_Specifying-used-device-features
+        // https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Logical_device_and_queues#page_Creating-the-logical-device
         {
             // https://docs.vulkan.org/samples/latest/samples/extensions/shader_object/README.html
             VkPhysicalDeviceShaderObjectFeaturesEXT deviceShaderObjectFeatures{
                 .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT,
                 .shaderObject  = VK_TRUE,
             };
-
             // https://lesleylai.info/en/vk-khr-dynamic-rendering/
             const VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeature{
                 .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR,
                 .pNext = &deviceShaderObjectFeatures,
                 .dynamicRendering = VK_TRUE,
             };
-
             const VkPhysicalDeviceFeatures deviceFeatures{
                 .samplerAnisotropy = VK_TRUE
             };
@@ -123,50 +134,30 @@ namespace z0 {
                 .ppEnabledExtensionNames = deviceExtensions.data(),
                 .pEnabledFeatures = &deviceFeatures,
             };
-
             if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
                 die("Failed to create logical device!");
             }
         }
 
+        // https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Logical_device_and_queues#page_Retrieving-queue-handles
         vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
+        // https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Window_surface#page_Creating-the-presentation-queue
         vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
-    }
 
-    void VulkanDevice::createInstance() {
-        if (!checkLayerSupport()) {
-            die("Some requested layers are not supported");
-        }
-
-        const VkApplicationInfo applicationInfo{
-            .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
-            .apiVersion = VK_API_VERSION_1_3
+        // Create the device command pool
+        // https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Command_buffers#page_Command-pools
+        QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice, surface);
+        const VkCommandPoolCreateInfo poolInfo = {
+            .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+            .flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+            .queueFamilyIndex = queueFamilyIndices.graphicsFamily.value(),
         };
-
-        uint32_t extensionCount = 0;
-        const char** extensions = nullptr;
-#ifdef GLFW_VERSION_MAJOR
-        extensions = glfwGetRequiredInstanceExtensions(&extensionCount);
-#endif
-        const VkInstanceCreateInfo createInfo  = {
-            VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-            nullptr,
-            0,
-            &applicationInfo,
-            static_cast<uint32_t>(requestedLayers.size()),
-            requestedLayers.data(),
-            extensionCount,
-            extensions
-        };
-        if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
-            die("Failed to create Vulkan instance");
+        if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
+            die("Failed to create the command pool");
         }
     }
 
-    float VulkanDevice::getAspectRatio() const {
-        return static_cast<float>(swapChainExtent.width) / static_cast<float>(swapChainExtent.height);
-    }
-
+    // https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain
     void VulkanDevice::createSwapChain() {
         const SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice, surface);
         const VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
@@ -188,6 +179,7 @@ namespace z0 {
                 .imageColorSpace = surfaceFormat.colorSpace,
                 .imageExtent = extent,
                 .imageArrayLayers = 1,
+                // VK_IMAGE_USAGE_TRANSFER_DST_BIT for Blit or Revolve (see presentToSwapChain())
                 .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                 .preTransform = swapChainSupport.capabilities.currentTransform,
                 .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
@@ -216,8 +208,16 @@ namespace z0 {
         vkGetSwapchainImagesKHR(device, swapChain, &imageCount, swapChainImages.data());
         swapChainImageFormat = surfaceFormat.format;
         swapChainExtent = extent;
+
+        swapChainImageViews.resize(swapChainImages.size());
+        for (uint32_t i = 0; i < swapChainImages.size(); i++) {
+            swapChainImageViews[i] = createImageView(swapChainImages[i], swapChainImageFormat,
+                                                     VK_IMAGE_ASPECT_COLOR_BIT, 1);
+        }
+
     }
 
+    // https://vulkan-tutorial.com/Drawing_a_triangle/Swap_chain_recreation
     void VulkanDevice::recreateSwapChain() {
         framebufferResized = false;
 #ifdef GLFW_VERSION_MAJOR
@@ -231,11 +231,11 @@ namespace z0 {
         vkDeviceWaitIdle(device);
         cleanupSwapChain();
         createSwapChain();
-        createImageViews();
         createColorResources();
         createDepthResources();
     }
 
+    // https://vulkan-tutorial.com/Drawing_a_triangle/Swap_chain_recreation#page_Recreating-the-swap-chain
     void VulkanDevice::cleanupSwapChain() {
         vkDestroyImageView(device, depthImageView, nullptr);
         vkDestroyImage(device, depthImage, nullptr);
@@ -249,58 +249,20 @@ namespace z0 {
         vkDestroySwapchainKHR(device, swapChain, nullptr);
     }
 
-    void VulkanDevice::createImageViews() {
-        swapChainImageViews.resize(swapChainImages.size());
-        for (uint32_t i = 0; i < swapChainImages.size(); i++) {
-            swapChainImageViews[i] = createImageView(swapChainImages[i], swapChainImageFormat,
-                                                     VK_IMAGE_ASPECT_COLOR_BIT, 1);
-        }
-    }
-
-    void VulkanDevice::createCommandPool() {
-        QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice, surface);
-        const VkCommandPoolCreateInfo poolInfo = {
-            .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-            .flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-            .queueFamilyIndex = queueFamilyIndices.graphicsFamily.value(),
-        };
-        if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
-            die("failed to create command pool!");
-        }
-    }
-
-    bool VulkanDevice::checkLayerSupport() {
-        uint32_t layerCount;
-        vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-        std::vector<VkLayerProperties> availableLayers(layerCount);
-        vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
-        for (const char* layerName : requestedLayers) {
-            bool layerFound = false;
-            for (const auto& layerProperties : availableLayers) {
-                if (strcmp(layerName, layerProperties.layerName) == 0) {
-                    layerFound = true;
-                    break;
-                }
-            }
-            if (!layerFound) {
-                return false;
-            }
-        }
-        return true;
-    }
-
+    // https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain#page_Choosing-the-right-settings-for-the-swap-chain
     VkSurfaceFormatKHR VulkanDevice::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats) {
         for (const auto& availableFormat : availableFormats) {
-            /*if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-                return availableFormat;
-            }*/
             if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
                 return availableFormat;
             }
+            /*if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+                return availableFormat;
+            }*/
         }
         return availableFormats[0];
     }
 
+    // https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain#page_Presentation-mode
     VkPresentModeKHR VulkanDevice::chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes) {
         for (const auto& availablePresentMode : availablePresentModes) {
             if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
@@ -310,6 +272,7 @@ namespace z0 {
         return VK_PRESENT_MODE_FIFO_KHR;
     }
 
+    // https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain#page_Swap-extent
     VkExtent2D VulkanDevice::chooseSwapExtent(WindowHelper& window, const VkSurfaceCapabilitiesKHR &capabilities) {
         if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
             return capabilities.currentExtent;
@@ -342,34 +305,7 @@ namespace z0 {
         return 0;
     }
 
-    void VulkanDevice::createBuffer(
-            VkDeviceSize size,
-            VkBufferUsageFlags usage,
-            VkMemoryPropertyFlags properties,
-            VkBuffer &buffer,
-            VkDeviceMemory &bufferMemory) {
-        const VkBufferCreateInfo bufferInfo{
-            .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-            .size = size,
-            .usage = usage,
-            .sharingMode = VK_SHARING_MODE_EXCLUSIVE
-        };
-        if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
-            die("failed to create vertex buffer!");
-        }
-        VkMemoryRequirements memRequirements;
-        vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
-        VkMemoryAllocateInfo allocInfo{
-            .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-            .allocationSize = memRequirements.size,
-            .memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties)
-        };
-        if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
-            die("failed to allocate vertex buffer memory!");
-        }
-        vkBindBufferMemory(device, buffer, bufferMemory, 0);
-    }
-
+    // https://vulkan-tutorial.com/Texture_mapping/Images#page_Layout-transitions
     VkCommandBuffer VulkanDevice::beginSingleTimeCommands() {
         const VkCommandBufferAllocateInfo allocInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
@@ -388,6 +324,7 @@ namespace z0 {
         return commandBuffer;
     }
 
+    // https://vulkan-tutorial.com/Texture_mapping/Images#page_Layout-transitions
     void VulkanDevice::endSingleTimeCommands(VkCommandBuffer commandBuffer) {
         vkEndCommandBuffer(commandBuffer);
         const VkSubmitInfo submitInfo{
@@ -400,14 +337,7 @@ namespace z0 {
         vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
     }
 
-    void VulkanDevice::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
-        VkCommandBuffer commandBuffer = beginSingleTimeCommands();
-        VkBufferCopy copyRegion{};
-        copyRegion.size = size;
-        vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
-        endSingleTimeCommands(commandBuffer);
-    }
-
+    // https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Physical_devices_and_queue_families#page_Queue-families
     QueueFamilyIndices  VulkanDevice::findQueueFamilies(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR surface) {
         QueueFamilyIndices indices;
         uint32_t queueFamilyCount = 0;
@@ -432,6 +362,7 @@ namespace z0 {
         return indices;
     }
 
+    // https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain#page_Querying-details-of-swap-chain-support
     SwapChainSupportDetails VulkanDevice::querySwapChainSupport(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR surface) {
         SwapChainSupportDetails details;
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vkPhysicalDevice, surface, &details.capabilities);
@@ -450,6 +381,7 @@ namespace z0 {
         return details;
     }
 
+    // https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain#page_Checking-for-swap-chain-support
     bool VulkanDevice::checkDeviceExtensionSupport(VkPhysicalDevice vkPhysicalDevice) {
         uint32_t extensionCount;
         vkEnumerateDeviceExtensionProperties(vkPhysicalDevice, nullptr, &extensionCount, nullptr);
@@ -462,6 +394,7 @@ namespace z0 {
         return requiredExtensions.empty();
     }
 
+    // https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Physical_devices_and_queue_families#page_Base-device-suitability-checks
     int VulkanDevice::rateDeviceSuitability(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR surface) {
         VkPhysicalDeviceProperties _deviceProperties;
         vkGetPhysicalDeviceProperties(vkPhysicalDevice, &_deviceProperties);
@@ -492,12 +425,12 @@ namespace z0 {
         return score;
     }
 
-    VkFormat VulkanDevice::findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling,
-                                               VkFormatFeatureFlags features) {
+    // https://vulkan-tutorial.com/Depth_buffering#page_Depth-image-and-view
+    VkFormat VulkanDevice::findImageTilingSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling,
+                                                          VkFormatFeatureFlags features) {
         for (VkFormat format : candidates) {
             VkFormatProperties props;
             vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
-
             if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
                 return format;
             } else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
@@ -508,6 +441,7 @@ namespace z0 {
         return candidates.at(0);
     }
 
+    // https://vulkan-tutorial.com/Multisampling#page_Getting-available-sample-count
     VkSampleCountFlagBits VulkanDevice::getMaxUsableMSAASampleCount() {
         VkPhysicalDeviceProperties physicalDeviceProperties;
         vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
@@ -521,6 +455,7 @@ namespace z0 {
         return VK_SAMPLE_COUNT_1_BIT;
     }
 
+    // https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Image_views
     VkImageView VulkanDevice::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels) {
         VkImageViewCreateInfo viewInfo{};
         viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -540,6 +475,7 @@ namespace z0 {
         return imageView;
     }
 
+    // https://vulkan-tutorial.com/Texture_mapping/Images#page_Texture-Image
     void VulkanDevice::createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples,
                                    VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
                                    VkMemoryPropertyFlags properties, VkImage &image,
@@ -579,6 +515,7 @@ namespace z0 {
         vkBindImageMemory(device, image, imageMemory, 0);
     }
 
+    // https://vulkan-tutorial.com/Multisampling#page_Setting-up-a-render-target
     void VulkanDevice::createColorResources() {
         VkFormat colorFormat = swapChainImageFormat;
         createImage(swapChainExtent.width, swapChainExtent.height,
@@ -611,6 +548,7 @@ namespace z0 {
 
     void VulkanDevice::presentToSwapChain(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
         if (samples == VK_SAMPLE_COUNT_1_BIT) {
+            // Blit image to swap chain if MSAA is disabled
             vkCmdBlitImage(commandBuffer,
                            colorImage,
                            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
@@ -620,6 +558,7 @@ namespace z0 {
                            &colorImageBlit,
                            VK_FILTER_LINEAR );
         } else {
+            // Resolve multisample image to a non-multisample swap chain image if MSAA is enabled
             const VkImageResolve imageResolve{
                     .srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
                     .srcOffset = {0, 0, 0},
@@ -637,8 +576,9 @@ namespace z0 {
         }
     }
 
+    // https://vulkan-tutorial.com/Depth_buffering#page_Depth-image-and-view
     void VulkanDevice::createDepthResources() {
-        depthFormat = findSupportedFormat(
+        depthFormat = findImageTilingSupportedFormat(
                 {VK_FORMAT_D16_UNORM, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
                 VK_IMAGE_TILING_OPTIMAL,
                 VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
@@ -653,10 +593,12 @@ namespace z0 {
         depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
     }
 
+    // https://vulkan-tutorial.com/Depth_buffering#page_Depth-image-and-view
     bool VulkanDevice::hasStencilComponent(VkFormat format) {
         return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
     }
 
+    // https://vulkan-tutorial.com/Texture_mapping/Images#page_Layout-transitions
     void VulkanDevice::transitionImageLayout(VkImage image, VkFormat format,
                                              VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels) {
         VkCommandBuffer commandBuffer = beginSingleTimeCommands();
@@ -664,6 +606,8 @@ namespace z0 {
         endSingleTimeCommands(commandBuffer);
     }
 
+    // https://vulkan-tutorial.com/Texture_mapping/Images#page_Layout-transitions
+    // https://vulkan-tutorial.com/Generating_Mipmaps#page_Generating-Mipmaps
     void VulkanDevice::transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format,
                                              VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels) {
         VkImageMemoryBarrier imageMemoryBarrier{
@@ -687,6 +631,7 @@ namespace z0 {
         VkPipelineStageFlags sourceStage;
         VkPipelineStageFlags destinationStage;
 
+        // https://vulkan-tutorial.com/Depth_buffering#page_Explicitly-transitioning-the-depth-image
         if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
             imageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
             if (hasStencilComponent(format)) {
@@ -765,4 +710,9 @@ namespace z0 {
                 &imageMemoryBarrier // pImageMemoryBarriers
         );
     }
+
+    float VulkanDevice::getSwapChainAspectRatio() const {
+        return static_cast<float>(swapChainExtent.width) / static_cast<float>(swapChainExtent.height);
+    }
+
 }

@@ -191,14 +191,16 @@ namespace z0 {
             cameraNode.transform.translation.y = 0.0f;
             cameraNode.transform.rotation.x = 0.0f;
             camera.setViewYXZ(cameraNode.transform.translation, cameraNode.transform.rotation);
-            float aspect = vulkanDevice.getAspectRatio();
+            float aspect = vulkanDevice.getSwapChainAspectRatio();
             camera.setPerspectiveProjection(glm::radians(50.0f), aspect, 0.1f, 100.0f);
 
             UniformBufferObject ubo{};
             ubo.projection = camera.getProjection();
             ubo.view = camera.getView();
             ubo.inverseView = camera.getInverseView();
-            ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f) / 2, glm::vec3(1.0f, 0.0f, 1.0f));
+            glm::mat4 rot = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f) / 2, glm::vec3(1.0f, 0.0f, 1.0f));
+            glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(-1.5f, 0.0f, 0.0f));
+            ubo.model = trans * rot;
             ubo.textureBinding = 0;
             uint32_t size = uboBuffers[currentFrame]->getAlignmentSize();
             uint32_t offset = size * 0;
@@ -216,7 +218,9 @@ namespace z0 {
             model->bind(commandBuffer);
             model->draw(commandBuffer);
 
-            ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(-90.0f) / 2, glm::vec3(1.0f, 0.0f, 1.0f));
+            rot = glm::rotate(glm::mat4(1.0f), time * glm::radians(-90.0f) / 2, glm::vec3(1.0f, 0.0f, 1.0f));
+            trans = glm::translate(glm::mat4(1.0f), glm::vec3(1.5f, 0.0f, 0.0f));
+            ubo.model = trans * rot;
             ubo.textureBinding = 1;
             offset += size * 1;
             uboBuffers[currentFrame]->writeToBuffer(&ubo, size, offset);
@@ -317,6 +321,8 @@ namespace z0 {
     }
 
     void VulkanRenderer::createDescriptorSetLayout() {
+        // Using one descriptor per scene with offsets
+        // https://docs.vulkan.org/samples/latest/samples/performance/descriptor_management/README.html
         for(int i = 0; i < uboBuffers.size(); i++) {
             uboBuffers[i] = std::make_unique<VulkanBuffer>(
                     vulkanDevice,

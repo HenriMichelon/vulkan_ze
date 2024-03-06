@@ -9,6 +9,7 @@
  */
 
 #include "z0/vulkan/vulkan_buffer.hpp"
+#include "z0/log.hpp"
 
 #include <cassert>
 #include <cstring>
@@ -41,7 +42,7 @@ namespace z0 {
               memoryPropertyFlags{memoryPropertyFlags} {
         alignmentSize = getAlignment(instanceSize, minOffsetAlignment);
         bufferSize = alignmentSize * instanceCount;
-        device.createBuffer(bufferSize, usageFlags, memoryPropertyFlags, buffer, memory);
+        createBuffer(usageFlags, memoryPropertyFlags);
     }
 
     VulkanBuffer::~VulkanBuffer() {
@@ -195,5 +196,37 @@ namespace z0 {
     VkResult VulkanBuffer::invalidateIndex(int index) {
         return invalidate(alignmentSize, index * alignmentSize);
     }
+
+    void VulkanBuffer::createBuffer(VkBufferUsageFlags usage, VkMemoryPropertyFlags properties) {
+        const VkBufferCreateInfo bufferInfo{
+                .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+                .size = bufferSize,
+                .usage = usage,
+                .sharingMode = VK_SHARING_MODE_EXCLUSIVE
+        };
+        if (vkCreateBuffer(device.getDevice(), &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+            die("failed to create buffer!");
+        }
+        VkMemoryRequirements memRequirements;
+        vkGetBufferMemoryRequirements(device.getDevice(), buffer, &memRequirements);
+        VkMemoryAllocateInfo allocInfo{
+                .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+                .allocationSize = memRequirements.size,
+                .memoryTypeIndex = device.findMemoryType(memRequirements.memoryTypeBits, properties)
+        };
+        if (vkAllocateMemory(device.getDevice(), &allocInfo, nullptr, &memory) != VK_SUCCESS) {
+            die("failed to allocate buffer memory!");
+        }
+        vkBindBufferMemory(device.getDevice(), buffer, memory, 0);
+    }
+
+    void VulkanBuffer::copyTo(VulkanBuffer& dstBuffer, VkDeviceSize size) {
+        VkCommandBuffer commandBuffer = device.beginSingleTimeCommands();
+        VkBufferCopy copyRegion{};
+        copyRegion.size = size;
+        vkCmdCopyBuffer(commandBuffer, buffer, dstBuffer.buffer, 1, &copyRegion);
+        device.endSingleTimeCommands(commandBuffer);
+    }
+
 
 }  // namespace lve

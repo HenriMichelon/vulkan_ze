@@ -15,8 +15,15 @@ namespace z0 {
         static Application& getApp();
 
     private:
+        VulkanInstance vulkanInstance;
         Viewport viewport;
         const std::string appdir;
+
+    public:
+        Application(const Application&) = delete;
+        Application &operator=(const Application&) = delete;
+        Application(const Application&&) = delete;
+        Application &&operator=(const Application&&) = delete;
     };
 
 }

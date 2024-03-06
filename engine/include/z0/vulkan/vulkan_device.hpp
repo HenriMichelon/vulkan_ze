@@ -1,7 +1,6 @@
 #pragma once
 
-#include <volk.h>
-
+#include "z0/vulkan/vulkan_instance.hpp"
 #include "z0/vulkan/window_helper.hpp"
 
 #include <memory>
@@ -10,6 +9,7 @@
 
 namespace z0 {
 
+    // used for findQueueFamilies()
     struct QueueFamilyIndices {
         std::optional<uint32_t> graphicsFamily;
         std::optional<uint32_t> presentFamily;
@@ -17,6 +17,8 @@ namespace z0 {
             return graphicsFamily.has_value() && presentFamily.has_value();
         }
     };
+
+    // used for querySwapChainSupport()
     struct SwapChainSupportDetails {
         VkSurfaceCapabilitiesKHR capabilities;
         std::vector<VkSurfaceFormatKHR> formats;
@@ -25,13 +27,12 @@ namespace z0 {
 
     class VulkanDevice {
     public:
-        explicit VulkanDevice(WindowHelper &window);
+        VulkanDevice(VulkanInstance& instance, WindowHelper &window);
         ~VulkanDevice();
 
         VkDevice getDevice() { return device; }
-        VkSurfaceKHR getSurface() { return surface; }
-        VkSwapchainKHR getSwapChain() { return swapChain; }
         VkPhysicalDevice getPhysicalDevice() { return physicalDevice; }
+        VkSwapchainKHR getSwapChain() { return swapChain; }
         VkQueue getGraphicsQueue() { return graphicsQueue; }
         VkQueue getPresentQueue() { return presentQueue; }
         VkCommandPool getCommandPool() { return commandPool; }
@@ -42,26 +43,20 @@ namespace z0 {
         VkImageView getColorImageView() { return colorImageView; }
         VkSampleCountFlagBits getSamples() { return samples; }
         const VkExtent2D& getSwapChainExtent() const { return swapChainExtent;}
+        float getSwapChainAspectRatio() const;
         VkFormat getSwapChainImageFormat() const { return swapChainImageFormat; }
-        std::vector<VkImageView>& getSwapChainImageViews() { return swapChainImageViews; }
         std::vector<VkImage>& getSwapChainImages() { return swapChainImages; }
-        float getAspectRatio() const;
-        VkSampleCountFlagBits getSamples() const { return samples; }
         VkPhysicalDeviceProperties getDeviceProperties() const { return deviceProperties; }
 
+        // Recreation of the swap chain in case of window resizing/minimizing
         void recreateSwapChain();
+        // Since we render in a memory image we need to manually present the image in the swap chain
         void presentToSwapChain(VkCommandBuffer commandBuffer, uint32_t imageIndex);
-        bool framebufferResized = false;
 
-        void createBuffer(
-                VkDeviceSize size,
-                VkBufferUsageFlags usage,
-                VkMemoryPropertyFlags properties,
-                VkBuffer &buffer,
-                VkDeviceMemory &bufferMemory);
         VkCommandBuffer beginSingleTimeCommands();
         void endSingleTimeCommands(VkCommandBuffer commandBuffer);
-        void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+
+        // Image management helpers
         void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples,
                          VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
                          VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory,
@@ -77,28 +72,28 @@ namespace z0 {
         static bool hasStencilComponent(VkFormat format);
 
     private:
+        VulkanInstance& vulkanInstance;
+
+        // Physical & logical device management (single atm.)
         WindowHelper &window;
-        VkInstance instance;
         VkDevice device;
         VkPhysicalDevice physicalDevice;
         VkSurfaceKHR surface;
         VkQueue graphicsQueue;
         VkQueue presentQueue;
+        VkCommandPool commandPool;
+        VkPhysicalDeviceProperties deviceProperties;
+        void createDevice();
+
+        // Swap chain management
         VkSwapchainKHR swapChain;
         std::vector<VkImage> swapChainImages;
         VkFormat swapChainImageFormat;
         VkExtent2D swapChainExtent;
         std::vector<VkImageView> swapChainImageViews;
         std::shared_ptr<VkSwapchainKHR> oldSwapChain;
-        VkCommandPool commandPool;
-        VkPhysicalDeviceProperties deviceProperties;
-
-        void createInstance();
-        void createDevice();
         void createSwapChain();
         void cleanupSwapChain();
-        void createImageViews();
-        void createCommandPool();
 
         // Depth buffering
         VkImage depthImage;
@@ -112,21 +107,30 @@ namespace z0 {
         VkImage colorImage;
         VkDeviceMemory colorImageMemory;
         VkImageView colorImageView;
-        VkSampleCountFlagBits getMaxUsableMSAASampleCount();
         VkImageBlit colorImageBlit{};
         VkImageResolve colorImageResolve{};
         void createColorResources();
+        VkSampleCountFlagBits getMaxUsableMSAASampleCount();
 
-        static bool checkLayerSupport();
-        static int rateDeviceSuitability(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR surface);
+        // Check if all the requested Vulkan extensions are supported by a device
         static bool checkDeviceExtensionSupport(VkPhysicalDevice vkPhysicalDevice);
+        // Rate physical device by properties
+        static int rateDeviceSuitability(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR surface);
+        // Get the swap chain capabilities
         static SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR surface);
+        // Get the swap chain format, default for sRGB/NON-LINEAR
         static VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
+        // Get the swap chain present mode, default to MAILBOX, if not avaible FIFO (V-SYNC)
         static VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
+        // Get the swap chain images sizes
         static VkExtent2D chooseSwapExtent(WindowHelper& window, const VkSurfaceCapabilitiesKHR& capabilities);
-        VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+        // Find a suitable IMAGE_TILING format (for the Depth buffering image)
+        VkFormat findImageTilingSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
     public:
+        // accessed by static function framebufferResizeCallback()
+        bool framebufferResized = false;
+
         VulkanDevice(const VulkanDevice&) = delete;
         VulkanDevice &operator=(const VulkanDevice&) = delete;
         VulkanDevice(const VulkanDevice&&) = delete;

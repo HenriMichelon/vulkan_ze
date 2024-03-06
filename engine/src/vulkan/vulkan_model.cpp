@@ -76,7 +76,7 @@ namespace  z0 {
                 VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
                 );
-        device.copyBuffer(stagingBuffer.getBuffer(), vertexBuffer->getBuffer(), bufferSize);
+        stagingBuffer.copyTo(*vertexBuffer, bufferSize);
     }
 
     void VulkanModel::createIndexBuffers(const std::vector<uint32_t> &indices) {
@@ -105,7 +105,7 @@ namespace  z0 {
                 VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
                 );
-        device.copyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(), bufferSize);
+        stagingBuffer.copyTo(*indexBuffer, bufferSize);
     }
 
     void VulkanModel::draw(VkCommandBuffer commandBuffer) {

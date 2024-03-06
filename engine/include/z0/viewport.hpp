@@ -12,11 +12,10 @@ namespace z0 {
         MSAA_4X         = 2,
         MSAA_8X         = 3,
     };
+    class Application;
 
     class Viewport: public Object {
     public:
-        Viewport(int w, int h, const std::string& name, const std::string &appdir);
-
         MSAA getMSAA() const;
         void setMSAA(MSAA samples);
 
@@ -27,6 +26,9 @@ namespace z0 {
         WindowHelper window;
         std::unique_ptr<VulkanDevice> vulkanDevice;
         std::unique_ptr<VulkanRenderer> vulkanRenderer;
+
+        Viewport(VulkanInstance& instance, int w, int h, const std::string& name, const std::string &appdir);
+        friend class Application;
 
     public:
         VulkanDevice& _getDevice() { return *vulkanDevice; }

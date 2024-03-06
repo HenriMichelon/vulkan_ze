@@ -1,6 +1,5 @@
 #pragma once
 
-#include "z0/vulkan/vulkan_device.hpp"
 #include "z0/vulkan/vulkan_buffer.hpp"
 
 #define GLM_FORCE_RADIANS
