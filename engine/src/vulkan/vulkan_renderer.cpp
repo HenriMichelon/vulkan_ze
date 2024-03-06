@@ -324,7 +324,7 @@ namespace z0 {
                     2,
                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-                    64
+                    vulkanDevice.getDeviceProperties().limits.minUniformBufferOffsetAlignment
             );
             uboBuffers[i]->map();
         }

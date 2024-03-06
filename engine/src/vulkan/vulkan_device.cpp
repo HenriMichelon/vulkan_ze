@@ -60,6 +60,7 @@ namespace z0 {
         if (candidates.rbegin()->first > 0) {
             physicalDevice = candidates.rbegin()->second;
             samples = getMaxUsableMSAASampleCount();
+            vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
         } else {
             die("Failed to find a suitable GPU!");
         }
@@ -462,18 +463,18 @@ namespace z0 {
     }
 
     int VulkanDevice::rateDeviceSuitability(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR surface) {
-        VkPhysicalDeviceProperties deviceProperties;
-        vkGetPhysicalDeviceProperties(vkPhysicalDevice, &deviceProperties);
+        VkPhysicalDeviceProperties _deviceProperties;
+        vkGetPhysicalDeviceProperties(vkPhysicalDevice, &_deviceProperties);
         VkPhysicalDeviceFeatures deviceFeatures;
         vkGetPhysicalDeviceFeatures(vkPhysicalDevice, &deviceFeatures);
 
         int score = 0;
         // Discrete GPUs have a significant performance advantage
-        if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+        if (_deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
             score += 1000;
         }
         // Maximum possible size of textures affects graphics quality
-        score += deviceProperties.limits.maxImageDimension2D;
+        score += _deviceProperties.limits.maxImageDimension2D;
         // Application can't function without geometry shaders
         if (!deviceFeatures.geometryShader) {
             return 0;

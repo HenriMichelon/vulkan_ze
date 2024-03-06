@@ -47,6 +47,7 @@ namespace z0 {
         std::vector<VkImage>& getSwapChainImages() { return swapChainImages; }
         float getAspectRatio() const;
         VkSampleCountFlagBits getSamples() const { return samples; }
+        VkPhysicalDeviceProperties getDeviceProperties() const { return deviceProperties; }
 
         void recreateSwapChain();
         void presentToSwapChain(VkCommandBuffer commandBuffer, uint32_t imageIndex);
@@ -90,6 +91,7 @@ namespace z0 {
         std::vector<VkImageView> swapChainImageViews;
         std::shared_ptr<VkSwapchainKHR> oldSwapChain;
         VkCommandPool commandPool;
+        VkPhysicalDeviceProperties deviceProperties;
 
         void createInstance();
         void createDevice();
