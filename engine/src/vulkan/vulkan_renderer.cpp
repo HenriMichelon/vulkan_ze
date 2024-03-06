@@ -435,9 +435,9 @@ namespace z0 {
                                            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
         // Color attachement : where the rendering is done
         const VkClearValue clearColor = {{{
-              static_cast<float>(WINDOW_CLEAR_COLOR[0]) / 255.0f,
-              static_cast<float>(WINDOW_CLEAR_COLOR[1]) / 255.0f,
-              static_cast<float>(WINDOW_CLEAR_COLOR[2]) / 255.0f,
+              static_cast<float>(WINDOW_CLEAR_COLOR[0]) / 256.0f,
+              static_cast<float>(WINDOW_CLEAR_COLOR[1]) / 256.0f,
+              static_cast<float>(WINDOW_CLEAR_COLOR[2]) / 256.0f,
               1.0f}}};
         const VkRenderingAttachmentInfo colorAttachmentInfo{
                 .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,

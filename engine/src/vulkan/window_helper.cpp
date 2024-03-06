@@ -13,7 +13,6 @@ namespace z0 {
     WindowHelper::WindowHelper(WindowMode _mode, int w, int h, const std::string& windowName):
         mode{_mode}, width{w}, height{h}
     {
-        // Initialize GLFW
         glfwInit();
 
         // Create the GLW Window on the primary monitor
