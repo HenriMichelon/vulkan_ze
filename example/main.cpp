@@ -4,7 +4,7 @@
 
 class ExampleApp : z0::Application {
 public:
-    ExampleApp(): z0::Application{z0::WINDOW_MODE_WINDOWED, 1024, 768,
+    ExampleApp(): z0::Application{z0::WINDOW_MODE_WINDOWED_FULLSCREEN, 1024, 768,
                                   "Example App", "..", z0::MSAA_DISABLED} {
 
     };
