@@ -8,7 +8,6 @@
 #include <fstream>
 #include <utility>
 #include <filesystem>
-#include <array>
 
 namespace z0 {
 
@@ -16,20 +15,20 @@ namespace z0 {
         vulkanDevice{dev}, device(dev.getDevice()), shaderDirectory(std::move(sDir))
     {
         globalPool = VulkanDescriptorPool::Builder(vulkanDevice)
-                .setMaxSets(MAX_FRAMES_IN_FLIGHT)
-                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, MAX_FRAMES_IN_FLIGHT)
-                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT)
-                .build();
+            .setMaxSets(MAX_FRAMES_IN_FLIGHT)
+            .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, MAX_FRAMES_IN_FLIGHT)
+            .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT)
+            .build();
 
         // Create command buffers
         // https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Command_buffers
         {
             commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
             const VkCommandBufferAllocateInfo allocInfo{
-                    .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-                    .commandPool = vulkanDevice.getCommandPool(),
-                    .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-                    .commandBufferCount = static_cast<uint32_t>(commandBuffers.size())
+                .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+                .commandPool = vulkanDevice.getCommandPool(),
+                .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+                .commandBufferCount = static_cast<uint32_t>(commandBuffers.size())
             };
             if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
                 die("failed to allocate command buffers!");
@@ -42,11 +41,11 @@ namespace z0 {
             renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
             inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
             const VkSemaphoreCreateInfo semaphoreInfo{
-                    .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
+                .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
             };
             const VkFenceCreateInfo fenceInfo{
-                    .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
-                    .flags = VK_FENCE_CREATE_SIGNALED_BIT
+                .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+                .flags = VK_FENCE_CREATE_SIGNALED_BIT
             };
             for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
                 if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||

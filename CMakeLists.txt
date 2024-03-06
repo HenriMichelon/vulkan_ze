@@ -18,13 +18,17 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_renderer.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_shader.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_descriptors.hpp
-        ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_ubo.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_texture.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_instance.hpp
+        ${Z0_ENGINE_DIR}/include/z0/vulkan/default_renderer.hpp
         ${Z0_ENGINE_DIR}/include/z0/application.hpp
         ${Z0_ENGINE_DIR}/include/z0/log.hpp
-        ${Z0_ENGINE_DIR}/include/z0/camera.hpp
+        ${Z0_ENGINE_DIR}/include/z0/object.hpp
         ${Z0_ENGINE_DIR}/include/z0/node.hpp
+        ${Z0_ENGINE_DIR}/include/z0/window.hpp
+        ${Z0_ENGINE_DIR}/include/z0/viewport.hpp
+        ${Z0_ENGINE_DIR}/include/z0/mesh.hpp
+        ${Z0_ENGINE_DIR}/include/z0/camera.hpp
         ${Z0_ENGINE_DIR}/src/vulkan/window_helper.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_device.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_buffer.cpp
@@ -34,18 +38,13 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_descriptors.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_texture.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_instance.cpp
+        ${Z0_ENGINE_DIR}/src/vulkan/default_renderer.cpp
         ${Z0_ENGINE_DIR}/src/application.cpp
         ${Z0_ENGINE_DIR}/src/camera.cpp
         ${Z0_ENGINE_DIR}/src/node.cpp
-        engine/include/z0/mesh.hpp
-        engine/include/z0/object.hpp
-        engine/src/object.cpp
-        engine/include/z0/viewport.hpp
-        engine/src/viewport.cpp
-        engine/src/mesh.cpp
-        engine/include/z0/window.hpp
-        engine/include/z0/vulkan/default_renderer.hpp
-        engine/src/vulkan/default_renderer.cpp
+        ${Z0_ENGINE_DIR}/src/object.cpp
+        ${Z0_ENGINE_DIR}/src/viewport.cpp
+        ${Z0_ENGINE_DIR}/src/mesh.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC ${Z0_ENGINE_DIR}/include)
 

@@ -5,7 +5,7 @@ layout(binding = 0) uniform UniformBufferObject  {
     mat4 projection;
     mat4 view;
     mat4 inverseView;
-    uint textureBingind;
+    uint textureBinding;
 } ubo;
 
 layout(location = 0) in vec3 inPosition;
