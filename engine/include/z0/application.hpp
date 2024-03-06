@@ -8,7 +8,9 @@ namespace z0 {
 
     class Application: public Object {
     public:
-        Application(WindowMode mode, int w, int h, const std::string& name, const std::string appdir);
+        Application(WindowMode mode, int w, int h,
+                    const std::string& name, const std::string &appdir,
+                    MSAA msaa = MSAA_DISABLED);
 
         const std::string& getApplicationDirectory() const { return appdir; }
 

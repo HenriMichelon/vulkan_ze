@@ -27,7 +27,8 @@ namespace z0 {
 
     class VulkanDevice {
     public:
-        VulkanDevice(VulkanInstance& instance, WindowHelper &window);
+        // if useMSAA == true && samples == VK_SAMPLE_COUNT_1_BIT then use the maximum sample count
+        VulkanDevice(VulkanInstance& instance, WindowHelper &window, bool useMSAA = false, VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT);
         ~VulkanDevice();
 
         VkDevice getDevice() { return device; }

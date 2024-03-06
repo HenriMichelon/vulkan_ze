@@ -20,8 +20,9 @@ namespace z0 {
     };
 
 
-    VulkanDevice::VulkanDevice(VulkanInstance& _instance, WindowHelper &_window):
-        vulkanInstance{_instance}, window{_window}
+    VulkanDevice::VulkanDevice(VulkanInstance& _instance, WindowHelper &_window,
+                               bool useMSAA, VkSampleCountFlagBits _samples):
+        vulkanInstance{_instance}, window{_window}, samples(_samples)
     {
         // Check for at least one supported Vulkan physical device
         // https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Physical_devices_and_queue_families#page_Selecting-a-physical-device
@@ -54,7 +55,9 @@ namespace z0 {
         if (candidates.rbegin()->first > 0) {
             // Select the better suitable device and get some useful properties
             physicalDevice = candidates.rbegin()->second;
-            samples = getMaxUsableMSAASampleCount();
+            if (useMSAA && samples == VK_SAMPLE_COUNT_1_BIT) {
+                samples = getMaxUsableMSAASampleCount();
+            }
             vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
         } else {
             die("Failed to find a suitable GPU!");
@@ -433,9 +436,9 @@ namespace z0 {
         VkPhysicalDeviceProperties physicalDeviceProperties;
         vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
         VkSampleCountFlags counts = physicalDeviceProperties.limits.framebufferColorSampleCounts & physicalDeviceProperties.limits.framebufferDepthSampleCounts;
-        //if (counts & VK_SAMPLE_COUNT_64_BIT) { return VK_SAMPLE_COUNT_64_BIT; }
-        //if (counts & VK_SAMPLE_COUNT_32_BIT) { return VK_SAMPLE_COUNT_32_BIT; }
-        //if (counts & VK_SAMPLE_COUNT_16_BIT) { return VK_SAMPLE_COUNT_16_BIT; }
+        if (counts & VK_SAMPLE_COUNT_64_BIT) { return VK_SAMPLE_COUNT_64_BIT; }
+        if (counts & VK_SAMPLE_COUNT_32_BIT) { return VK_SAMPLE_COUNT_32_BIT; }
+        if (counts & VK_SAMPLE_COUNT_16_BIT) { return VK_SAMPLE_COUNT_16_BIT; }
         if (counts & VK_SAMPLE_COUNT_8_BIT) { return VK_SAMPLE_COUNT_8_BIT; }
         if (counts & VK_SAMPLE_COUNT_4_BIT) { return VK_SAMPLE_COUNT_4_BIT; }
         if (counts & VK_SAMPLE_COUNT_2_BIT) { return VK_SAMPLE_COUNT_2_BIT; }

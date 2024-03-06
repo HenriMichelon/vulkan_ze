@@ -11,6 +11,7 @@ namespace z0 {
         MSAA_2X         = 1,
         MSAA_4X         = 2,
         MSAA_8X         = 3,
+        MSAA_AUTO       = 4,
     };
     class Application;
 
@@ -27,7 +28,9 @@ namespace z0 {
         std::unique_ptr<VulkanDevice> vulkanDevice;
         std::unique_ptr<VulkanRenderer> vulkanRenderer;
 
-        Viewport(VulkanInstance& instance, WindowMode mode, int w, int h, const std::string& name, const std::string &appdir);
+        Viewport(VulkanInstance& instance, WindowMode mode, int w, int h,
+                 const std::string& name, const std::string &appdir,
+                 MSAA msaa);
         friend class Application;
 
     public:

@@ -19,11 +19,11 @@ namespace z0 {
         // Create the GLW Window on the primary monitor
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         const GLFWvidmode* vidmod = glfwGetVideoMode(glfwGetPrimaryMonitor());
-        if (mode != WINDOW_MODE_WINDOWED) {
+        /*if (mode != WINDOW_MODE_WINDOWED) {
             // ignore the requested window size in full screen modes
             width = vidmod->width;
             height = vidmod->height;
-        }
+        }*/
         glfwWindowHint(GLFW_RESIZABLE, mode == WINDOW_MODE_WINDOWED);
         windowHandle = glfwCreateWindow(
                 width,
