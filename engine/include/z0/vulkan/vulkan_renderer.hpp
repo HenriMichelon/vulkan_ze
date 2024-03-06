@@ -40,12 +40,12 @@ namespace z0 {
         std::vector<VkSemaphore> renderFinishedSemaphores;
         std::vector<VkFence> inFlightFences;
 
-        const VkClearValue clearColor = {{{
+        const VkClearValue clearColor {{{
           static_cast<float>(WINDOW_CLEAR_COLOR[0]) / 256.0f,
           static_cast<float>(WINDOW_CLEAR_COLOR[1]) / 256.0f,
           static_cast<float>(WINDOW_CLEAR_COLOR[2]) / 256.0f,
           1.0f}}};
-        const VkClearValue depthClearValue{ .depthStencil = {1.0f, 0} };
+        const VkClearValue depthClearValue { .depthStencil = {1.0f, 0} };
 
         void setInitialState(VkCommandBuffer commandBuffer);
         void beginRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex);
