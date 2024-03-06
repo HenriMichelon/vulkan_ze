@@ -1,4 +1,4 @@
-#include "z0/vulkan/vulkan_renderer.hpp"
+#include "z0/vulkan/default_renderer.hpp"
 #include "z0/application.hpp"
 
 namespace z0 {
@@ -27,7 +27,11 @@ namespace z0 {
                 window,
                 msaa != MSAA_DISABLED,
                 MSAA_VULKAN.at(msaa));
-        vulkanRenderer = std::make_unique<VulkanRenderer>(*vulkanDevice, appdir + "/shaders");
+        vulkanRenderer = std::make_unique<DefaultRenderer>(*vulkanDevice, appdir + "/shaders");
+        vulkanRenderer->loadResources();
+    }
+
+    Viewport::~Viewport() {
     }
 
     void Viewport::process() {

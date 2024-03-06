@@ -1,6 +1,6 @@
 #pragma once
 
-#include "z0/vulkan/vulkan_renderer.hpp"
+#include "z0/vulkan/default_renderer.hpp"
 
 #include "object.hpp"
 
@@ -17,6 +17,8 @@ namespace z0 {
 
     class Viewport: public Object {
     public:
+        ~Viewport();
+
         MSAA getMSAA() const;
         void setMSAA(MSAA samples);
 
@@ -26,7 +28,7 @@ namespace z0 {
     private:
         WindowHelper window;
         std::unique_ptr<VulkanDevice> vulkanDevice;
-        std::unique_ptr<VulkanRenderer> vulkanRenderer;
+        std::unique_ptr<DefaultRenderer> vulkanRenderer;
 
         Viewport(VulkanInstance& instance, WindowMode mode, int w, int h,
                  const std::string& name, const std::string &appdir,

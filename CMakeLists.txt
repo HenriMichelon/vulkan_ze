@@ -44,6 +44,8 @@ add_executable(${PROJECT_NAME}
         engine/src/viewport.cpp
         engine/src/mesh.cpp
         engine/include/z0/window.hpp
+        engine/include/z0/vulkan/default_renderer.hpp
+        engine/src/vulkan/default_renderer.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC ${Z0_ENGINE_DIR}/include)
 

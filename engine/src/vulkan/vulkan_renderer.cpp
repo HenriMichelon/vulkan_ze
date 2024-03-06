@@ -23,23 +23,14 @@ namespace z0 {
                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, MAX_FRAMES_IN_FLIGHT)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT)
                 .build();
-
-        texture = std::make_unique<VulkanTexture>(vulkanDevice, "../models/cube_diffuse.png");
-        model = VulkanModel::createModelFromFile(vulkanDevice, "../models/cube.obj");
-        texture1 = std::make_unique<VulkanTexture>(vulkanDevice, "../models/sphere_diffuse.png");
-        model1 = VulkanModel::createModelFromFile(vulkanDevice, "../models/sphere.obj");
-
         createCommandBuffers();
         createSyncObjects();
-        createDescriptorSetLayout();
-        createPipelineLayout();
-        createShaders();
     }
 
     VulkanRenderer::~VulkanRenderer() {
-        vkDeviceWaitIdle(device);
-        fragShader.reset();
-        fragShader.reset();
+        for (auto shader : shaders) {
+            shader.reset();
+        }
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
             vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
@@ -48,8 +39,17 @@ namespace z0 {
         vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
     }
 
-    void VulkanRenderer::update(uint32_t frameIndex) {
+    void VulkanRenderer::loadResources() {
+        loadModels();
+        createPipelineLayout();
+        loadShaders();
+    }
 
+    void VulkanRenderer::updateFrame() {
+        static auto startTime = std::chrono::high_resolution_clock::now();
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+        update(deltaTime);
     }
 
     // https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Rendering_and_presentation
@@ -78,7 +78,7 @@ namespace z0 {
             const VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
             const VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 
-            update(currentFrame);
+            updateFrame();
 
             const VkSubmitInfo submitInfo{
                     .sType                  = VK_STRUCTURE_TYPE_SUBMIT_INFO,
@@ -116,6 +116,7 @@ namespace z0 {
         currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     }
 
+
     void VulkanRenderer::createSyncObjects() {
         imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
         renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
@@ -138,6 +139,7 @@ namespace z0 {
 
     // https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Introduction
     void VulkanRenderer::createPipelineLayout() {
+        createDescriptorSetLayout();
         const VkPipelineLayoutCreateInfo pipelineLayoutInfo{
                 .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
                 .setLayoutCount = 1,
@@ -174,75 +176,13 @@ namespace z0 {
             die("failed to begin recording command buffer!");
         }
         setInitialState(commandBuffer);
-
         beginRendering(commandBuffer, imageIndex);
-        {
-            vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_NONE);
-            vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
-            bindShader(commandBuffer, *vertShader);
-            bindShader(commandBuffer, *fragShader);
-
-            static auto startTime = std::chrono::high_resolution_clock::now();
-            auto currentTime = std::chrono::high_resolution_clock::now();
-            float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
-            Camera camera{};
-            auto cameraNode = Node::create();
-            cameraNode.transform.translation.z = -5.0f;
-            cameraNode.transform.translation.y = 0.0f;
-            cameraNode.transform.rotation.x = 0.0f;
-            camera.setViewYXZ(cameraNode.transform.translation, cameraNode.transform.rotation);
-            float aspect = vulkanDevice.getSwapChainAspectRatio();
-            camera.setPerspectiveProjection(glm::radians(50.0f), aspect, 0.1f, 100.0f);
-
-            UniformBufferObject ubo{};
-            ubo.projection = camera.getProjection();
-            ubo.view = camera.getView();
-            ubo.inverseView = camera.getInverseView();
-            glm::mat4 rot = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f) / 2, glm::vec3(1.0f, 0.0f, 1.0f));
-            glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(-1.5f, 0.0f, 0.0f));
-            ubo.model = trans * rot;
-            ubo.textureBinding = 0;
-            uint32_t size = uboBuffers[currentFrame]->getAlignmentSize();
-            uint32_t offset = size * 0;
-            uboBuffers[currentFrame]->writeToBuffer(&ubo, size, offset);
-            uboBuffers[currentFrame]->flush();
-
-            vkCmdBindDescriptorSets(commandBuffer,
-                                    VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                    pipelineLayout,
-                                    0,
-                                    1,
-                                    &globalDescriptorSets[currentFrame],
-                                    1,
-                                    &offset);
-            model->bind(commandBuffer);
-            model->draw(commandBuffer);
-
-            rot = glm::rotate(glm::mat4(1.0f), time * glm::radians(-90.0f) / 2, glm::vec3(1.0f, 0.0f, 1.0f));
-            trans = glm::translate(glm::mat4(1.0f), glm::vec3(1.5f, 0.0f, 0.0f));
-            ubo.model = trans * rot;
-            ubo.textureBinding = 1;
-            offset += size * 1;
-            uboBuffers[currentFrame]->writeToBuffer(&ubo, size, offset);
-            uboBuffers[currentFrame]->flush();
-            vkCmdBindDescriptorSets(commandBuffer,
-                                    VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                    pipelineLayout,
-                                    0,
-                                    1,
-                                    &globalDescriptorSets[currentFrame],
-                                    1,
-                                    &offset);
-            model1->bind(commandBuffer);
-            model1->draw(commandBuffer);
-        }
+        recordCommands(commandBuffer);
         endRendering(commandBuffer, imageIndex);
         if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
             die("failed to record command buffer!");
         }
     }
-
 
     void VulkanRenderer::setInitialState(VkCommandBuffer commandBuffer)
     {
@@ -321,66 +261,24 @@ namespace z0 {
 
     }
 
-    void VulkanRenderer::createDescriptorSetLayout() {
-        // Using one descriptor per scene with offsets
-        // https://docs.vulkan.org/samples/latest/samples/performance/descriptor_management/README.html
-        for(int i = 0; i < uboBuffers.size(); i++) {
-            uboBuffers[i] = std::make_unique<VulkanBuffer>(
-                    vulkanDevice,
-                    sizeof(UniformBufferObject),
-                    2,
-                    VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-                    vulkanDevice.getDeviceProperties().limits.minUniformBufferOffsetAlignment
-            );
-            uboBuffers[i]->map();
-        }
-        globalSetLayout = VulkanDescriptorSetLayout::Builder(vulkanDevice)
-                .addBinding(0,
-                            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-                            VK_SHADER_STAGE_ALL_GRAPHICS)
-                .addBinding(1,
-                            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                            VK_SHADER_STAGE_ALL_GRAPHICS,
-                            2)
-                .build();
-        for (int i = 0; i < globalDescriptorSets.size(); i++) {
-            auto bufferInfo = uboBuffers[i]->descriptorInfo(sizeof(UniformBufferObject));
-            std::array imagesInfo{ texture->imageInfo(), texture1->imageInfo()};
-            if (!VulkanDescriptorWriter(*globalSetLayout, *globalPool)
-                    .writeBuffer(0, &bufferInfo)
-                    .writeImage(1, imagesInfo.data())
-                    .build(globalDescriptorSets[i])) {
-                die("Cannot allocate descriptor set");
-            }
-        }
+    std::shared_ptr<VulkanShader> VulkanRenderer::createShader(const std::string& filename,
+                                                               VkShaderStageFlagBits stage,
+                                                               VkShaderStageFlags next_stage) {
+        auto code = readFile(filename);
+        std::shared_ptr<VulkanShader> shader  = std::make_shared<VulkanShader>(
+                vulkanDevice,
+                stage,
+                next_stage,
+                filename,
+                code,
+                globalSetLayout->getDescriptorSetLayout(),
+                nullptr);
+        buildShader(*shader);
+        shaders.push_back(shader);
+        return shader;
     }
 
-    void VulkanRenderer::createShaders() {
-        auto vertCode = readFile("triangle.vert");
-        vertShader = std::make_unique<VulkanShader>(
-                vulkanDevice,
-                VK_SHADER_STAGE_VERTEX_BIT,
-                VK_SHADER_STAGE_FRAGMENT_BIT,
-                "triangle vert",
-                vertCode,
-                globalSetLayout->getDescriptorSetLayout(),
-                nullptr
-                );
-        auto fragCode = readFile("triangle.frag");
-        fragShader = std::make_unique<VulkanShader>(
-                vulkanDevice,
-                VK_SHADER_STAGE_FRAGMENT_BIT,
-                0,
-                "triangle frag",
-                fragCode,
-                globalSetLayout->getDescriptorSetLayout(),
-                nullptr
-        );
-        buildLinkedShaders(*vertShader, *fragShader);
-    }
-
-    void VulkanRenderer::buildLinkedShaders(VulkanShader& vert, VulkanShader& frag)
+   /* void VulkanRenderer::buildLinkedShaders(VulkanShader& vert, VulkanShader& frag)
     {
         VkShaderCreateInfoEXT shader_create_infos[2];
         shader_create_infos[0] = vert.getShaderCreateInfo();
@@ -395,11 +293,11 @@ namespace z0 {
                 shader_create_infos,
                 nullptr,
                 shaderEXTs) != VK_SUCCESS) {
-            die("vkCreateShadersEXT failed\n");
+            die("vkCreateShadersEXT failed");
         }
         vert.setShader(shaderEXTs[0]);
         frag.setShader(shaderEXTs[1]);
-    }
+    }*/
 
     void VulkanRenderer::buildShader(VulkanShader& shader) {
         VkShaderEXT shaderEXT;
