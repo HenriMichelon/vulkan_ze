@@ -18,6 +18,9 @@ namespace z0 {
     public:
         WindowHelper(int w, int h, const std::string& windowName);
 
+        // accessed by static function framebufferResizeCallback()
+        bool windowResized = false;
+
         bool shouldClose() { return glfwWindowShouldClose(windowHandle); };
         void process() { return glfwPollEvents(); };
         void close();

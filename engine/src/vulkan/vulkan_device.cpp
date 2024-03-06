@@ -19,13 +19,6 @@ namespace z0 {
         VK_EXT_SHADER_OBJECT_EXTENSION_NAME,
     };
 
-#ifdef GLFW_VERSION_MAJOR
-    // Called by GLFW when the window is resized/minimized
-    static void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
-        auto device = reinterpret_cast<VulkanDevice*>(glfwGetWindowUserPointer(window));
-        device->framebufferResized = true;
-    }
-#endif
 
     VulkanDevice::VulkanDevice(VulkanInstance& _instance, WindowHelper &_window):
         vulkanInstance{_instance}, window{_window}
@@ -66,12 +59,6 @@ namespace z0 {
         } else {
             die("Failed to find a suitable GPU!");
         }
-
-        // Initiliaze window management for resizing/minimizing
-#ifdef GLFW_VERSION_MAJOR
-        glfwSetWindowUserPointer(window.getWindowHandle(), this);
-        glfwSetFramebufferSizeCallback(window.getWindowHandle(), framebufferResizeCallback);
-#endif
 
         createDevice();
         createSwapChain();
@@ -219,7 +206,7 @@ namespace z0 {
 
     // https://vulkan-tutorial.com/Drawing_a_triangle/Swap_chain_recreation
     void VulkanDevice::recreateSwapChain() {
-        framebufferResized = false;
+        window.windowResized = false;
 #ifdef GLFW_VERSION_MAJOR
         int width = 0, height = 0;
         glfwGetFramebufferSize(window.getWindowHandle(), &width, &height);

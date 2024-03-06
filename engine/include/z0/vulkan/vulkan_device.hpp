@@ -47,6 +47,7 @@ namespace z0 {
         VkFormat getSwapChainImageFormat() const { return swapChainImageFormat; }
         std::vector<VkImage>& getSwapChainImages() { return swapChainImages; }
         VkPhysicalDeviceProperties getDeviceProperties() const { return deviceProperties; }
+        WindowHelper& getWindowHelper() { return window; }
 
         // Recreation of the swap chain in case of window resizing/minimizing
         void recreateSwapChain();
@@ -128,9 +129,6 @@ namespace z0 {
         VkFormat findImageTilingSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
     public:
-        // accessed by static function framebufferResizeCallback()
-        bool framebufferResized = false;
-
         VulkanDevice(const VulkanDevice&) = delete;
         VulkanDevice &operator=(const VulkanDevice&) = delete;
         VulkanDevice(const VulkanDevice&&) = delete;

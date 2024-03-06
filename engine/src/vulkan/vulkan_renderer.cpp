@@ -105,7 +105,7 @@ namespace z0 {
                     .pResults           = nullptr // Optional
             };
             result = vkQueuePresentKHR(vulkanDevice.getPresentQueue(), &presentInfo);
-            if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || vulkanDevice.framebufferResized) {
+            if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || vulkanDevice.getWindowHelper().windowResized) {
                 vulkanDevice.recreateSwapChain();
             } else if (result != VK_SUCCESS) {
                 die("failed to present swap chain image!");
