@@ -10,13 +10,14 @@
 #error OS Not supported
 #endif
 
+#include "z0/window.hpp"
 #include <string>
 
 namespace z0 {
 
     class WindowHelper {
     public:
-        WindowHelper(int w, int h, const std::string& windowName);
+        WindowHelper(WindowMode mode, int w, int h, const std::string& windowName);
 
         // accessed by static function framebufferResizeCallback()
         bool windowResized = false;
@@ -32,6 +33,7 @@ namespace z0 {
         GLFWwindow *getWindowHandle() { return windowHandle; }
 #endif
     private:
+        WindowMode mode;
         int width, height;
 
 #ifdef GLFW_VERSION_MAJOR

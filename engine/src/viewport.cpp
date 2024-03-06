@@ -16,8 +16,8 @@ namespace z0 {
             { VK_SAMPLE_COUNT_8_BIT, MSAA_8X },
     };
 
-    Viewport::Viewport(VulkanInstance& instance, int w, int h, const std::string &name, const std::string &appdir):
-        window{w, h, name}
+    Viewport::Viewport(VulkanInstance& instance, WindowMode mode, int w, int h, const std::string &name, const std::string &appdir):
+        window{mode, w, h, name}
     {
         vulkanDevice = std::make_unique<VulkanDevice>(instance, window);
         vulkanRenderer = std::make_unique<VulkanRenderer>(*vulkanDevice, appdir + "/shaders");

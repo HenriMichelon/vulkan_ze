@@ -27,7 +27,7 @@ namespace z0 {
         std::unique_ptr<VulkanDevice> vulkanDevice;
         std::unique_ptr<VulkanRenderer> vulkanRenderer;
 
-        Viewport(VulkanInstance& instance, int w, int h, const std::string& name, const std::string &appdir);
+        Viewport(VulkanInstance& instance, WindowMode mode, int w, int h, const std::string& name, const std::string &appdir);
         friend class Application;
 
     public:

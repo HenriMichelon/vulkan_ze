@@ -10,16 +10,36 @@ namespace z0 {
         device->windowResized = true;
     }
 
-    // Create the GLW Window on the primary monitor and center the window
-    WindowHelper::WindowHelper(int w, int h, const std::string& windowName): width{w}, height{h} {
+    WindowHelper::WindowHelper(WindowMode _mode, int w, int h, const std::string& windowName):
+        mode{_mode}, width{w}, height{h}
+    {
+        // Initialize GLFW
         glfwInit();
+
+        // Create the GLW Window on the primary monitor
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-        windowHandle = glfwCreateWindow(width, height, windowName.c_str(), nullptr, nullptr);
+        const GLFWvidmode* vidmod = glfwGetVideoMode(glfwGetPrimaryMonitor());
+        if (mode != WINDOW_MODE_WINDOWED) {
+            // ignore the requested window size in full screen modes
+            width = vidmod->width;
+            height = vidmod->height;
+        }
+        glfwWindowHint(GLFW_RESIZABLE, mode == WINDOW_MODE_WINDOWED);
+        windowHandle = glfwCreateWindow(
+                width,
+                height,
+                windowName.c_str(),
+                mode == WINDOW_MODE_WINDOWED ? nullptr : glfwGetPrimaryMonitor(),
+                nullptr);
+
+        if (mode == WINDOW_MODE_WINDOWED) {
+            // Center the window on the screen
+            glfwSetWindowPos(windowHandle, (vidmod->width - width) / 2, (vidmod->height - height) / 2);
+        }
+
+        // Set callback for window resize/minimize
         glfwSetWindowUserPointer(windowHandle, this);
         glfwSetFramebufferSizeCallback(windowHandle, framebufferResizeCallback);
-        const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-        glfwSetWindowPos(windowHandle, (mode->width - width)/2, (mode->height - height)/2);
     }
 
     void WindowHelper::close() {
