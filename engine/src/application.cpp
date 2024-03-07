@@ -6,11 +6,10 @@ namespace z0 {
 
     Application& Application::getApp() { return *instance; }
 
-    Application::Application(WindowMode mode, int w, int h,
-                             const std::string &name, const std::string& _appdir,
-                             MSAA msaa):
-            appdir(_appdir), vulkanInstance{},
-            viewport{vulkanInstance, mode, w, h, name, _appdir, msaa}
+    Application::Application(const ApplicationConfig& cfg):
+            appdir(cfg.appDir),
+            vulkanInstance{},
+            viewport{vulkanInstance, cfg}
     {
         if (instance != nullptr) die("Application already registered");
         instance = this;

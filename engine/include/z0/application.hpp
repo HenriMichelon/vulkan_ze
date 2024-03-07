@@ -1,16 +1,13 @@
 #pragma once
 
 #include "z0/vulkan/window_helper.hpp"
-
-#include "viewport.hpp"
+#include "z0/viewport.hpp"
 
 namespace z0 {
 
     class Application: public Object {
     public:
-        Application(WindowMode mode, int w, int h,
-                    const std::string& name, const std::string &appdir,
-                    MSAA msaa = MSAA_DISABLED);
+        Application(const ApplicationConfig& applicationConfig);
 
         const std::string& getApplicationDirectory() const { return appdir; }
 

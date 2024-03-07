@@ -3,13 +3,19 @@
 
 class ExampleApp : z0::Application {
 public:
-    ExampleApp(): z0::Application{z0::WINDOW_MODE_WINDOWED_MAXIMIZED, 1024, 768,
-                                  "Example App", "..", z0::MSAA_AUTO} {
+    ExampleApp(const z0::ApplicationConfig& cfg): z0::Application{cfg} {
 
     };
 };
 
 int main() {
-    ExampleApp{};
+    z0::ApplicationConfig applicationConfig {
+        .appName = "Example App",
+        .appDir = "..",
+        .windowMode = z0::WINDOW_MODE_WINDOWED,
+        .windowWidth = 1024,
+        .windowHeight = 768,
+    };
+    ExampleApp{applicationConfig};
     return 0;
 }

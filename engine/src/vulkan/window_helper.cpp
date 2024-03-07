@@ -10,7 +10,7 @@ namespace z0 {
         device->windowResized = true;
     }
 
-    WindowHelper::WindowHelper(WindowMode _mode, int w, int h, const std::string& windowName):
+    WindowHelper::WindowHelper(WindowMode _mode, uint32_t w, uint32_t h, const std::string& windowName):
         mode{_mode}, width{w}, height{h}
     {
         glfwInit();

@@ -17,7 +17,7 @@ namespace z0 {
 
     class WindowHelper {
     public:
-        WindowHelper(WindowMode mode, int w, int h, const std::string& windowName);
+        WindowHelper(WindowMode mode, uint32_t w, uint32_t h, const std::string& windowName);
 
         // accessed by static function framebufferResizeCallback()
         bool windowResized = false;
@@ -34,7 +34,7 @@ namespace z0 {
 #endif
     private:
         WindowMode mode;
-        int width, height;
+        uint32_t width, height;
 
 #ifdef GLFW_VERSION_MAJOR
         GLFWwindow *windowHandle;

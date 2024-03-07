@@ -17,17 +17,15 @@ namespace z0 {
             { VK_SAMPLE_COUNT_8_BIT, MSAA_8X },
     };
 
-    Viewport::Viewport(VulkanInstance& instance, WindowMode mode, int w, int h,
-                       const std::string &name, const std::string &appdir,
-                       MSAA msaa):
-        window{mode, w, h, name}
+    Viewport::Viewport(VulkanInstance& instance, const ApplicationConfig& cfg):
+        window{cfg.windowMode, cfg.windowWidth, cfg.windowHeight, cfg.appName}
     {
         vulkanDevice = std::make_unique<VulkanDevice>(
                 instance,
                 window,
-                msaa != MSAA_DISABLED,
-                MSAA_VULKAN.at(msaa));
-        vulkanRenderer = std::make_unique<DefaultRenderer>(*vulkanDevice, appdir + "/shaders");
+                cfg.msaa != MSAA_DISABLED,
+                MSAA_VULKAN.at(cfg.msaa));
+        vulkanRenderer = std::make_unique<DefaultRenderer>(*vulkanDevice, cfg.appDir + "/shaders");
         vulkanRenderer->loadResources();
     }
 
