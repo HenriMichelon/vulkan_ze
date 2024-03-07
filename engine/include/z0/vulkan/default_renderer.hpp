@@ -1,8 +1,9 @@
 #pragma once
 
-#include <set>
 #include "z0/vulkan/vulkan_renderer.hpp"
 #include "z0/nodes/mesh_instance.hpp"
+
+#include <set>
 
 namespace z0 {
 
@@ -17,20 +18,27 @@ namespace z0 {
         };
 
         DefaultRenderer(VulkanDevice& device, const std::string& shaderDirectory,
-                        std::vector<std::shared_ptr<MeshInstance>>& models);
+                        const std::shared_ptr<Node>& rootNode);
         ~DefaultRenderer();
+
+        //void loadScene(const std::shared_ptr<Node>& rootNode);
 
     private:
         std::unique_ptr<VulkanShader> vertShader;
         std::unique_ptr<VulkanShader> fragShader;
-        std::vector<std::shared_ptr<MeshInstance>> nodes;
+        std::shared_ptr<Node> rootNode;
         std::set<std::shared_ptr<Mesh>> meshes {};
-        std::map<std::shared_ptr<MeshInstance>, uint32_t> meshesIndices {};
+
+        std::map<MeshInstance*, uint32_t> meshesIndices {};
+        std::vector<MeshInstance*> meshInstances {};
 
         void update(float delta) override;
         void recordCommands(VkCommandBuffer commandBuffer) override;
         void createDescriptorSetLayout() override;
         void loadShaders() override;
+
+        void createMeshIndices(const std::shared_ptr<Node>& parent);
+        void createMeshIndex(const std::shared_ptr<Node>& node);
 
     public:
         DefaultRenderer(const DefaultRenderer&) = delete;

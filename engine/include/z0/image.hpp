@@ -2,10 +2,11 @@
 
 #include "z0/vulkan/vulkan_image.hpp"
 #include "z0/viewport.hpp"
+#include "z0/resource.hpp"
 
 namespace z0 {
 
-    class Image: public Object {
+    class Image: public Resource {
     public:
         Image(Viewport& viewport, const std::string& appdir, const std::string& filename);
 

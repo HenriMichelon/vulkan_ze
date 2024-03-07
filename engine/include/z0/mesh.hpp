@@ -7,7 +7,7 @@
 
 namespace z0 {
 
-    class Mesh: public Object {
+    class Mesh: public Resource {
     public:
         Mesh(Viewport &viewport, const std::string& appdir, const std::string& filename, std::shared_ptr<Texture> texture);
 

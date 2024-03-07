@@ -15,9 +15,9 @@ namespace z0 {
 
         id_t getId() const { return id; }
 
-        void addChild(const Node& node);
-        void removeChild(const Node& node);
-        std::list<Node>& getChildren() { return children; }
+        void addChild(const std::shared_ptr<Node> node);
+        void removeChild(const std::shared_ptr<Node> node);
+        std::list<std::shared_ptr<Node>>& getChildren() { return children; }
 
         bool operator==(const Node& other) const {
             return id == other.id;
@@ -26,7 +26,7 @@ namespace z0 {
     private:
         id_t id;
         static id_t currentId;
-        std::list<Node> children;
+        std::list<std::shared_ptr<Node>> children;
 
     };
 }

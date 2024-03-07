@@ -1,10 +1,10 @@
 #pragma once
 
-#include "z0/object.hpp"
+#include "z0/resource.hpp"
 
 namespace z0 {
 
-    class Material: public Object {
+    class Material: public Resource {
 
     };
 

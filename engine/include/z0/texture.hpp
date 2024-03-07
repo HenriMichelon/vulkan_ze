@@ -4,7 +4,7 @@
 
 namespace z0 {
 
-    class Texture: public Object {
+    class Texture: public Resource {
     public:
         Image& getImage() { return *image; }
         uint32_t getWidth() const { return image->getWidth(); };

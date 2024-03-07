@@ -54,6 +54,8 @@ add_executable(${PROJECT_NAME}
         engine/src/image.cpp
         engine/src/texture.cpp
         engine/include/z0/nodes/mesh_instance.hpp
+        engine/include/z0/resource.hpp
+        engine/src/resource.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC ${Z0_ENGINE_DIR}/include)
 
