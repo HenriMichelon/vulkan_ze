@@ -5,12 +5,10 @@
 namespace z0 {
 
     DefaultRenderer::DefaultRenderer(VulkanDevice &dev,
-                                     const std::string& sDir,
-                                     const std::shared_ptr<Node>& node) :
-         VulkanRenderer{dev, sDir},
-         rootNode{node}
+                                     const std::string& sDir) :
+         VulkanRenderer{dev, sDir}
      {
-         createMeshIndices(rootNode);
+         //createMeshIndices(rootNode);
      }
 
     DefaultRenderer::~DefaultRenderer() {
@@ -60,6 +58,7 @@ namespace z0 {
     }
 
     void DefaultRenderer::recordCommands(VkCommandBuffer commandBuffer) {
+        if (meshInstances.empty()) return;
         vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_NONE);
         vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
         bindShader(commandBuffer, *vertShader);
@@ -71,6 +70,7 @@ namespace z0 {
     }
 
     void DefaultRenderer::createDescriptorSetLayout() {
+        if (meshInstances.empty()) return;
         VkDeviceSize size = sizeof(UniformBufferObject);
         createUniformBuffers(size, meshInstances.size());
         globalSetLayout = VulkanDescriptorSetLayout::Builder(vulkanDevice)

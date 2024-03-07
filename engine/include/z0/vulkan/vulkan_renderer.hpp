@@ -21,7 +21,7 @@ namespace z0 {
         uint32_t currentFrame = 0;
         VkDevice device;
         VulkanDevice& vulkanDevice;
-        VkPipelineLayout pipelineLayout;
+        VkPipelineLayout pipelineLayout { VK_NULL_HANDLE };
         std::vector<std::unique_ptr<VulkanBuffer>> uboBuffers{MAX_FRAMES_IN_FLIGHT};
         std::unique_ptr<VulkanDescriptorPool> globalPool {};
         std::unique_ptr<VulkanDescriptorSetLayout> globalSetLayout {};

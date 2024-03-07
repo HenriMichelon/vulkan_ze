@@ -17,8 +17,7 @@ namespace z0 {
             uint32_t textureBinding;
         };
 
-        DefaultRenderer(VulkanDevice& device, const std::string& shaderDirectory,
-                        const std::shared_ptr<Node>& rootNode);
+        DefaultRenderer(VulkanDevice& device, const std::string& shaderDirectory);
         ~DefaultRenderer();
 
         //void loadScene(const std::shared_ptr<Node>& rootNode);

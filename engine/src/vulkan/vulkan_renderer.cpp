@@ -65,24 +65,23 @@ namespace z0 {
             vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
             vkDestroyFence(device, inFlightFences[i], nullptr);
         }
-        vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+        if (pipelineLayout != VK_NULL_HANDLE) vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
     }
 
     void VulkanRenderer::loadResources() {
         // Create Pipeline Layout
         // https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Introduction
-        {
-            createDescriptorSetLayout();
-            const VkPipelineLayoutCreateInfo pipelineLayoutInfo{
-                    .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-                    .setLayoutCount = 1,
-                    .pSetLayouts = globalSetLayout->getDescriptorSetLayout(),
-                    .pushConstantRangeCount = 0,
-                    .pPushConstantRanges = nullptr
-            };
-            if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
-                die("failed to create pipeline layout!");
-            }
+        createDescriptorSetLayout();
+        if (globalSetLayout == nullptr) return;
+        const VkPipelineLayoutCreateInfo pipelineLayoutInfo{
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+                .setLayoutCount = 1,
+                .pSetLayouts = globalSetLayout->getDescriptorSetLayout(),
+                .pushConstantRangeCount = 0,
+                .pPushConstantRanges = nullptr
+        };
+        if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+            die("failed to create pipeline layout!");
         }
         loadShaders();
     }

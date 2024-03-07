@@ -41,7 +41,7 @@ namespace z0 {
         node2->transform.position = { 1.5f, 0.0f, 0.0f };
         rootNode->addChild(node2);
 
-        vulkanRenderer = std::make_unique<DefaultRenderer>(*vulkanDevice, cfg.appDir + "/shaders", rootNode);
+        vulkanRenderer = std::make_unique<DefaultRenderer>(*vulkanDevice, cfg.appDir + "/shaders");
         vulkanRenderer->loadResources();
     }
 
