@@ -15,10 +15,18 @@ namespace z0 {
 
         id_t getId() const { return id; }
 
+        void addChild(const Node& node);
+        void removeChild(const Node& node);
+        std::list<Node>& getChildren() { return children; }
+
+        bool operator==(const Node& other) const {
+            return id == other.id;
+        }
+
     private:
         id_t id;
         static id_t currentId;
-
+        std::list<Node> children;
 
     };
 }
