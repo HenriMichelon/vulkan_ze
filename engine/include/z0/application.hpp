@@ -24,6 +24,9 @@ namespace z0 {
         std::shared_ptr<Viewport> viewport;
         const ApplicationConfig& applicationConfig;
 
+        void ready(const std::shared_ptr<Node>& node);
+        void process(const std::shared_ptr<Node>& node, float delta);
+
     public:
         Application(const Application&) = delete;
         Application &operator=(const Application&) = delete;

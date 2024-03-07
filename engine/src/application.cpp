@@ -18,14 +18,28 @@ namespace z0 {
     }
 
     void Application::start(const std::shared_ptr<Node>& rootNode) {
-        rootNode->onReady(); // make recursive
+        ready(rootNode);
         viewport->loadScene(rootNode);
         while (!viewport->shouldClose()) {
             static auto startTime = std::chrono::high_resolution_clock::now();
             auto currentTime = std::chrono::high_resolution_clock::now();
             float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-            rootNode->onProcess(deltaTime);
+            process(rootNode, deltaTime);
             viewport->process(deltaTime);
+        }
+    }
+
+    void Application::ready(const std::shared_ptr<Node>& node) {
+        node->onReady();
+        for(auto child: node->getChildren()) {
+            ready(child);
+        }
+    }
+
+    void Application::process(const std::shared_ptr<Node>& node, float delta) {
+        node->onProcess(delta);
+        for(auto child: node->getChildren()) {
+            process(child, delta);
         }
     }
 }

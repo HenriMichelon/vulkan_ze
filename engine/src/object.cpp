@@ -5,5 +5,4 @@
 namespace z0 {
     Object::Object(): class_name{__func__} {
     }
-
 }
