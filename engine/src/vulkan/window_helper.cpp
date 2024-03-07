@@ -19,7 +19,7 @@ namespace z0 {
         GLFWmonitor* monitor = glfwGetPrimaryMonitor();
         const GLFWvidmode* vidmod = glfwGetVideoMode(monitor);
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API); // disable OpenGL API support
-        const bool isFullScreen = mode == WINDOW_MODE_FULLSCREEN || mode == WINDOW_MODE_FULLSCREEN_EXCLUSIVE;
+        const bool isFullScreen = mode == WINDOW_MODE_FULLSCREEN; // || mode == WINDOW_MODE_FULLSCREEN_EXCLUSIVE;
         glfwWindowHint(GLFW_RESIZABLE, mode == WINDOW_MODE_WINDOWED || mode == WINDOW_MODE_WINDOWED_MAXIMIZED);
         glfwWindowHint(GLFW_MAXIMIZED, mode == WINDOW_MODE_WINDOWED_MAXIMIZED);
         windowHandle = glfwCreateWindow(
