@@ -1,3 +1,5 @@
+// Using one descriptor per scene with offsets
+// https://docs.vulkan.org/samples/latest/samples/performance/descriptor_management/README.html
 #include "z0/vulkan/vulkan_renderer.hpp"
 #include "z0/vulkan/vulkan_model.hpp"
 #include "z0/vulkan/vulkan_descriptors.hpp"
@@ -91,6 +93,36 @@ namespace z0 {
         auto currentTime = std::chrono::high_resolution_clock::now();
         float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
         update(deltaTime);
+    }
+
+    void VulkanRenderer::writeUniformBuffer(void *data, uint32_t index) {
+        uint32_t size = uboBuffers[currentFrame]->getAlignmentSize();
+        uboBuffers[currentFrame]->writeToBuffer(data, size, size * index);
+        uboBuffers[currentFrame]->flush();
+    }
+
+    void VulkanRenderer::bindDescriptorSets(VkCommandBuffer commandBuffer, uint32_t index) {
+        uint32_t size = uboBuffers[currentFrame]->getAlignmentSize();
+        uint32_t offset = size * index;
+        vkCmdBindDescriptorSets(commandBuffer,
+                                VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
+                                0, 1,
+                                &globalDescriptorSets[currentFrame],
+                                1, &offset);
+    }
+
+    void VulkanRenderer::createUniformBuffers(VkDeviceSize size, uint32_t count) {
+        for (auto &uboBuffer: uboBuffers) {
+            uboBuffer = std::make_unique<VulkanBuffer>(
+                    vulkanDevice,
+                    size,
+                    count,
+                    VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+                    vulkanDevice.getDeviceProperties().limits.minUniformBufferOffsetAlignment
+            );
+            uboBuffer->map();
+        }
     }
 
     // https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Rendering_and_presentation

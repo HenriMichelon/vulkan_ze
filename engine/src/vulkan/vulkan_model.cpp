@@ -109,6 +109,7 @@ namespace  z0 {
     }
 
     void VulkanModel::draw(VkCommandBuffer commandBuffer) {
+        bind(commandBuffer);
         if (hasIndexBuffer) {
             vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);
         } else {

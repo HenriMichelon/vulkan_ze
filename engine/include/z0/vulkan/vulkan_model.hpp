@@ -37,7 +37,6 @@ namespace z0 {
         static std::vector<VkVertexInputBindingDescription2EXT> getBindingDescription();
         static std::vector<VkVertexInputAttributeDescription2EXT> getAttributeDescription();
 
-        void bind(VkCommandBuffer commandBuffer);
         void draw(VkCommandBuffer commandBuffer);
 
     private:
@@ -48,6 +47,7 @@ namespace z0 {
         std::unique_ptr<VulkanBuffer> vertexBuffer;
         std::unique_ptr<VulkanBuffer> indexBuffer;
 
+        void bind(VkCommandBuffer commandBuffer);
         void createVertexBuffers(const std::vector<Vertex> &vertices);
         void createIndexBuffers(const std::vector<uint32_t> &indices);
 

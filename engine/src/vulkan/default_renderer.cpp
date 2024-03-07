@@ -30,33 +30,28 @@ namespace z0 {
 
     void DefaultRenderer::update(float delta) {
         Camera camera{};
-        camera.transform.position.z = -5.0f;
-        camera.transform.position.y = 0.0f;
-        camera.transform.rotation.x = 0.0f;
+        camera.transform.position = { -0.0f, 0.0f, -5.0f };
         camera.setViewYXZ();
-        float aspect = vulkanDevice.getSwapChainAspectRatio();
-        camera.setPerspectiveProjection(glm::radians(50.0f), aspect, 0.1f, 100.0f);
+        camera.setPerspectiveProjection(glm::radians(50.0f), getAspectRatio(), 0.1f, 100.0f);
 
-        UniformBufferObject ubo{};
-        ubo.projection = camera.getProjection();
-        ubo.view = camera.getView();
-        ubo.inverseView = camera.getInverseView();
+        UniformBufferObject ubo{
+            .projection = camera.getProjection(),
+            .view = camera.getView(),
+            .inverseView = camera.getInverseView(),
+        };
+
+        int index = 0;
         glm::mat4 rot = glm::rotate(glm::mat4(1.0f), delta * glm::radians(90.0f) / 2, glm::vec3(1.0f, 0.0f, 1.0f));
         glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(-1.5f, 0.0f, 0.0f));
         ubo.model = trans * rot;
         ubo.textureBinding = 0;
-        uint32_t size = uboBuffers[currentFrame]->getAlignmentSize();
-        uint32_t offset = size * 0;
-        uboBuffers[currentFrame]->writeToBuffer(&ubo, size, offset);
-        uboBuffers[currentFrame]->flush();
+        writeUniformBuffer(&ubo, index);
 
         rot = glm::rotate(glm::mat4(1.0f), delta * glm::radians(-90.0f) / 2, glm::vec3(1.0f, 0.0f, 1.0f));
         trans = glm::translate(glm::mat4(1.0f), glm::vec3(1.5f, 0.0f, 0.0f));
         ubo.model = trans * rot;
         ubo.textureBinding = 1;
-        offset += size * 1;
-        uboBuffers[currentFrame]->writeToBuffer(&ubo, size, offset);
-        uboBuffers[currentFrame]->flush();
+        writeUniformBuffer(&ubo, ++index);
     }
 
     void DefaultRenderer::recordCommands(VkCommandBuffer commandBuffer) {
@@ -65,40 +60,17 @@ namespace z0 {
         bindShader(commandBuffer, *vertShader);
         bindShader(commandBuffer, *fragShader);
 
-        uint32_t size = uboBuffers[currentFrame]->getAlignmentSize();
-        uint32_t offset = size * 0;
-        vkCmdBindDescriptorSets(commandBuffer,
-                                VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
-                                0, 1,
-                                &globalDescriptorSets[currentFrame],
-                                1, &offset);
-        model->bind(commandBuffer);
+        uint32_t index = 0;
+        bindDescriptorSets(commandBuffer, index);
         model->draw(commandBuffer);
 
-        offset += size * 1;
-        vkCmdBindDescriptorSets(commandBuffer,
-                                VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
-                                0, 1,
-                                &globalDescriptorSets[currentFrame],
-                                1, &offset);
-        model1->bind(commandBuffer);
+        bindDescriptorSets(commandBuffer, ++index);
         model1->draw(commandBuffer);
     }
 
     void DefaultRenderer::createDescriptorSetLayout() {
-        // Using one descriptor per scene with offsets
-        // https://docs.vulkan.org/samples/latest/samples/performance/descriptor_management/README.html
-        for(auto & uboBuffer : uboBuffers) {
-            uboBuffer = std::make_unique<VulkanBuffer>(
-                    vulkanDevice,
-                    sizeof(UniformBufferObject),
-                    2,
-                    VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-                    vulkanDevice.getDeviceProperties().limits.minUniformBufferOffsetAlignment
-            );
-            uboBuffer->map();
-        }
+        VkDeviceSize size = sizeof(UniformBufferObject);
+        createUniformBuffers(size, 2);
         globalSetLayout = VulkanDescriptorSetLayout::Builder(vulkanDevice)
                 .addBinding(0,
                             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
@@ -109,7 +81,7 @@ namespace z0 {
                             2)
                 .build();
         for (int i = 0; i < globalDescriptorSets.size(); i++) {
-            auto bufferInfo = uboBuffers[i]->descriptorInfo(sizeof(UniformBufferObject));
+            auto bufferInfo = uboBuffers[i]->descriptorInfo(size);
             std::array imagesInfo{ texture->imageInfo(), texture1->imageInfo()};
             if (!VulkanDescriptorWriter(*globalSetLayout, *globalPool)
                     .writeBuffer(0, &bufferInfo)

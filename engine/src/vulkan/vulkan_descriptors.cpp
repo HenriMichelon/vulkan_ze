@@ -131,30 +131,30 @@ namespace z0 {
     VulkanDescriptorWriter::VulkanDescriptorWriter(VulkanDescriptorSetLayout &setLayout, VulkanDescriptorPool &pool)
             : setLayout{setLayout}, pool{pool} {}
 
-    VulkanDescriptorWriter &VulkanDescriptorWriter::writeBuffer(
-            uint32_t binding, VkDescriptorBufferInfo *bufferInfo) {
+    VulkanDescriptorWriter &VulkanDescriptorWriter::writeBuffer(uint32_t binding, VkDescriptorBufferInfo *bufferInfo) {
         assert(setLayout.bindings.count(binding) == 1 && "Layout does not contain specified binding");
         auto &bindingDescription = setLayout.bindings[binding];
-        VkWriteDescriptorSet write{};
-        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        write.descriptorType = bindingDescription.descriptorType;
-        write.dstBinding = binding;
-        write.pBufferInfo = bufferInfo;
-        write.descriptorCount = bindingDescription.descriptorCount;
+        VkWriteDescriptorSet write{
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .dstBinding = binding,
+            .descriptorCount = bindingDescription.descriptorCount,
+            .descriptorType = bindingDescription.descriptorType,
+            .pBufferInfo = bufferInfo,
+        };
         writes.push_back(write);
         return *this;
     }
 
-    VulkanDescriptorWriter &VulkanDescriptorWriter::writeImage(
-            uint32_t binding, VkDescriptorImageInfo *imageInfo) {
+    VulkanDescriptorWriter &VulkanDescriptorWriter::writeImage(uint32_t binding, VkDescriptorImageInfo *imageInfo) {
         assert(setLayout.bindings.count(binding) == 1 && "Layout does not contain specified binding");
         auto &bindingDescription = setLayout.bindings[binding];
-        VkWriteDescriptorSet write{};
-        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        write.descriptorType = bindingDescription.descriptorType;
-        write.dstBinding = binding;
-        write.pImageInfo = imageInfo;
-        write.descriptorCount = bindingDescription.descriptorCount;
+        VkWriteDescriptorSet write{
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .dstBinding = binding,
+            .descriptorCount = bindingDescription.descriptorCount,
+            .descriptorType = bindingDescription.descriptorType,
+            .pImageInfo = imageInfo,
+        };
         writes.push_back(write);
         return *this;
     }

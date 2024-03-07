@@ -22,16 +22,24 @@ namespace z0 {
         VkDevice device;
         VulkanDevice& vulkanDevice;
         VkPipelineLayout pipelineLayout;
+        std::vector<std::unique_ptr<VulkanBuffer>> uboBuffers{MAX_FRAMES_IN_FLIGHT};
         std::unique_ptr<VulkanDescriptorPool> globalPool {};
         std::unique_ptr<VulkanDescriptorSetLayout> globalSetLayout {};
         std::vector<VkDescriptorSet> globalDescriptorSets{MAX_FRAMES_IN_FLIGHT};
-        std::vector<std::unique_ptr<VulkanBuffer>> uboBuffers{MAX_FRAMES_IN_FLIGHT};
 
         VulkanRenderer(VulkanDevice& device, std::string shaderDirectory);
+
+        // Helpers function for children classes
+        void createUniformBuffers(VkDeviceSize size, uint32_t count);
+        void writeUniformBuffer(void *data, uint32_t index);
+        void bindDescriptorSets(VkCommandBuffer commandBuffer, uint32_t index);
         void bindShader(VkCommandBuffer commandBuffer, VulkanShader& shader);
         std::unique_ptr<VulkanShader> createShader(const std::string& filename,
                                                    VkShaderStageFlagBits stage,
                                                    VkShaderStageFlags next_stage);
+        float getAspectRatio() const {
+            return static_cast<float>(vulkanDevice.getSwapChainExtent().width) / static_cast<float>(vulkanDevice.getSwapChainExtent().height);
+        }
 
     private:
         std::string shaderDirectory;

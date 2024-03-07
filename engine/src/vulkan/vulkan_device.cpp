@@ -701,8 +701,4 @@ namespace z0 {
         );
     }
 
-    float VulkanDevice::getSwapChainAspectRatio() const {
-        return static_cast<float>(swapChainExtent.width) / static_cast<float>(swapChainExtent.height);
-    }
-
 }
