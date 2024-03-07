@@ -26,11 +26,15 @@ namespace z0 {
                 cfg.msaa != MSAA_DISABLED,
                 MSAA_VULKAN.at(cfg.msaa));
 
-        std::vector<std::shared_ptr<Image>> textures{};
-        textures.push_back(std::make_shared<Image>(*this, cfg.appDir, "models/cube_diffuse.png"));
-        textures.push_back(std::make_shared<Image>(*this, cfg.appDir, "models/sphere_diffuse.png"));
+        std::vector<std::shared_ptr<VulkanModel>> models{};
+        models.push_back(VulkanModel::createFromFile(*vulkanDevice, "../models/cube.obj"));
+        models.push_back(VulkanModel::createFromFile(*vulkanDevice, "../models/sphere.obj"));
 
-        vulkanRenderer = std::make_unique<DefaultRenderer>(*vulkanDevice, cfg.appDir + "/shaders", textures);
+        std::vector<std::shared_ptr<Texture>> textures{};
+        textures.push_back(std::make_shared<ImageTexture>(*this, cfg.appDir, "models/cube_diffuse.png"));
+        textures.push_back(std::make_shared<ImageTexture>(*this, cfg.appDir, "models/sphere_diffuse.png"));
+
+        vulkanRenderer = std::make_unique<DefaultRenderer>(*vulkanDevice, cfg.appDir + "/shaders", models, textures);
         vulkanRenderer->loadResources();
     }
 

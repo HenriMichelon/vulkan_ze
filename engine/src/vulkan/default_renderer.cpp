@@ -6,18 +6,14 @@ namespace z0 {
 
     DefaultRenderer::DefaultRenderer(VulkanDevice &dev,
                                      const std::string& sDir,
-                                     std::vector<std::shared_ptr<Image>> texts) :
+                                     std::vector<std::shared_ptr<VulkanModel>>& m,
+                                     std::vector<std::shared_ptr<Texture>>& texts) :
          VulkanRenderer{dev, sDir},
-         textures{texts}
+         models{m}, textures{texts}
      {}
 
     DefaultRenderer::~DefaultRenderer() {
         vkDeviceWaitIdle(device);
-    }
-
-    void DefaultRenderer::loadModels() {
-        model = VulkanModel::createFromFile(vulkanDevice, "../models/cube.obj");
-        model1 = VulkanModel::createFromFile(vulkanDevice, "../models/sphere.obj");
     }
 
     void DefaultRenderer::loadShaders() {
@@ -56,13 +52,10 @@ namespace z0 {
         vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
         bindShader(commandBuffer, *vertShader);
         bindShader(commandBuffer, *fragShader);
-
-        uint32_t index = 0;
-        bindDescriptorSets(commandBuffer, index);
-        model->draw(commandBuffer);
-
-        bindDescriptorSets(commandBuffer, ++index);
-        model1->draw(commandBuffer);
+        for (int index = 0; index < models.size(); index++) {
+            bindDescriptorSets(commandBuffer, index);
+            models[index]->draw(commandBuffer);
+        }
     }
 
     void DefaultRenderer::createDescriptorSetLayout() {
@@ -81,7 +74,7 @@ namespace z0 {
             auto bufferInfo = uboBuffers[i]->descriptorInfo(size);
             std::vector<VkDescriptorImageInfo> imagesInfo{};
             for(auto texture: textures) {
-                imagesInfo.push_back(texture->_getImage().imageInfo());
+                imagesInfo.push_back(texture->getImage()._getImage().imageInfo());
             }
             if (!VulkanDescriptorWriter(*globalSetLayout, *globalPool)
                     .writeBuffer(0, &bufferInfo)

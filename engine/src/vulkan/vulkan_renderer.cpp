@@ -69,7 +69,6 @@ namespace z0 {
     }
 
     void VulkanRenderer::loadResources() {
-        loadModels();
         // Create Pipeline Layout
         // https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Introduction
         {

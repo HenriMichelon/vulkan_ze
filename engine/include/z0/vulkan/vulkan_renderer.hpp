@@ -65,7 +65,6 @@ namespace z0 {
         virtual void update(float delta) = 0;
         virtual void recordCommands(VkCommandBuffer commandBuffer) = 0;
         virtual void createDescriptorSetLayout() = 0;
-        virtual void loadModels() = 0;
         virtual void loadShaders() = 0;
 
     public:

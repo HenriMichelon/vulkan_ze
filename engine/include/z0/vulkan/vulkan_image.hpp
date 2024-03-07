@@ -13,6 +13,9 @@ namespace z0 {
 
         static std::shared_ptr<VulkanImage> createFromFile(VulkanDevice &device, const std::string &filepath);
 
+        uint32_t getWidth() const { return width; }
+        uint32_t getHeight() const { return height; }
+
     private:
         uint32_t width, height;
 
