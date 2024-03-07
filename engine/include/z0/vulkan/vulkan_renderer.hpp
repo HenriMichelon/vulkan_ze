@@ -14,7 +14,6 @@ namespace z0 {
     public:
         ~VulkanRenderer();
 
-        void loadResources();
         void drawFrame();
 
     protected:
@@ -30,6 +29,7 @@ namespace z0 {
         VulkanRenderer(VulkanDevice& device, std::string shaderDirectory);
 
         // Helpers function for children classes
+        void loadResources();
         void createUniformBuffers(VkDeviceSize size, uint32_t count);
         void writeUniformBuffer(void *data, uint32_t index);
         void bindDescriptorSets(VkCommandBuffer commandBuffer, uint32_t index);

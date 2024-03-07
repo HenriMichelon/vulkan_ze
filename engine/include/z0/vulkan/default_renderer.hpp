@@ -20,7 +20,7 @@ namespace z0 {
         DefaultRenderer(VulkanDevice& device, const std::string& shaderDirectory);
         ~DefaultRenderer();
 
-        //void loadScene(const std::shared_ptr<Node>& rootNode);
+        void loadScene(const std::shared_ptr<Node>& rootNode);
 
     private:
         std::unique_ptr<VulkanShader> vertShader;

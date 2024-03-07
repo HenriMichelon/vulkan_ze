@@ -27,22 +27,7 @@ namespace z0 {
                 window,
                 cfg.msaa != MSAA_DISABLED,
                 MSAA_VULKAN.at(cfg.msaa));
-
-        std::shared_ptr<Mesh> mesh1 = std::make_shared<Mesh>(*this, cfg.appDir,  "models/cube.obj",
-                                    std::make_shared<ImageTexture>(*this, cfg.appDir, "models/cube_diffuse.png"));
-        std::shared_ptr<Mesh> mesh2 = std::make_shared<Mesh>(*this, cfg.appDir, "models/sphere.obj",
-                                    std::make_shared<ImageTexture>(*this, cfg.appDir, "models/sphere_diffuse.png"));
-        std::shared_ptr<Node> rootNode = std::make_shared<Node>();
-        auto node1 = std::make_shared<MeshInstance>(mesh1);
-        node1->transform.position = { -1.5f, 0.0f, 0.0f };
-        rootNode->addChild(node1);
-
-        auto node2 = std::make_shared<MeshInstance>(mesh2);
-        node2->transform.position = { 1.5f, 0.0f, 0.0f };
-        rootNode->addChild(node2);
-
         vulkanRenderer = std::make_unique<DefaultRenderer>(*vulkanDevice, cfg.appDir + "/shaders");
-        vulkanRenderer->loadResources();
     }
 
     Viewport::~Viewport() {
@@ -59,5 +44,10 @@ namespace z0 {
 
     void Viewport::setMSAA(z0::MSAA samples) {
         die("not implemented");
+    }
+
+    void Viewport::loadScene(const std::shared_ptr<Node>& rootNode) {
+        vulkanRenderer->loadScene(rootNode);
+
     }
 }

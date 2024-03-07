@@ -4,6 +4,7 @@
 #include "z0/object.hpp"
 #include "z0/vulkan/window_helper.hpp"
 #include "z0/vulkan/vulkan_device.hpp"
+#include "z0/nodes/node.hpp"
 
 namespace z0 {
 
@@ -19,6 +20,8 @@ namespace z0 {
 
         void process();
         bool shouldClose() { return window.shouldClose(); }
+
+        void loadScene(const std::shared_ptr<Node>& rootNode);
 
     private:
         WindowHelper window;

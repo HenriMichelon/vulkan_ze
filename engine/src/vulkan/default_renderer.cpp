@@ -8,11 +8,16 @@ namespace z0 {
                                      const std::string& sDir) :
          VulkanRenderer{dev, sDir}
      {
-         //createMeshIndices(rootNode);
      }
 
     DefaultRenderer::~DefaultRenderer() {
         vkDeviceWaitIdle(device);
+    }
+
+    void DefaultRenderer::loadScene(const std::shared_ptr<Node>& root) {
+        rootNode = root;
+        createMeshIndices(rootNode);
+        loadResources();
     }
 
     void DefaultRenderer::createMeshIndices(const std::shared_ptr<Node>& parent) {
@@ -27,7 +32,6 @@ namespace z0 {
             meshInstances.push_back(meshInstance);
             auto it = meshes.insert(meshInstance->getMesh());
             meshesIndices[meshInstance] = std::distance(std::begin(meshes), it.first);
-            //std::cout << meshes.size() << " " << meshesIndices[meshInstance] << std::endl;
         }
     }
 
@@ -47,7 +51,6 @@ namespace z0 {
             .view = camera.getView(),
             .inverseView = camera.getInverseView(),
         };
-        //glm::mat4 rot = glm::rotate(glm::mat4(1.0f), delta * glm::radians(90.0f) / 2, glm::vec3(1.0f, 0.0f, 1.0f));
 
         for (int index = 0; index < meshInstances.size(); index++) {
             auto meshInstance = meshInstances[index];
