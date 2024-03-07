@@ -1,7 +1,7 @@
 #include "z0/vulkan/default_renderer.hpp"
 #include "z0/log.hpp"
-#include "z0/node.hpp"
-#include "z0/camera.hpp"
+#include "z0/nodes/node.hpp"
+#include "z0/nodes/camera.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -30,11 +30,10 @@ namespace z0 {
 
     void DefaultRenderer::update(float delta) {
         Camera camera{};
-        auto cameraNode = Node::create();
-        cameraNode.transform.translation.z = -5.0f;
-        cameraNode.transform.translation.y = 0.0f;
-        cameraNode.transform.rotation.x = 0.0f;
-        camera.setViewYXZ(cameraNode.transform.translation, cameraNode.transform.rotation);
+        camera.transform.position.z = -5.0f;
+        camera.transform.position.y = 0.0f;
+        camera.transform.rotation.x = 0.0f;
+        camera.setViewYXZ();
         float aspect = vulkanDevice.getSwapChainAspectRatio();
         camera.setPerspectiveProjection(glm::radians(50.0f), aspect, 0.1f, 100.0f);
 

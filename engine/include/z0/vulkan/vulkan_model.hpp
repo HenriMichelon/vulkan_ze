@@ -16,7 +16,6 @@ namespace z0 {
         glm::vec3 color{};
         glm::vec3 normal{};
         glm::vec2 uv{};
-
         bool operator==(const Vertex&other) const {
             return position == other.position && color == other.color && normal == other.normal && uv == other.uv;
         }
