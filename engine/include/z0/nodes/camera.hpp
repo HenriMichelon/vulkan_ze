@@ -1,6 +1,6 @@
 #pragma once
 
-#include "node.hpp"
+#include "z0/nodes/node.hpp"
 
 namespace z0 {
     class Camera: public Node {

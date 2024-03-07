@@ -33,9 +33,9 @@ namespace z0 {
     Viewport::~Viewport() {
     }
 
-    void Viewport::process() {
+    void Viewport::process(float delta) {
         window.process();
-        vulkanRenderer->drawFrame();
+        vulkanRenderer->drawFrame(delta);
     }
 
     MSAA Viewport::getMSAA() const {
@@ -48,6 +48,5 @@ namespace z0 {
 
     void Viewport::loadScene(const std::shared_ptr<Node>& rootNode) {
         vulkanRenderer->loadScene(rootNode);
-
     }
 }

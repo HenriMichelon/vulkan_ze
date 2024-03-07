@@ -8,7 +8,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <fstream>
-#include <utility>
+
 #include <filesystem>
 
 namespace z0 {
@@ -86,13 +86,6 @@ namespace z0 {
         loadShaders();
     }
 
-    void VulkanRenderer::updateFrame() {
-        static auto startTime = std::chrono::high_resolution_clock::now();
-        auto currentTime = std::chrono::high_resolution_clock::now();
-        float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-        update(deltaTime);
-    }
-
     void VulkanRenderer::writeUniformBuffer(void *data, uint32_t index) {
         uint32_t size = uboBuffers[currentFrame]->getAlignmentSize();
         uboBuffers[currentFrame]->writeToBuffer(data, size, size * index);
@@ -124,7 +117,7 @@ namespace z0 {
     }
 
     // https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Rendering_and_presentation
-    void VulkanRenderer::drawFrame() {
+    void VulkanRenderer::drawFrame(float delta) {
         vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
         uint32_t imageIndex;
         VkResult result = vkAcquireNextImageKHR(device,
@@ -165,7 +158,7 @@ namespace z0 {
         {
             const VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
             const VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-            updateFrame();
+            update(delta);
             const VkSubmitInfo submitInfo{
                     .sType                  = VK_STRUCTURE_TYPE_SUBMIT_INFO,
                     .waitSemaphoreCount     = 1,

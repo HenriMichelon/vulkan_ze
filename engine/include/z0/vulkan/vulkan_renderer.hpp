@@ -14,7 +14,7 @@ namespace z0 {
     public:
         ~VulkanRenderer();
 
-        void drawFrame();
+        void drawFrame(float delta);
 
     protected:
         uint32_t currentFrame = 0;
@@ -58,7 +58,6 @@ namespace z0 {
         void setInitialState(VkCommandBuffer commandBuffer);
         void beginRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex);
         void endRendering(VkCommandBuffer commandBuffer,uint32_t imageIndex);
-        void updateFrame();
         void buildShader(VulkanShader& shader);
         std::vector<char> readFile(const std::string& fileName);
 

@@ -76,7 +76,7 @@ namespace z0 {
     private:
         VulkanInstance& vulkanInstance;
 
-        // Physical & logical device management (single atm.)
+        // Physical & logical device management
         WindowHelper &window;
         VkDevice device;
         VkPhysicalDevice physicalDevice;
