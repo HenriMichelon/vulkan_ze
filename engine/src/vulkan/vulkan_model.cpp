@@ -47,10 +47,10 @@ namespace  z0 {
     VulkanModel::~VulkanModel() {
     }
 
-    std::unique_ptr<VulkanModel> VulkanModel::createModelFromFile(VulkanDevice &device, const std::string &filepath) {
+    std::shared_ptr<VulkanModel> VulkanModel::createFromFile(VulkanDevice &device, const std::string &filename) {
         Builder builder{};
-        builder.loadModel(filepath);
-        return std::make_unique<VulkanModel>(device, builder);
+        builder.loadModel(filename);
+        return std::make_shared<VulkanModel>(device, builder);
     }
 
     void VulkanModel::createVertexBuffers(const std::vector<Vertex> &vertices) {

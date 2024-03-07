@@ -1,12 +1,14 @@
 #pragma once
 
-#include "z0/vulkan/default_renderer.hpp"
 #include "z0/application_config.hpp"
 #include "z0/object.hpp"
+#include "z0/vulkan/window_helper.hpp"
+#include "z0/vulkan/vulkan_device.hpp"
 
 namespace z0 {
 
     class Application;
+    class DefaultRenderer;
 
     class Viewport: public Object {
     public:

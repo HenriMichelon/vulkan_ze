@@ -1,6 +1,7 @@
 #pragma once
 
 #include "z0/vulkan/vulkan_renderer.hpp"
+#include "z0/image.hpp"
 
 namespace z0 {
 
@@ -14,16 +15,16 @@ namespace z0 {
             uint32_t textureBinding;
         };
 
-        DefaultRenderer(VulkanDevice& device, const std::string& shaderDirectory);
+        DefaultRenderer(VulkanDevice& device, const std::string& shaderDirectory,
+                        std::vector<std::shared_ptr<Image>> textures);
         ~DefaultRenderer();
 
     private:
         std::unique_ptr<VulkanShader> vertShader;
         std::unique_ptr<VulkanShader> fragShader;
-        std::unique_ptr<VulkanModel> model;
-        std::unique_ptr<VulkanTexture> texture;
-        std::unique_ptr<VulkanModel> model1;
-        std::unique_ptr<VulkanTexture> texture1;
+        std::shared_ptr<VulkanModel> model;
+        std::shared_ptr<VulkanModel> model1;
+        std::vector<std::shared_ptr<Image>> textures;
 
         void update(float delta) override;
         void recordCommands(VkCommandBuffer commandBuffer) override;

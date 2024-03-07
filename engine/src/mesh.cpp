@@ -3,10 +3,10 @@
 
 namespace z0 {
 
-    Mesh::Mesh(z0::Viewport &_viewport, const std::string& filename): viewport(_viewport) {
-        vulkanModel = VulkanModel::createModelFromFile(
-            viewport._getDevice(),
-            Application::getApp().getApplicationDirectory() + filename
+    Mesh::Mesh(Viewport &_viewport, const std::string& filename): viewport(_viewport) {
+        vulkanModel = VulkanModel::createFromFile(
+                viewport._getDevice(),
+                Application::getApp().getApplicationDirectory() + filename
         );
     }
 

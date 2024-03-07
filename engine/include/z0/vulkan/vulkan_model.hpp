@@ -23,7 +23,6 @@ namespace z0 {
 
     class VulkanModel {
     public:
-
         struct Builder {
             std::vector<Vertex> vertices{};
             std::vector<uint32_t> indices{};
@@ -33,7 +32,7 @@ namespace z0 {
         VulkanModel(VulkanDevice &device, const VulkanModel::Builder &builder);
         ~VulkanModel();
 
-        static std::unique_ptr<VulkanModel> createModelFromFile(VulkanDevice &device, const std::string &filename);
+        static std::shared_ptr<VulkanModel> createFromFile(VulkanDevice &device, const std::string &filename);
         static std::vector<VkVertexInputBindingDescription2EXT> getBindingDescription();
         static std::vector<VkVertexInputAttributeDescription2EXT> getAttributeDescription();
 
@@ -46,6 +45,7 @@ namespace z0 {
         VulkanDevice& device;
         std::unique_ptr<VulkanBuffer> vertexBuffer;
         std::unique_ptr<VulkanBuffer> indexBuffer;
+
 
         void bind(VkCommandBuffer commandBuffer);
         void createVertexBuffers(const std::vector<Vertex> &vertices);

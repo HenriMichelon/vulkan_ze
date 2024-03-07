@@ -1,7 +1,9 @@
 #pragma once
 
 #include "z0/window.hpp"
-#include "z0/viewport.hpp"
+
+#include <string>
+#include <cstdint>
 
 namespace z0 {
     enum MSAA {

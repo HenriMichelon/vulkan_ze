@@ -1,7 +1,8 @@
 #pragma once
 
-#include "object.hpp"
-#include "viewport.hpp"
+#include "z0/viewport.hpp"
+
+#include "z0/vulkan/vulkan_model.hpp"
 
 namespace z0 {
 
@@ -11,7 +12,10 @@ namespace z0 {
 
     private:
         Viewport &viewport;
-        std::unique_ptr<VulkanModel> vulkanModel;
+        std::shared_ptr<VulkanModel> vulkanModel;
+
+    public:
+        VulkanModel& _getModel() { return *vulkanModel; }
     };
 
 }

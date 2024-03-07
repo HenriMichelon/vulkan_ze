@@ -1,26 +1,23 @@
 #include "z0/vulkan/default_renderer.hpp"
 #include "z0/log.hpp"
-#include "z0/nodes/node.hpp"
 #include "z0/nodes/camera.hpp"
-
-#include <glm/gtc/matrix_transform.hpp>
-
-#include <filesystem>
-#include <array>
 
 namespace z0 {
 
-    DefaultRenderer::DefaultRenderer(VulkanDevice &dev, const std::string& sDir) : VulkanRenderer{dev, sDir} {}
+    DefaultRenderer::DefaultRenderer(VulkanDevice &dev,
+                                     const std::string& sDir,
+                                     std::vector<std::shared_ptr<Image>> texts) :
+         VulkanRenderer{dev, sDir},
+         textures{texts}
+     {}
 
     DefaultRenderer::~DefaultRenderer() {
         vkDeviceWaitIdle(device);
     }
 
     void DefaultRenderer::loadModels() {
-        texture = std::make_unique<VulkanTexture>(vulkanDevice, "../models/cube_diffuse.png");
-        model = VulkanModel::createModelFromFile(vulkanDevice, "../models/cube.obj");
-        texture1 = std::make_unique<VulkanTexture>(vulkanDevice, "../models/sphere_diffuse.png");
-        model1 = VulkanModel::createModelFromFile(vulkanDevice, "../models/sphere.obj");
+        model = VulkanModel::createFromFile(vulkanDevice, "../models/cube.obj");
+        model1 = VulkanModel::createFromFile(vulkanDevice, "../models/sphere.obj");
     }
 
     void DefaultRenderer::loadShaders() {
@@ -82,7 +79,10 @@ namespace z0 {
                 .build();
         for (int i = 0; i < globalDescriptorSets.size(); i++) {
             auto bufferInfo = uboBuffers[i]->descriptorInfo(size);
-            std::array imagesInfo{ texture->imageInfo(), texture1->imageInfo()};
+            std::vector<VkDescriptorImageInfo> imagesInfo{};
+            for(auto texture: textures) {
+                imagesInfo.push_back(texture->_getImage().imageInfo());
+            }
             if (!VulkanDescriptorWriter(*globalSetLayout, *globalPool)
                     .writeBuffer(0, &bufferInfo)
                     .writeImage(1, imagesInfo.data())

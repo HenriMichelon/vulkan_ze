@@ -1,4 +1,3 @@
-#include <iostream>
 #include "z0/application.hpp"
 
 class ExampleApp : z0::Application {

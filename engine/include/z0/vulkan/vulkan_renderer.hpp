@@ -4,7 +4,7 @@
 #include "z0/vulkan/vulkan_shader.hpp"
 #include "z0/vulkan/vulkan_model.hpp"
 #include "z0/vulkan/vulkan_descriptors.hpp"
-#include "z0/vulkan/vulkan_texture.hpp"
+#include "z0/vulkan/vulkan_image.hpp"
 
 namespace z0 {
 

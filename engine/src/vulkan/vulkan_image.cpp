@@ -2,7 +2,7 @@
  * Derived from
  * https://vulkan-tutorial.com/Texture_mapping/Images
  */
-#include "z0/vulkan/vulkan_texture.hpp"
+#include "z0/vulkan/vulkan_image.hpp"
 #include "z0/vulkan/vulkan_buffer.hpp"
 #include "z0/log.hpp"
 
@@ -11,17 +11,10 @@
 
 namespace z0 {
 
-    VulkanTexture::VulkanTexture(VulkanDevice& device, std::string filepath): vulkanDevice{device} {
-        // Create texture image
-        // https://vulkan-tutorial.com/Texture_mapping/Images#page_Loading-an-image
-        int texWidth, texHeight, texChannels;
-        stbi_uc *pixels = stbi_load(filepath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-        VkDeviceSize imageSize = texWidth * texHeight * 4;
-        if (!pixels) {
-            die("failed to load texture image!");
-        }
-        mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
-
+    VulkanImage::VulkanImage(VulkanDevice& device, uint32_t w, uint32_t h, VkDeviceSize imageSize, void* data):
+        vulkanDevice{device}, width{w}, height{h}
+    {
+        mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
         VulkanBuffer textureStagingBuffer{
                 vulkanDevice,
                 imageSize,
@@ -30,13 +23,13 @@ namespace z0 {
                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
         };
         textureStagingBuffer.map();
-        textureStagingBuffer.writeToBuffer(pixels);
-        stbi_image_free(pixels);
+        textureStagingBuffer.writeToBuffer(data);
+        stbi_image_free(data);
 
         //const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
         const VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
 
-        vulkanDevice.createImage(texWidth, texHeight, mipLevels, VK_SAMPLE_COUNT_1_BIT, format,
+        vulkanDevice.createImage(width, height, mipLevels, VK_SAMPLE_COUNT_1_BIT, format,
                                  VK_IMAGE_TILING_OPTIMAL,
                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
@@ -46,17 +39,27 @@ namespace z0 {
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 mipLevels);
         copyBufferToImage(textureStagingBuffer.getBuffer(),
-                          textureImage,
-                          static_cast<uint32_t>(texWidth),
-                          static_cast<uint32_t>(texHeight));
+                          textureImage);
 
         //transitioned to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL while generating mipmaps
-        generateMipmaps(textureImage, format, texWidth, texHeight, mipLevels);
+        generateMipmaps(format);
         textureImageView = vulkanDevice.createImageView(textureImage, format, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
         createTextureSampler();
     }
 
-    VulkanTexture::~VulkanTexture() {
+    std::shared_ptr<VulkanImage> VulkanImage::createFromFile(VulkanDevice &device, const std::string &filepath) {
+        // Create texture image
+        // https://vulkan-tutorial.com/Texture_mapping/Images#page_Loading-an-image
+        int texWidth, texHeight, texChannels;
+        stbi_uc *pixels = stbi_load(filepath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+        VkDeviceSize imageSize = texWidth * texHeight * 4;
+        if (!pixels) {
+            die("failed to load texture image!");
+        }
+        return std::make_shared<VulkanImage>(device, texWidth, texHeight, imageSize, pixels);
+    }
+
+    VulkanImage::~VulkanImage() {
         vkDestroySampler(vulkanDevice.getDevice(), textureSampler, nullptr);
         vkDestroyImageView(vulkanDevice.getDevice(), textureImageView, nullptr);
         vkDestroyImage(vulkanDevice.getDevice(), textureImage, nullptr);
@@ -64,7 +67,7 @@ namespace z0 {
     }
 
     // https://vulkan-tutorial.com/Texture_mapping/Images#page_Copying-buffer-to-image
-    void VulkanTexture::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
+    void VulkanImage::copyBufferToImage(VkBuffer buffer, VkImage image) {
         VkCommandBuffer commandBuffer = vulkanDevice.beginSingleTimeCommands();
 
         VkBufferImageCopy region{};
@@ -94,7 +97,7 @@ namespace z0 {
     }
 
     // https://vulkan-tutorial.com/Texture_mapping/Combined_image_sampler#page_Updating-the-descriptors
-    VkDescriptorImageInfo VulkanTexture::imageInfo() {
+    VkDescriptorImageInfo VulkanImage::imageInfo() {
         return VkDescriptorImageInfo {
             .sampler = textureSampler,
             .imageView = textureImageView,
@@ -103,7 +106,7 @@ namespace z0 {
     }
 
     // https://vulkan-tutorial.com/en/Generating_Mipmaps
-    void VulkanTexture::generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels) {
+    void VulkanImage::generateMipmaps(VkFormat imageFormat) {
         // Check if image format supports linear blitting
         VkFormatProperties formatProperties;
         vkGetPhysicalDeviceFormatProperties(vulkanDevice.getPhysicalDevice(), imageFormat, &formatProperties);
@@ -115,7 +118,7 @@ namespace z0 {
 
         VkImageMemoryBarrier barrier{};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        barrier.image = image;
+        barrier.image = textureImage;
         barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -123,8 +126,8 @@ namespace z0 {
         barrier.subresourceRange.layerCount = 1;
         barrier.subresourceRange.levelCount = 1;
 
-        int32_t mipWidth = texWidth;
-        int32_t mipHeight = texHeight;
+        int32_t mipWidth = width;
+        int32_t mipHeight = height;
         for (uint32_t i = 1; i < mipLevels; i++) {
             barrier.subresourceRange.baseMipLevel = i - 1;
             barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
@@ -151,8 +154,8 @@ namespace z0 {
             blit.dstSubresource.baseArrayLayer = 0;
             blit.dstSubresource.layerCount = 1;
             vkCmdBlitImage(commandBuffer,
-                           image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                           image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                           textureImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                           textureImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                            1, &blit,
                            VK_FILTER_LINEAR);
 
@@ -185,7 +188,7 @@ namespace z0 {
     }
 
     // https://vulkan-tutorial.com/Texture_mapping/Image_view_and_sampler#page_Samplers
-    void VulkanTexture::createTextureSampler() {
+    void VulkanImage::createTextureSampler() {
         VkPhysicalDeviceProperties properties{};
         vkGetPhysicalDeviceProperties(vulkanDevice.getPhysicalDevice(), &properties);
         VkSamplerCreateInfo samplerInfo{};

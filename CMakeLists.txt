@@ -18,9 +18,9 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_renderer.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_shader.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_descriptors.hpp
-        ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_texture.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_instance.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/default_renderer.hpp
+        ${Z0_ENGINE_DIR}/src/vulkan/vulkan_image.cpp
         ${Z0_ENGINE_DIR}/include/z0/nodes/node.hpp
         ${Z0_ENGINE_DIR}/include/z0/nodes/camera.hpp
         ${Z0_ENGINE_DIR}/include/z0/application_config.hpp
@@ -38,8 +38,8 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_renderer.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_shader.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_descriptors.cpp
-        ${Z0_ENGINE_DIR}/src/vulkan/vulkan_texture.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_instance.cpp
+        ${Z0_ENGINE_DIR}/src/vulkan/vulkan_image.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/default_renderer.cpp
         ${Z0_ENGINE_DIR}/src/nodes/node.cpp
         ${Z0_ENGINE_DIR}/src/nodes/camera.cpp
@@ -48,6 +48,10 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/viewport.cpp
         ${Z0_ENGINE_DIR}/src/mesh.cpp
         ${Z0_ENGINE_DIR}/src/transform.cpp
+        engine/include/z0/material.hpp
+        engine/include/z0/texture.hpp
+        engine/include/z0/image.hpp
+        engine/src/image.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC ${Z0_ENGINE_DIR}/include)
 
