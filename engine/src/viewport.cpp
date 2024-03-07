@@ -1,5 +1,6 @@
 #include "z0/vulkan/default_renderer.hpp"
 #include "z0/application.hpp"
+#include "z0/mesh.hpp"
 
 namespace z0 {
 
@@ -26,15 +27,13 @@ namespace z0 {
                 cfg.msaa != MSAA_DISABLED,
                 MSAA_VULKAN.at(cfg.msaa));
 
-        std::vector<std::shared_ptr<VulkanModel>> models{};
-        models.push_back(VulkanModel::createFromFile(*vulkanDevice, "../models/cube.obj"));
-        models.push_back(VulkanModel::createFromFile(*vulkanDevice, "../models/sphere.obj"));
+        std::vector<std::shared_ptr<Mesh>> models{};
+        models.push_back(std::make_shared<Mesh>(*this, cfg.appDir,  "models/cube.obj",
+                                                std::make_shared<ImageTexture>(*this, cfg.appDir, "models/cube_diffuse.png")));
+        models.push_back(std::make_shared<Mesh>(*this, cfg.appDir, "models/sphere.obj",
+                                                std::make_shared<ImageTexture>(*this, cfg.appDir, "models/sphere_diffuse.png")));
 
-        std::vector<std::shared_ptr<Texture>> textures{};
-        textures.push_back(std::make_shared<ImageTexture>(*this, cfg.appDir, "models/cube_diffuse.png"));
-        textures.push_back(std::make_shared<ImageTexture>(*this, cfg.appDir, "models/sphere_diffuse.png"));
-
-        vulkanRenderer = std::make_unique<DefaultRenderer>(*vulkanDevice, cfg.appDir + "/shaders", models, textures);
+        vulkanRenderer = std::make_unique<DefaultRenderer>(*vulkanDevice, cfg.appDir + "/shaders", models);
         vulkanRenderer->loadResources();
     }
 

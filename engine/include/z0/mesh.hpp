@@ -3,15 +3,19 @@
 #include "z0/viewport.hpp"
 
 #include "z0/vulkan/vulkan_model.hpp"
+#include "texture.hpp"
 
 namespace z0 {
 
     class Mesh: public Object {
     public:
-        Mesh(Viewport &viewport, const std::string& filename);
+        Mesh(Viewport &viewport, const std::string& appdir, const std::string& filename, std::shared_ptr<Texture> texture);
+
+        Texture& getTexture() { return *texture; }
 
     private:
-        Viewport &viewport;
+        Viewport& viewport;
+        std::shared_ptr<Texture> texture;
         std::shared_ptr<VulkanModel> vulkanModel;
 
     public:

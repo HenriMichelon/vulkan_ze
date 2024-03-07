@@ -6,10 +6,9 @@ namespace z0 {
 
     DefaultRenderer::DefaultRenderer(VulkanDevice &dev,
                                      const std::string& sDir,
-                                     std::vector<std::shared_ptr<VulkanModel>>& m,
-                                     std::vector<std::shared_ptr<Texture>>& texts) :
+                                     std::vector<std::shared_ptr<Mesh>>& m) :
          VulkanRenderer{dev, sDir},
-         models{m}, textures{texts}
+         models{m}
      {}
 
     DefaultRenderer::~DefaultRenderer() {
@@ -54,7 +53,7 @@ namespace z0 {
         bindShader(commandBuffer, *fragShader);
         for (int index = 0; index < models.size(); index++) {
             bindDescriptorSets(commandBuffer, index);
-            models[index]->draw(commandBuffer);
+            models[index]->_getModel().draw(commandBuffer);
         }
     }
 
@@ -73,8 +72,8 @@ namespace z0 {
         for (int i = 0; i < globalDescriptorSets.size(); i++) {
             auto bufferInfo = uboBuffers[i]->descriptorInfo(size);
             std::vector<VkDescriptorImageInfo> imagesInfo{};
-            for(auto texture: textures) {
-                imagesInfo.push_back(texture->getImage()._getImage().imageInfo());
+            for(auto model: models) {
+                imagesInfo.push_back(model->getTexture().getImage()._getImage().imageInfo());
             }
             if (!VulkanDescriptorWriter(*globalSetLayout, *globalPool)
                     .writeBuffer(0, &bufferInfo)
