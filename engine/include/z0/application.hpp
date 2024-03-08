@@ -16,7 +16,7 @@ namespace z0 {
         void start(const std::shared_ptr<Node>& rootNode);
 
         static Viewport& getViewport() { return *getApp().viewport; }
-        static const std::string& getDirectory() { return getApp().applicationConfig.appDir; }
+        static const std::filesystem::path getDirectory() { return getApp().applicationConfig.appDir; }
         static Application& getApp();
 
     private:

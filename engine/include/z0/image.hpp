@@ -8,7 +8,7 @@ namespace z0 {
 
     class Image: public Resource {
     public:
-        Image(const std::string& filename);
+        Image(const std::filesystem::path& filename);
 
         uint32_t getWidth() const { return vulkanImage->getWidth(); };
         uint32_t getHeight() const { return vulkanImage->getHeight(); };

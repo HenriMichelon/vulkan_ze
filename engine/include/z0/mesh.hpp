@@ -9,7 +9,7 @@ namespace z0 {
 
     class Mesh: public Resource {
     public:
-        Mesh(const std::string& filename, std::shared_ptr<Texture> texture);
+        Mesh(const std::filesystem::path& filename, std::shared_ptr<Texture> texture);
 
         Texture& getTexture() { return *texture; }
 

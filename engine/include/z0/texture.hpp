@@ -17,7 +17,7 @@ namespace z0 {
 
     class ImageTexture: public Texture {
     public:
-        ImageTexture(const std::string& filename);
+        ImageTexture(const std::filesystem::path& filename);
     };
 
 

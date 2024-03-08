@@ -13,6 +13,7 @@
 #include <list>
 #include <map>
 #include <unordered_map>
+#include <filesystem>
 
 namespace z0 {
 

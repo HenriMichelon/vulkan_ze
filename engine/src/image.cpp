@@ -3,10 +3,10 @@
 
 namespace z0 {
 
-    Image::Image(const std::string& filename) {
+    Image::Image(const std::filesystem::path& filename) {
         vulkanImage = VulkanImage::createFromFile(
             Application::getViewport()._getDevice(),
-            Application::getDirectory() + "/" + filename
+            (Application::getDirectory() / filename).string()
         );
     }
 

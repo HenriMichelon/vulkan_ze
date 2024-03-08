@@ -36,11 +36,3 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(fetch_fastgltf)
 target_link_libraries(${PROJECT_NAME} fastgltf)
-
-FetchContent_Declare(
-        fetch_tinyobjloader
-        GIT_REPOSITORY https://github.com/tinyobjloader/tinyobjloader
-        GIT_TAG        v2.0.0rc13
-)
-FetchContent_MakeAvailable(fetch_tinyobjloader)
-target_link_libraries(${PROJECT_NAME} tinyobjloader)

@@ -3,7 +3,7 @@
 
 namespace z0 {
 
-    ImageTexture::ImageTexture(const std::string& filename) {
+    ImageTexture::ImageTexture(const std::filesystem::path& filename) {
         image = std::make_shared<Image>(filename);
     }
 

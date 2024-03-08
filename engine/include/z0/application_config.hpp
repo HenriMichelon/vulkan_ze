@@ -4,6 +4,7 @@
 
 #include <string>
 #include <cstdint>
+#include <filesystem>
 
 namespace z0 {
     enum MSAA {
@@ -15,11 +16,11 @@ namespace z0 {
     };
 
     struct ApplicationConfig {
-        std::string appName     = "MyApp";
-        std::string appDir      = ".";
-        WindowMode windowMode   = WINDOW_MODE_WINDOWED;
-        uint32_t windowWidth    = 800;
-        uint32_t windowHeight   = 600;
-        MSAA msaa               = MSAA_DISABLED;
+        std::string appName             = "MyApp";
+        std::filesystem::path appDir    = ".";
+        WindowMode windowMode           = WINDOW_MODE_WINDOWED;
+        uint32_t windowWidth            = 800;
+        uint32_t windowHeight           = 600;
+        MSAA msaa                       = MSAA_DISABLED;
     };
 }

@@ -27,7 +27,7 @@ namespace z0 {
                 window,
                 cfg.msaa != MSAA_DISABLED,
                 MSAA_VULKAN.at(cfg.msaa));
-        vulkanRenderer = std::make_unique<DefaultRenderer>(*vulkanDevice, cfg.appDir + "/shaders");
+        vulkanRenderer = std::make_unique<DefaultRenderer>(*vulkanDevice, (cfg.appDir / "shaders").string());
     }
 
     Viewport::~Viewport() {
