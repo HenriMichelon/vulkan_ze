@@ -20,18 +20,23 @@ namespace z0 {
         loadResources();
     }
 
-    void DefaultRenderer::createMeshIndices(const std::shared_ptr<Node>& parent) {
+    void DefaultRenderer::createMeshIndices(std::shared_ptr<Node>& parent) {
         createMeshIndex(parent);
-        for(const auto& node: parent->getChildren()) {
+        for(auto& node: parent->getChildren()) {
             createMeshIndices(node);
         }
     }
 
-    void DefaultRenderer::createMeshIndex(const std::shared_ptr<Node>& node) {
+    void DefaultRenderer::createMeshIndex(std::shared_ptr<Node>& node) {
         if (auto meshInstance = dynamic_cast<MeshInstance*>(node.get())) {
-            meshInstances.push_back(meshInstance);
-            auto it = meshes.insert(meshInstance->getMesh());
-            meshesIndices[meshInstance] = std::distance(std::begin(meshes), it.first);
+            meshes.push_back(meshInstance);
+            for(const auto& material : meshInstance->getMesh()->getMaterials()) {
+                if (material->albedo_texture != nullptr) {
+                    auto it = textures.insert(material->albedo_texture);
+                    auto index = std::distance(std::begin(textures), it.first);
+                    texturesIndices[material->albedo_texture] = index;
+                }
+            }
         }
     }
 
@@ -52,32 +57,48 @@ namespace z0 {
             .inverseView = camera.getInverseView(),
         };
 
-        for (int index = 0; index < meshInstances.size(); index++) {
-            auto meshInstance = meshInstances[index];
+        uint32_t surfaceIndex = 0;
+        for (const auto&meshInstance: meshes) {
             ubo.model = meshInstance->transform.mat4();
-            ubo.textureIndex = meshesIndices[meshInstance];
-            writeUniformBuffer(&ubo, index);
+            for (const auto& surface: meshInstance->getMesh()->getSurfaces()) {
+                auto material = meshInstance->getMesh()->getMaterials()[surface->materialIndex];
+                if (material->albedo_texture == nullptr) {
+                    ubo.textureIndex = -1;
+                } else {
+                    ubo.textureIndex = texturesIndices[material->albedo_texture];
+                }
+                writeUniformBuffer(&ubo, surfaceIndex);
+            }
+            surfaceIndex += 1;
         }
     }
 
     void DefaultRenderer::recordCommands(VkCommandBuffer commandBuffer) {
-        if (meshInstances.empty()) return;
+        if (meshes.empty()) return;
         vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_NONE);
         vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
         bindShader(commandBuffer, *vertShader);
         bindShader(commandBuffer, *fragShader);
-        for (int index = 0; index < meshInstances.size(); index++) {
-            if (meshInstances[index]->getMesh()->isValid()) {
-                bindDescriptorSets(commandBuffer, index);
-                meshInstances[index]->getMesh()->_getModel().draw(commandBuffer);
+        uint32_t surfaceIndex = 0;
+        for (const auto&meshInstance: meshes) {
+            if (meshInstance->getMesh()->isValid()) {
+                for (const auto& surface: meshInstance->getMesh()->getSurfaces()) {
+                    bindDescriptorSets(commandBuffer, surfaceIndex);
+                    surface->_model->draw(commandBuffer);
+                }
             }
+            surfaceIndex += 1;
         }
     }
 
     void DefaultRenderer::createDescriptorSetLayout() {
-        if (meshInstances.empty()) return;
+        if (meshes.empty()) return;
         VkDeviceSize size = sizeof(UniformBufferObject);
-        createUniformBuffers(size, meshInstances.size());
+        uint32_t surfaceCount = 0;
+        for (const auto& meshInstance: meshes) {
+            surfaceCount += meshInstance->getMesh()->getSurfaces().size();
+        }
+        createUniformBuffers(size, surfaceCount);
         globalSetLayout = VulkanDescriptorSetLayout::Builder(vulkanDevice)
                 .addBinding(0,
                             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
@@ -85,13 +106,13 @@ namespace z0 {
                 .addBinding(1,
                             VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                             VK_SHADER_STAGE_ALL_GRAPHICS,
-                            meshes.size())
+                            textures.size())
                 .build();
         for (int i = 0; i < globalDescriptorSets.size(); i++) {
             auto bufferInfo = uboBuffers[i]->descriptorInfo(size);
             std::vector<VkDescriptorImageInfo> imagesInfo{};
-            for(const auto& mesh: meshes) {
-                imagesInfo.push_back(mesh->getSurfaceMaterial(0)->albedo_texture->getImage()._getImage().imageInfo());
+            for(const auto& texture : textures) {
+                imagesInfo.push_back(texture->getImage()._getImage().imageInfo());
             }
             if (!VulkanDescriptorWriter(*globalSetLayout, *globalPool)
                     .writeBuffer(0, &bufferInfo)

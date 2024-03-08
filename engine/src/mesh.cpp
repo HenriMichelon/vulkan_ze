@@ -8,13 +8,24 @@
 
 namespace z0 {
 
-    Mesh::Mesh(std::filesystem::path filename) {
+    Mesh::Mesh(const std::filesystem::path& filename) {
         loadFromFile(filename);
+    }
+
+    std::shared_ptr<StandardMaterial>& Mesh::getSurfaceMaterial(uint32_t surfaceIndex) {
+        return materials[surfaces[surfaceIndex]->materialIndex];
+    }
+
+    void Mesh::setSurfaceMaterial(uint32_t surfaceIndex, std::shared_ptr<StandardMaterial>& material) {
+        // TODO : clean unused/duplicates materials, reindex
+        uint32_t index = materials.size();
+        materials.push_back(material);
+        surfaces[surfaceIndex]->materialIndex = index;
     }
 
     // https://fastgltf.readthedocs.io/v0.7.x/overview.html
     // https://github.com/vblanco20-1/vulkan-guide/blob/all-chapters-1.3-wip/chapter-5/vk_loader.cpp
-    void Mesh::loadFromFile(std::filesystem::path filename) {
+    void Mesh::loadFromFile(const std::filesystem::path& filename) {
         std::filesystem::path filepath = Application::getDirectory() / filename;
         fastgltf::Parser parser;
         fastgltf::GltfDataBuffer data;
@@ -26,27 +37,31 @@ namespace z0 {
         fastgltf::Asset gltf = std::move(asset.get());
 
         materials.clear();
-        materials.push_back(std::make_shared<StandardMaterial>());
+        /*for (fastgltf::Material& mat : gltf.materials) {
+            StandardMaterial material;
+            materials.push_back(material);
+        }*/
+        if (materials.empty()) {
+            materials.push_back(std::make_shared<StandardMaterial>());
+        }
 
-        vertices.clear();
-        indices.clear();
         for (fastgltf::Mesh& mesh : gltf.meshes) {
-            std::cout << mesh.name << std::endl;
+            name += "[" + mesh.name + "]";
             for (auto&& p : mesh.primitives) {
-                size_t initial_vtx = vertices.size();
+                std::shared_ptr<MeshSurface> surface = std::make_shared<MeshSurface>();
                 // load indexes
                 {
                     fastgltf::Accessor& indexaccessor = gltf.accessors[p.indicesAccessor.value()];
-                    indices.reserve(indices.size() + indexaccessor.count);
+                    surface->indices.reserve(indexaccessor.count);
                     fastgltf::iterateAccessor<std::uint32_t>(gltf, indexaccessor,
                                                              [&](std::uint32_t idx) {
-                                                                 indices.push_back(idx + initial_vtx);
+                                                                 surface->indices.push_back(idx);
                                                              });
                 }
                 // load vertex positions
                 {
                     fastgltf::Accessor& posAccessor = gltf.accessors[p.findAttribute("POSITION")->second];
-                    vertices.resize(vertices.size() + posAccessor.count);
+                    surface->vertices.resize(posAccessor.count);
                     fastgltf::iterateAccessorWithIndex<glm::vec3>(gltf, posAccessor,
                                                                   [&](glm::vec3 v, size_t index) {
                                                                       Vertex newvtx;
@@ -55,7 +70,7 @@ namespace z0 {
                                                                       newvtx.color = glm::vec4 { 1.f };
                                                                       newvtx.uv.x = 0;
                                                                       newvtx.uv.y = 0;
-                                                                      vertices[initial_vtx + index] = newvtx;
+                                                                      surface->vertices[index] = newvtx;
                                                                   });
                 }
                 // load vertex normals
@@ -63,7 +78,7 @@ namespace z0 {
                 if (normals != p.attributes.end()) {
                     fastgltf::iterateAccessorWithIndex<glm::vec3>(gltf, gltf.accessors[(*normals).second],
                                                                   [&](glm::vec3 v, size_t index) {
-                                                                      vertices[initial_vtx + index].normal = v;
+                                                                      surface->vertices[index].normal = v;
                                                                   });
                 }
                 // load UVs
@@ -71,8 +86,8 @@ namespace z0 {
                 if (uv != p.attributes.end()) {
                     fastgltf::iterateAccessorWithIndex<glm::vec2>(gltf, gltf.accessors[(*uv).second],
                                                                   [&](glm::vec2 v, size_t index) {
-                                                                      vertices[initial_vtx + index].uv.x = v.x;
-                                                                      vertices[initial_vtx + index].uv.y = v.y;
+                                                                      surface->vertices[index].uv.x = v.x;
+                                                                      surface->vertices[index].uv.y = v.y;
                                                                   });
                 }
                 // load vertex colors
@@ -80,12 +95,19 @@ namespace z0 {
                 if (colors != p.attributes.end()) {
                     fastgltf::iterateAccessorWithIndex<glm::vec4>(gltf, gltf.accessors[(*colors).second],
                                                                   [&](glm::vec4 v, size_t index) {
-                                                                      vertices[initial_vtx + index].color = v;
+                                                                      surface->vertices[index].color = v;
                                                                   });
                 }
+
+                std::cout << p.materialIndex.has_value() << " " << p.materialIndex.value() << std::endl;
+                surface->_model = std::make_shared<VulkanModel>(
+                        Application::getViewport()._getDevice(),
+                        surface->vertices,
+                        surface->indices);
+                surfaces.push_back(surface);
             }
         }
-        vulkanModel = std::make_shared<VulkanModel>(Application::getViewport()._getDevice(), vertices, indices);
+        std::cout << name << std::endl;
     }
 
 

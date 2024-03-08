@@ -20,12 +20,14 @@ private:
 class RootNode: public z0::Node {
 public:
     void onReady() override {
-        std::shared_ptr<z0::Texture> texture1 = std::make_shared<z0::ImageTexture>("textures/texture.jpg");
         std::shared_ptr<z0::StandardMaterial> material1 = std::make_shared<z0::StandardMaterial>();
-        material1->albedo_texture = texture1;
+        material1->albedo_texture = std::make_shared<z0::ImageTexture>("textures/texture.jpg");
+        std::shared_ptr<z0::StandardMaterial> material2 = std::make_shared<z0::StandardMaterial>();
+        material2->albedo_texture = std::make_shared<z0::ImageTexture>("textures/Wood048_1K-JPG_Color.jpg");
 
-        std::shared_ptr<z0::Mesh> meshMulti = std::make_shared<z0::Mesh>("models/sphere.glb");
+        std::shared_ptr<z0::Mesh> meshMulti = std::make_shared<z0::Mesh>("models/multi cube.glb");
         meshMulti->setSurfaceMaterial(0, material1);
+        meshMulti->setSurfaceMaterial(1, material2);
 
         node1 = std::make_shared<Cube>(meshMulti);
         //node1->transform.scale = glm::vec3{15.0f};

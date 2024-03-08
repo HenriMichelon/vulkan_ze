@@ -72,7 +72,6 @@ namespace  z0 {
         if (!hasIndexBuffer) {
             return;
         }
-
         VkDeviceSize bufferSize = sizeof (indices[0]) * indexCount;
         uint32_t  indexSize = sizeof(indices[0]);
         VulkanBuffer stagingBuffer {

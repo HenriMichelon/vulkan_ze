@@ -26,18 +26,17 @@ namespace z0 {
         std::unique_ptr<VulkanShader> vertShader;
         std::unique_ptr<VulkanShader> fragShader;
         std::shared_ptr<Node> rootNode;
-        std::set<std::shared_ptr<Mesh>> meshes {};
-
-        std::map<MeshInstance*, uint32_t> meshesIndices {};
-        std::vector<MeshInstance*> meshInstances {};
+        std::vector<MeshInstance*> meshes {};
+        std::unordered_set<std::shared_ptr<Texture>> textures {};
+        std::map<std::shared_ptr<Texture>, int32_t> texturesIndices {};
 
         void update(float delta) override;
         void recordCommands(VkCommandBuffer commandBuffer) override;
         void createDescriptorSetLayout() override;
         void loadShaders() override;
 
-        void createMeshIndices(const std::shared_ptr<Node>& parent);
-        void createMeshIndex(const std::shared_ptr<Node>& node);
+        void createMeshIndices(std::shared_ptr<Node>& parent);
+        void createMeshIndex(std::shared_ptr<Node>& node);
 
     public:
         DefaultRenderer(const DefaultRenderer&) = delete;
