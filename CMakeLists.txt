@@ -23,6 +23,7 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_image.cpp
         ${Z0_ENGINE_DIR}/include/z0/nodes/node.hpp
         ${Z0_ENGINE_DIR}/include/z0/nodes/camera.hpp
+        ${Z0_ENGINE_DIR}/include/z0/nodes/mesh_instance.hpp
         ${Z0_ENGINE_DIR}/include/z0/application_config.hpp
         ${Z0_ENGINE_DIR}/include/z0/application.hpp
         ${Z0_ENGINE_DIR}/include/z0/log.hpp
@@ -31,6 +32,10 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/include/z0/window.hpp
         ${Z0_ENGINE_DIR}/include/z0/viewport.hpp
         ${Z0_ENGINE_DIR}/include/z0/mesh.hpp
+        ${Z0_ENGINE_DIR}/include/z0/resource.hpp
+        ${Z0_ENGINE_DIR}/include/z0/material.hpp
+        ${Z0_ENGINE_DIR}/include/z0/texture.hpp
+        ${Z0_ENGINE_DIR}/include/z0/image.hpp
         ${Z0_ENGINE_DIR}/src/vulkan/window_helper.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_device.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_buffer.cpp
@@ -48,14 +53,9 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/viewport.cpp
         ${Z0_ENGINE_DIR}/src/mesh.cpp
         ${Z0_ENGINE_DIR}/src/transform.cpp
-        engine/include/z0/material.hpp
-        engine/include/z0/texture.hpp
-        engine/include/z0/image.hpp
-        engine/src/image.cpp
-        engine/src/texture.cpp
-        engine/include/z0/nodes/mesh_instance.hpp
-        engine/include/z0/resource.hpp
-        engine/src/resource.cpp
+        ${Z0_ENGINE_DIR}/src/image.cpp
+        ${Z0_ENGINE_DIR}/src/texture.cpp
+        ${Z0_ENGINE_DIR}/src/resource.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC ${Z0_ENGINE_DIR}/include)
 
