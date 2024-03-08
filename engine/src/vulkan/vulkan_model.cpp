@@ -5,16 +5,19 @@
  * https://vulkan-tutorial.com/Loading_models
 */
 #include "z0/vulkan/vulkan_model.hpp"
+#include "z0/log.hpp"
 
-#define TINYOBJLOADER_IMPLEMENTATION
-#include <tiny_obj_loader.h>
+#include <fastgltf/glm_element_traits.hpp>
+#include <fastgltf/core.hpp>
+#include <fastgltf/tools.hpp>
+#include <fastgltf/util.hpp>
+
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
 
 #include <cassert>
 #include <cstring>
 #include <unordered_map>
-#include <filesystem>
 
 namespace  z0 {
     // from: https://stackoverflow.com/a/57595105
@@ -173,7 +176,72 @@ namespace  z0 {
         return attributeDescriptions;
     }
 
-    void VulkanModel::Builder::loadModel(const std::string &filepath) {
+    // https://fastgltf.readthedocs.io/v0.7.x/overview.html
+    // https://github.com/vblanco20-1/vulkan-guide/blob/all-chapters-1.3-wip/chapter-5/vk_loader.cpp
+    void VulkanModel::Builder::loadModel(std::filesystem::path filepath) {
+        fastgltf::Parser parser;
+        fastgltf::GltfDataBuffer data;
+        data.loadFromFile(filepath);
+        auto asset = parser.loadGltf(&data, filepath.parent_path(), fastgltf::Options::None);
+        if (auto error = asset.error(); error != fastgltf::Error::None) {
+            die(getErrorMessage(error));
+        }
+        fastgltf::Asset gltf = std::move(asset.get());
+
+        vertices.clear();
+        indices.clear();
+        for (fastgltf::Mesh& mesh : gltf.meshes) {
+            std::cout << mesh.name << std::endl;
+            for (auto&& p : mesh.primitives) {
+                size_t initial_vtx = vertices.size();
+                // load indexes
+                {
+                    fastgltf::Accessor& indexaccessor = gltf.accessors[p.indicesAccessor.value()];
+                    indices.reserve(indices.size() + indexaccessor.count);
+                    fastgltf::iterateAccessor<std::uint32_t>(gltf, indexaccessor,
+                                                             [&](std::uint32_t idx) {
+                                                                 indices.push_back(idx + initial_vtx);
+                                                             });
+                }
+                // load vertex positions
+                {
+                    fastgltf::Accessor& posAccessor = gltf.accessors[p.findAttribute("POSITION")->second];
+                    vertices.resize(vertices.size() + posAccessor.count);
+                    fastgltf::iterateAccessorWithIndex<glm::vec3>(gltf, posAccessor,
+                          [&](glm::vec3 v, size_t index) {
+                              Vertex newvtx;
+                              newvtx.position = v;
+                              newvtx.normal = { 1, 0, 0 };
+                              newvtx.color = glm::vec4 { 1.f };
+                              newvtx.uv.x = 0;
+                              newvtx.uv.y = 0;
+                              vertices[initial_vtx + index] = newvtx;
+                          });
+                }
+                // load vertex normals
+                auto normals = p.findAttribute("NORMAL");
+                if (normals != p.attributes.end()) {
+                    fastgltf::iterateAccessorWithIndex<glm::vec3>(gltf, gltf.accessors[(*normals).second],
+                                                                  [&](glm::vec3 v, size_t index) {
+                                                                      vertices[initial_vtx + index].normal = v;
+                                                                  });
+                }
+                // load UVs
+                auto uv = p.findAttribute("TEXCOORD_0");
+                if (uv != p.attributes.end()) {
+                    fastgltf::iterateAccessorWithIndex<glm::vec2>(gltf, gltf.accessors[(*uv).second],
+                                                                  [&](glm::vec2 v, size_t index) {
+                                                                      vertices[initial_vtx + index].uv.x = v.x;
+                                                                      vertices[initial_vtx + index].uv.y = v.y;
+                                                                  });
+                }
+            }
+        }
+        //die("not implemented");
+
+    }
+
+    /*void VulkanModel::Builder::loadModel(const std::string &filepath) {
         tinyobj::attrib_t attrib;
         std::vector<tinyobj::shape_t> shapes;
         std::vector<tinyobj::material_t> materials;
@@ -224,7 +292,7 @@ namespace  z0 {
                 indices.push_back(uniqueVertices[vertex]);
             }
         }
-    }
+    }*/
 }
 
 

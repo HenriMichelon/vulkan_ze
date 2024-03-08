@@ -14,7 +14,7 @@ namespace z0 {
         Texture& getTexture() { return *texture; }
 
     private:
-        std::string filename;
+        std::string name;
         std::shared_ptr<Texture> texture;
         std::shared_ptr<VulkanModel> vulkanModel;
 

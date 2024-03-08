@@ -20,10 +20,10 @@ private:
 class RootNode: public z0::Node {
 public:
     void onReady() override {
-        std::shared_ptr<z0::Mesh> meshMulti = std::make_shared<z0::Mesh>("models/sphere.obj",
+        std::shared_ptr<z0::Mesh> meshMulti = std::make_shared<z0::Mesh>("models/rubiks_cube.glb",
                                          std::make_shared<z0::ImageTexture>("textures/texture.jpg"));
         node1 = std::make_shared<Cube>(meshMulti);
-        node1->transform.position = { 0.0f, 0.0f, 0.0f };
+        node1->transform.scale = glm::vec3{15.0f};
         addChild(node1);
 
         /*std::shared_ptr<z0::Mesh> mesh1 = std::make_shared<z0::Mesh>("models/cube.obj",

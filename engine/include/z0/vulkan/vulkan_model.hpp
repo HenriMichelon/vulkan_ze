@@ -8,6 +8,7 @@
 
 #include <memory>
 #include <vector>
+#include <filesystem>
 
 namespace z0 {
 
@@ -26,7 +27,7 @@ namespace z0 {
         struct Builder {
             std::vector<Vertex> vertices{};
             std::vector<uint32_t> indices{};
-            void loadModel(const std::string &filepath);
+            void loadModel(std::filesystem::path filepath);
         };
 
         VulkanModel(VulkanDevice &device, const VulkanModel::Builder &builder);
