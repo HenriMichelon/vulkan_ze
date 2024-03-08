@@ -7,6 +7,16 @@ namespace z0 {
 
     class Resource: public Object {
     public:
+        using rid_t = unsigned int;
+        Resource(): id{currentId++}  { }
+
+        rid_t getId() const { return id; }
+
         virtual bool isValid() = 0;
+
+        bool operator==(const Resource& other) const { return id == other.id;}
+    private:
+        rid_t id;
+        static rid_t currentId;
     };
 }

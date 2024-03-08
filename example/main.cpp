@@ -6,12 +6,12 @@ public:
     Cube(std::shared_ptr<z0::Mesh> mesh): z0::MeshInstance(mesh) {}
 
     void onReady() override {
-        speed = 0.25; //static_cast<float>(std::rand() % 8) / 4.0f;
+        speed = 1.0; //static_cast<float>(std::rand() % 8) / 4.0f;
     }
 
     void onProcess(float delta) override {
         float angle = delta * glm::radians(90.0f) * speed;
-        transform.rotation = { 0.0f, angle, angle };
+        transform.rotation = { angle, angle / 2, angle / 4};
     }
 private:
     float speed{0.0f};
@@ -20,36 +20,13 @@ private:
 class RootNode: public z0::Node {
 public:
     void onReady() override {
-        std::shared_ptr<z0::StandardMaterial> material1 = std::make_shared<z0::StandardMaterial>();
-        material1->albedo_texture = std::make_shared<z0::ImageTexture>("textures/texture.jpg");
-        std::shared_ptr<z0::StandardMaterial> material2 = std::make_shared<z0::StandardMaterial>();
-        material2->albedo_texture = std::make_shared<z0::ImageTexture>("textures/Wood048_1K-JPG_Color.jpg");
 
-        std::shared_ptr<z0::Mesh> meshMulti = std::make_shared<z0::Mesh>("models/multi cube.glb");
-        meshMulti->setSurfaceMaterial(0, material1);
-        meshMulti->setSurfaceMaterial(1, material2);
+        std::shared_ptr<z0::Mesh> meshMulti = std::make_shared<z0::Mesh>("models/locker_1.glb");
 
         node1 = std::make_shared<Cube>(meshMulti);
-        //node1->transform.scale = glm::vec3{15.0f};
-        node1->transform.scale = glm::vec3{1.0f};
+        node1->transform.scale = glm::vec3{.01f};
         addChild(node1);
 
-        /*std::shared_ptr<z0::Mesh> mesh1 = std::make_shared<z0::Mesh>("models/cube.obj",
-                                         std::make_shared<z0::ImageTexture>("models/cube_diffuse.png"));
-        std::shared_ptr<z0::Mesh> mesh2 = std::make_shared<z0::Mesh>("models/sphere.obj",
-                                         std::make_shared<z0::ImageTexture>("models/sphere_diffuse.png"));
-        std::shared_ptr<Node> rootNode = std::make_shared<Node>();
-        node1 = std::make_shared<Cube>(mesh1);
-        node1->transform.position = { -1.5f, 0.0f, 0.0f };
-        addChild(node1);
-
-        node3 = std::make_shared<Cube>(mesh1);
-        node3->transform.position = { 1.0f, 0.0f, 3.0f };
-        addChild(node3);
-
-        node2 = std::make_shared<z0::MeshInstance>(mesh2);
-        node2->transform.position = { 1.5f, 0.0f, 0.0f };
-        addChild(node2);*/
     }
 
     void onProcess(float delta) override {

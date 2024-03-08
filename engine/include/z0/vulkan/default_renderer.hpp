@@ -14,7 +14,7 @@ namespace z0 {
             glm::mat4 projection{1.0f};
             glm::mat4 view{1.0f};
             glm::mat4 inverseView{1.0f};
-            int32_t textureIndex{-1};
+            alignas(16) int32_t textureIndex{-1};
         };
 
         DefaultRenderer(VulkanDevice& device, const std::string& shaderDirectory);
@@ -28,7 +28,7 @@ namespace z0 {
         std::shared_ptr<Node> rootNode;
         std::vector<MeshInstance*> meshes {};
         std::unordered_set<std::shared_ptr<Texture>> textures {};
-        std::map<std::shared_ptr<Texture>, int32_t> texturesIndices {};
+        std::map<Resource::rid_t, int32_t> texturesIndices {};
 
         void update(float delta) override;
         void recordCommands(VkCommandBuffer commandBuffer) override;

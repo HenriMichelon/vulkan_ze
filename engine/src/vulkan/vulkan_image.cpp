@@ -24,7 +24,6 @@ namespace z0 {
         };
         textureStagingBuffer.map();
         textureStagingBuffer.writeToBuffer(data);
-        stbi_image_free(data);
 
         //const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
         const VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
@@ -52,11 +51,13 @@ namespace z0 {
         // https://vulkan-tutorial.com/Texture_mapping/Images#page_Loading-an-image
         int texWidth, texHeight, texChannels;
         stbi_uc *pixels = stbi_load(filepath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-        VkDeviceSize imageSize = texWidth * texHeight * 4;
+        VkDeviceSize imageSize = texWidth * texHeight * STBI_rgb_alpha;
         if (!pixels) {
             die("failed to load texture image!");
         }
-        return std::make_shared<VulkanImage>(device, texWidth, texHeight, imageSize, pixels);
+        auto image =  std::make_shared<VulkanImage>(device, texWidth, texHeight, imageSize, pixels);
+        stbi_image_free(pixels);
+        return image;
     }
 
     VulkanImage::~VulkanImage() {

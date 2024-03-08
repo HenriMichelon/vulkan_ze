@@ -17,9 +17,9 @@ layout(location = 0) out vec4 ALBEDO;
 
 void main() {
     if (ubo.textureIndex == -1) {
-        ALBEDO = COLOR;
+        ALBEDO = vec4(1, 0, 0, 1.0); //COLOR;
     } else {
         ALBEDO = texture(texSampler[ubo.textureIndex], UV);
-        ALBEDO.a = COLOR.a;
+        //ALBEDO.a = COLOR.a;
     }
 }

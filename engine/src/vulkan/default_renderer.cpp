@@ -7,8 +7,7 @@ namespace z0 {
     DefaultRenderer::DefaultRenderer(VulkanDevice &dev,
                                      const std::string& sDir) :
          VulkanRenderer{dev, sDir}
-     {
-     }
+     {}
 
     DefaultRenderer::~DefaultRenderer() {
         vkDeviceWaitIdle(device);
@@ -32,9 +31,14 @@ namespace z0 {
             meshes.push_back(meshInstance);
             for(const auto& material : meshInstance->getMesh()->getMaterials()) {
                 if (material->albedo_texture != nullptr) {
-                    auto it = textures.insert(material->albedo_texture);
-                    auto index = std::distance(std::begin(textures), it.first);
-                    texturesIndices[material->albedo_texture] = index;
+                   textures.insert(material->albedo_texture);
+                }
+            }
+            for(const auto& material : meshInstance->getMesh()->getMaterials()) {
+                if (material->albedo_texture != nullptr) {
+                    auto it = textures.find(material->albedo_texture) ;
+                    auto index = std::distance(std::begin(textures), it);
+                    texturesIndices[material->albedo_texture->getId()] = static_cast<int32_t>(index);
                 }
             }
         }
@@ -59,17 +63,19 @@ namespace z0 {
 
         uint32_t surfaceIndex = 0;
         for (const auto&meshInstance: meshes) {
-            ubo.model = meshInstance->transform.mat4();
-            for (const auto& surface: meshInstance->getMesh()->getSurfaces()) {
-                auto material = meshInstance->getMesh()->getMaterials()[surface->materialIndex];
-                if (material->albedo_texture == nullptr) {
-                    ubo.textureIndex = -1;
-                } else {
-                    ubo.textureIndex = texturesIndices[material->albedo_texture];
+            if (meshInstance->getMesh()->isValid()) {
+                ubo.model = meshInstance->transform.mat4();
+                for (const auto &surface: meshInstance->getMesh()->getSurfaces()) {
+                    auto material = meshInstance->getMesh()->getMaterials()[surface->materialIndex];
+                    if (material->albedo_texture == nullptr) {
+                        ubo.textureIndex = -1;
+                    } else {
+                        ubo.textureIndex = texturesIndices[material->albedo_texture->getId()];
+                    }
+                    writeUniformBuffer(&ubo, surfaceIndex);
+                    surfaceIndex += 1;
                 }
-                writeUniformBuffer(&ubo, surfaceIndex);
             }
-            surfaceIndex += 1;
         }
     }
 
@@ -85,9 +91,9 @@ namespace z0 {
                 for (const auto& surface: meshInstance->getMesh()->getSurfaces()) {
                     bindDescriptorSets(commandBuffer, surfaceIndex);
                     surface->_model->draw(commandBuffer);
+                    surfaceIndex += 1;
                 }
             }
-            surfaceIndex += 1;
         }
     }
 
@@ -96,18 +102,20 @@ namespace z0 {
         VkDeviceSize size = sizeof(UniformBufferObject);
         uint32_t surfaceCount = 0;
         for (const auto& meshInstance: meshes) {
-            surfaceCount += meshInstance->getMesh()->getSurfaces().size();
+            if (meshInstance->getMesh()->isValid()) {
+                surfaceCount += meshInstance->getMesh()->getSurfaces().size();
+            }
         }
         createUniformBuffers(size, surfaceCount);
         globalSetLayout = VulkanDescriptorSetLayout::Builder(vulkanDevice)
-                .addBinding(0,
-                            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-                            VK_SHADER_STAGE_ALL_GRAPHICS)
-                .addBinding(1,
-                            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                            VK_SHADER_STAGE_ALL_GRAPHICS,
-                            textures.size())
-                .build();
+            .addBinding(0,
+                        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                        VK_SHADER_STAGE_ALL_GRAPHICS)
+            .addBinding(1,
+                        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                        VK_SHADER_STAGE_ALL_GRAPHICS,
+                        textures.size())
+            .build();
         for (int i = 0; i < globalDescriptorSets.size(); i++) {
             auto bufferInfo = uboBuffers[i]->descriptorInfo(size);
             std::vector<VkDescriptorImageInfo> imagesInfo{};
@@ -115,9 +123,9 @@ namespace z0 {
                 imagesInfo.push_back(texture->getImage()._getImage().imageInfo());
             }
             if (!VulkanDescriptorWriter(*globalSetLayout, *globalPool)
-                    .writeBuffer(0, &bufferInfo)
-                    .writeImage(1, imagesInfo.data())
-                    .build(globalDescriptorSets[i])) {
+                .writeBuffer(0, &bufferInfo)
+                .writeImage(1, imagesInfo.data())
+                .build(globalDescriptorSets[i])) {
                 die("Cannot allocate descriptor set");
             }
         }

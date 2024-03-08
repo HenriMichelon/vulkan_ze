@@ -6,6 +6,9 @@ namespace z0 {
 
     class Texture: public Resource {
     public:
+        Texture() = default;
+        Texture(const std::shared_ptr<Image>& img): image{img} {};
+
         bool isValid() override { return image != nullptr; }
 
         Image& getImage() { return *image; }
@@ -20,6 +23,7 @@ namespace z0 {
     class ImageTexture: public Texture {
     public:
         ImageTexture() = default;
+        ImageTexture(const std::shared_ptr<Image>& img):Texture(img) {};
         ImageTexture(const std::filesystem::path& filename);
     };
 
