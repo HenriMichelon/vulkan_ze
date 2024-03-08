@@ -6,5 +6,7 @@
 namespace z0 {
 
     class Resource: public Object {
+    public:
+        virtual bool isValid() = 0;
     };
 }

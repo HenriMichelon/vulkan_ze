@@ -398,7 +398,7 @@ namespace z0 {
         }
         // Maximum possible size of textures affects graphics quality
         score += _deviceProperties.limits.maxImageDimension2D;
-        // Application can't function without geometry shaders
+        // MainLoop can't function without geometry shaders
         if (!deviceFeatures.geometryShader) {
             return 0;
         }

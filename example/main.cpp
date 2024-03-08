@@ -1,4 +1,4 @@
-#include "z0/application.hpp"
+#include "z0/mainloop.hpp"
 #include "z0/nodes/mesh_instance.hpp"
 
 class Cube: public z0::MeshInstance {
@@ -20,10 +20,16 @@ private:
 class RootNode: public z0::Node {
 public:
     void onReady() override {
-        std::shared_ptr<z0::Mesh> meshMulti = std::make_shared<z0::Mesh>("models/rubiks_cube.glb",
-                                         std::make_shared<z0::ImageTexture>("textures/texture.jpg"));
+        std::shared_ptr<z0::Texture> texture1 = std::make_shared<z0::ImageTexture>("textures/texture.jpg");
+        std::shared_ptr<z0::StandardMaterial> material1 = std::make_shared<z0::StandardMaterial>();
+        material1->albedo_texture = texture1;
+
+        std::shared_ptr<z0::Mesh> meshMulti = std::make_shared<z0::Mesh>("models/sphere.glb");
+        meshMulti->setSurfaceMaterial(0, material1);
+
         node1 = std::make_shared<Cube>(meshMulti);
-        node1->transform.scale = glm::vec3{15.0f};
+        //node1->transform.scale = glm::vec3{15.0f};
+        node1->transform.scale = glm::vec3{1.0f};
         addChild(node1);
 
         /*std::shared_ptr<z0::Mesh> mesh1 = std::make_shared<z0::Mesh>("models/cube.obj",
@@ -64,7 +70,7 @@ int main() {
         .windowHeight = 768,
         .msaa = z0::MSAA_AUTO
     };
-    z0::Application app{applicationConfig};
+    z0::MainLoop app{applicationConfig};
     app.start(std::make_shared<RootNode>());
     return 0;
 }

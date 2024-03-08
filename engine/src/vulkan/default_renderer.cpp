@@ -55,7 +55,7 @@ namespace z0 {
         for (int index = 0; index < meshInstances.size(); index++) {
             auto meshInstance = meshInstances[index];
             ubo.model = meshInstance->transform.mat4();
-            ubo.textureBinding = meshesIndices[meshInstance];
+            ubo.textureIndex = meshesIndices[meshInstance];
             writeUniformBuffer(&ubo, index);
         }
     }
@@ -67,8 +67,10 @@ namespace z0 {
         bindShader(commandBuffer, *vertShader);
         bindShader(commandBuffer, *fragShader);
         for (int index = 0; index < meshInstances.size(); index++) {
-            bindDescriptorSets(commandBuffer, index);
-            meshInstances[index]->getMesh()->_getModel().draw(commandBuffer);
+            if (meshInstances[index]->getMesh()->isValid()) {
+                bindDescriptorSets(commandBuffer, index);
+                meshInstances[index]->getMesh()->_getModel().draw(commandBuffer);
+            }
         }
     }
 
@@ -89,7 +91,7 @@ namespace z0 {
             auto bufferInfo = uboBuffers[i]->descriptorInfo(size);
             std::vector<VkDescriptorImageInfo> imagesInfo{};
             for(const auto& mesh: meshes) {
-                imagesInfo.push_back(mesh->getTexture().getImage()._getImage().imageInfo());
+                imagesInfo.push_back(mesh->getSurfaceMaterial(0)->albedo_texture->getImage()._getImage().imageInfo());
             }
             if (!VulkanDescriptorWriter(*globalSetLayout, *globalPool)
                     .writeBuffer(0, &bufferInfo)
