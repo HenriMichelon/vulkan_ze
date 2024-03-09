@@ -1,12 +1,6 @@
 #version 450
 
-layout(binding = 0) uniform UniformBufferObject  {
-    mat4 model;
-    mat4 projection;
-    mat4 view;
-    mat4 inverseView;
-    int textureIndex;
-} ubo;
+#include "ubo.glsl"
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec4 color;

@@ -55,8 +55,8 @@ namespace z0 {
 
     void DefaultRenderer::update(float delta) {
         Camera camera{};
-        camera.transform.position = { -0.0f, 0.0f, -5.0f };
-        camera.setViewYXZ();
+        camera.position = { -0.0f, 0.0f, -5.0f };
+        camera.setViewTarget({ 0.0f, 0.0f, 0.0f});
         camera.setPerspectiveProjection(glm::radians(50.0f), getAspectRatio(), 0.1f, 100.0f);
 
         UniformBufferObject ubo{
@@ -68,7 +68,7 @@ namespace z0 {
         uint32_t surfaceIndex = 0;
         for (const auto&meshInstance: meshes) {
             if (meshInstance->getMesh()->isValid()) {
-                ubo.model = meshInstance->transform.mat4();
+                ubo.model = meshInstance->worldTransform;
                 for (const auto &surface: meshInstance->getMesh()->getSurfaces()) {
                     if (auto standardMaterial = dynamic_cast<StandardMaterial*>(surface->material.get())) {
                         if (standardMaterial->albedoTexture == nullptr) {

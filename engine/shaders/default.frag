@@ -1,12 +1,6 @@
 #version 450
 
-layout(binding = 0) uniform UniformBufferObject  {
-    mat4 model;
-    mat4 projection;
-    mat4 view;
-    mat4 inverseView;
-    int textureIndex;
-} ubo;
+#include "ubo.glsl"
 
 layout(binding = 1) uniform sampler2D texSampler[100]; // put a limit into the default renderer
 

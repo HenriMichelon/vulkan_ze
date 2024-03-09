@@ -90,6 +90,15 @@ namespace z0 {
         return newImage == nullptr ? nullptr : std::make_shared<Image>(newImage);
     }
 
+    void translateReferential(const std::shared_ptr<Mesh> mesh) {
+        return;
+        auto angle = glm::radians(180.f);
+        glm::mat4 rotationMatrix = glm::rotate(glm::mat4 {1.0f}, angle, {1.0f, 0.0f, 0.0f});
+        for (auto& vertex: mesh->getVertices()) {
+            vertex.position = rotationMatrix * glm::vec4{vertex.position, 1.0f};
+        }
+    }
+
     // https://fastgltf.readthedocs.io/v0.7.x/overview.html
     // https://github.com/vblanco20-1/vulkan-guide/blob/all-chapters-1.3-wip/chapter-5/vk_loader.cpp
     std::shared_ptr<Node> Loader::loadModelFromFile(const std::filesystem::path& filename, bool forceBackFaceCulling) {
@@ -129,7 +138,7 @@ namespace z0 {
             materials.push_back(std::make_shared<StandardMaterial>());
         }
 
-        std::shared_ptr<Node> rootNode = std::make_shared<Node>();
+        std::vector<std::shared_ptr<Mesh>> meshes;
         for (fastgltf::Mesh& glftMesh : gltf.meshes) {
             std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>(glftMesh.name.data());
             std::vector<Vertex>& vertices = mesh->getVertices();
@@ -195,31 +204,29 @@ namespace z0 {
                 };
                 mesh->getSurfaces().push_back(surface);
             }
-            mesh->_buildModel();
+            meshes.push_back(mesh);
             std::cout << mesh->getName() << std::endl;
-            rootNode->addChild( std::make_shared<MeshInstance>(mesh));
         }
 
-/*
         // load all nodes and their meshes
+        std::shared_ptr<Node> rootNode = std::make_shared<Node>();
         for (fastgltf::Node& node : gltf.nodes) {
             std::shared_ptr<Node> newNode;
-
             // find if the node has a mesh, and if it does hook it to the mesh pointer and allocate it with the meshnode class
             if (node.meshIndex.has_value()) {
-                newNode = std::make_shared<MeshNode>();
-                static_cast<MeshNode*>(newNode.get())->mesh = meshes[*node.meshIndex];
+                auto mesh = meshes[*node.meshIndex];
+                translateReferential(mesh);
+                mesh->_buildModel();
+                newNode = std::make_shared<MeshInstance>(mesh);
             } else {
                 newNode = std::make_shared<Node>();
+                std::cout << "Node" << std::endl;
             }
-
-            nodes.push_back(newNode);
-            file.nodes[node.name.c_str()];
 
             std::visit(fastgltf::visitor { [&](fastgltf::Node::TransformMatrix matrix) {
                            memcpy(&newNode->localTransform, matrix.data(), sizeof(matrix));
                        },
-                                           [&](fastgltf::Node::TRS transform) {
+                                           [&](fastgltf::TRS transform) {
                                                glm::vec3 tl(transform.translation[0], transform.translation[1],
                                                             transform.translation[2]);
                                                glm::quat rot(transform.rotation[3], transform.rotation[0], transform.rotation[1],
@@ -233,8 +240,11 @@ namespace z0 {
                                                newNode->localTransform = tm * rm * sm;
                                            } },
                        node.transform);
-        }*/
+            rootNode->addChild(newNode);
+        }
+
         return rootNode;
     }
+
 
 }
