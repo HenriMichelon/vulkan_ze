@@ -70,31 +70,30 @@ namespace z0 {
 
 
     void VulkanRenderer::writeUniformBuffer(void *data, uint32_t index) {
-        uint32_t size = uboBuffers[currentFrame]->getAlignmentSize();
-        uboBuffers[currentFrame]->writeToBuffer(data, size, size * index);
-        uboBuffers[currentFrame]->flush();
+        uint32_t size = surfacesBuffers[currentFrame]->getAlignmentSize();
+        surfacesBuffers[currentFrame]->writeToBuffer(data, size, size * index);
+        surfacesBuffers[currentFrame]->flush();
     }
 
     void VulkanRenderer::bindDescriptorSets(VkCommandBuffer commandBuffer, uint32_t index) {
-        uint32_t size = uboBuffers[currentFrame]->getAlignmentSize();
+        uint32_t size = surfacesBuffers[currentFrame]->getAlignmentSize();
         uint32_t offset = size * index;
         vkCmdBindDescriptorSets(commandBuffer,
                                 VK_PIPELINE_BIND_POINT_GRAPHICS,
                                 pipelineLayout,
                                 0, 1,
-                                &globalDescriptorSets[currentFrame],
+                                &surfacesDescriptorSets[currentFrame],
                                 1, &offset);
     }
 
-
-    void VulkanRenderer::createResources(uint32_t pushConstantSize) {
+    void VulkanRenderer::createResources() {
         createDescriptorSetLayout();
-        createPipelineLayout(pushConstantSize);
+        createPipelineLayout();
         loadShaders();
     };
 
     void VulkanRenderer::createUniformBuffers(VkDeviceSize size, uint32_t count) {
-        for (auto &uboBuffer: uboBuffers) {
+        for (auto &uboBuffer: surfacesBuffers) {
             uboBuffer = std::make_unique<VulkanBuffer>(
                     vulkanDevice,
                     size,
@@ -107,12 +106,11 @@ namespace z0 {
         }
     }
 
-    void VulkanRenderer::createPipelineLayout(uint32_t pushConstantSize) {
-        pushConstantRange.size = pushConstantSize;
+    void VulkanRenderer::createPipelineLayout() {
         const VkPipelineLayoutCreateInfo pipelineLayoutInfo{
                 .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
                 .setLayoutCount = 1,
-                .pSetLayouts = globalSetLayout->getDescriptorSetLayout(),
+                .pSetLayouts = surfacesSetLayout->getDescriptorSetLayout(),
                 .pushConstantRangeCount = 0,
                 .pPushConstantRanges = nullptr
         };
@@ -287,7 +285,7 @@ namespace z0 {
                 next_stage,
                 filename,
                 code,
-                globalSetLayout->getDescriptorSetLayout(),
+                surfacesSetLayout->getDescriptorSetLayout(),
                 nullptr);
         buildShader(*shader);
         return shader;

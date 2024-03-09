@@ -21,16 +21,15 @@ namespace z0 {
         VkDevice device;
         VulkanDevice& vulkanDevice;
         VkPipelineLayout pipelineLayout { VK_NULL_HANDLE };
-        std::vector<std::unique_ptr<VulkanBuffer>> uboBuffers{MAX_FRAMES_IN_FLIGHT};
         std::unique_ptr<VulkanDescriptorPool> globalPool {};
-        std::unique_ptr<VulkanDescriptorSetLayout> globalSetLayout {};
-        std::vector<VkDescriptorSet> globalDescriptorSets{MAX_FRAMES_IN_FLIGHT};
-        VkPushConstantRange pushConstantRange = { VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT };
+        std::vector<std::unique_ptr<VulkanBuffer>> surfacesBuffers{MAX_FRAMES_IN_FLIGHT};
+        std::unique_ptr<VulkanDescriptorSetLayout> surfacesSetLayout {};
+        std::vector<VkDescriptorSet> surfacesDescriptorSets{MAX_FRAMES_IN_FLIGHT};
 
         VulkanRenderer(VulkanDevice& device, std::string shaderDirectory);
 
         // Helpers function for children classes
-        void createResources(uint32_t pushConstantSize = 0);
+        void createResources();
         void createUniformBuffers(VkDeviceSize size, uint32_t count);
         void writeUniformBuffer(void *data, uint32_t index);
         void bindDescriptorSets(VkCommandBuffer commandBuffer, uint32_t index);
@@ -60,7 +59,7 @@ namespace z0 {
         void beginRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex);
         void endRendering(VkCommandBuffer commandBuffer,uint32_t imageIndex);
         void buildShader(VulkanShader& shader);
-        void createPipelineLayout(uint32_t pushConstantSize = 0);
+        void createPipelineLayout();
         std::vector<char> readFile(const std::string& fileName);
 
         virtual void update(float delta) = 0;

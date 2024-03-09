@@ -128,7 +128,7 @@ namespace z0 {
             }
         }
         createUniformBuffers(size, surfaceCount);
-        globalSetLayout = VulkanDescriptorSetLayout::Builder(vulkanDevice)
+        surfacesSetLayout = VulkanDescriptorSetLayout::Builder(vulkanDevice)
             .addBinding(0,
                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
                         VK_SHADER_STAGE_ALL_GRAPHICS)
@@ -137,16 +137,16 @@ namespace z0 {
                         VK_SHADER_STAGE_ALL_GRAPHICS,
                         textures.size())
             .build();
-        for (int i = 0; i < globalDescriptorSets.size(); i++) {
-            auto bufferInfo = uboBuffers[i]->descriptorInfo(size);
+        for (int i = 0; i < surfacesDescriptorSets.size(); i++) {
+            auto bufferInfo = surfacesBuffers[i]->descriptorInfo(size);
             std::vector<VkDescriptorImageInfo> imagesInfo{};
             for(const auto& texture : textures) {
                 imagesInfo.push_back(texture->getImage()._getImage().imageInfo());
             }
-            if (!VulkanDescriptorWriter(*globalSetLayout, *globalPool)
+            if (!VulkanDescriptorWriter(*surfacesSetLayout, *globalPool)
                 .writeBuffer(0, &bufferInfo)
                 .writeImage(1, imagesInfo.data())
-                .build(globalDescriptorSets[i])) {
+                .build(surfacesDescriptorSets[i])) {
                 die("Cannot allocate descriptor set");
             }
         }
