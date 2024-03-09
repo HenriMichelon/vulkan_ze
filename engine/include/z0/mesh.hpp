@@ -16,7 +16,7 @@ namespace z0 {
     class Mesh: public Resource {
     public:
         Mesh() = default;
-        Mesh(const std::filesystem::path& filename);
+        Mesh(const std::filesystem::path& filename, bool forceBackFaceCulling = false);
 
         std::vector<std::shared_ptr<MeshSurface>>& getSurfaces() { return surfaces; };
         std::vector<std::shared_ptr<StandardMaterial>>& getMaterials() { return materials; }
@@ -25,7 +25,7 @@ namespace z0 {
         void setSurfaceMaterial(uint32_t surfaceIndex, std::shared_ptr<StandardMaterial>& material);
 
         bool isValid() override { return !surfaces.empty(); }
-        void loadFromFile(const std::filesystem::path& filepath);
+        void loadFromFile(const std::filesystem::path& filepath, bool forceBackFaceCulling = false);
 
     private:
         std::string name {};

@@ -89,8 +89,8 @@ namespace z0 {
         return newImage == nullptr ? nullptr : std::make_shared<Image>(newImage);
     }
 
-    Mesh::Mesh(const std::filesystem::path& filename) {
-        loadFromFile(filename);
+    Mesh::Mesh(const std::filesystem::path& filename, bool forceBackFaceCulling) {
+        loadFromFile(filename, forceBackFaceCulling);
     }
 
     std::shared_ptr<StandardMaterial>& Mesh::getSurfaceMaterial(uint32_t surfaceIndex) {
@@ -106,7 +106,7 @@ namespace z0 {
 
     // https://fastgltf.readthedocs.io/v0.7.x/overview.html
     // https://github.com/vblanco20-1/vulkan-guide/blob/all-chapters-1.3-wip/chapter-5/vk_loader.cpp
-    void Mesh::loadFromFile(const std::filesystem::path& filename) {
+    void Mesh::loadFromFile(const std::filesystem::path& filename, bool forceBackFaceCulling) {
         std::filesystem::path filepath = Application::getDirectory() / filename;
         fastgltf::Parser parser {};
         constexpr auto gltfOptions =
@@ -136,6 +136,7 @@ namespace z0 {
                 std::shared_ptr<Image> image = images[mat.pbrData.baseColorTexture.value().textureIndex];
                 material->albedoTexture = std::make_shared<ImageTexture>(image);
             }
+            material->cullMode = forceBackFaceCulling ? CULLMODE_BACK : mat.doubleSided ? CULLMODE_DISABLED : CULLMODE_BACK;
             materials.push_back(material);
         }
         if (materials.empty()) {

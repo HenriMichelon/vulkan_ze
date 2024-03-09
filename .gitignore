@@ -1048,4 +1048,4 @@ libraries/
 .idea/
 *.spv
 .env.cmake
-.blend1
+*.blend1
