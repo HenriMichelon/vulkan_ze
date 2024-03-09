@@ -78,7 +78,7 @@ namespace z0 {
                             ubo.textureIndex = texturesIndices[standardMaterial->albedoTexture->getId()];
                         }
                     }
-                    writeUniformBuffer(&ubo, surfaceIndex);
+                    writeUniformBuffer(surfacesBuffers, &ubo, surfaceIndex);
                     surfaceIndex += 1;
                 }
             }
@@ -127,7 +127,7 @@ namespace z0 {
                 surfaceCount += meshInstance->getMesh()->getSurfaces().size();
             }
         }
-        createUniformBuffers(size, surfaceCount);
+        createUniformBuffers(surfacesBuffers, size, surfaceCount);
         surfacesSetLayout = VulkanDescriptorSetLayout::Builder(vulkanDevice)
             .addBinding(0,
                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,

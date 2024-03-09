@@ -69,21 +69,20 @@ namespace z0 {
     }
 
 
-    void VulkanRenderer::writeUniformBuffer(void *data, uint32_t index) {
-        uint32_t size = surfacesBuffers[currentFrame]->getAlignmentSize();
-        surfacesBuffers[currentFrame]->writeToBuffer(data, size, size * index);
-        surfacesBuffers[currentFrame]->flush();
+    void VulkanRenderer::writeUniformBuffer(const std::vector<std::unique_ptr<VulkanBuffer>>& buffers, void *data, uint32_t index) {
+        uint32_t size = buffers[currentFrame]->getAlignmentSize();
+        buffers[currentFrame]->writeToBuffer(data, size, size * index);
+        buffers[currentFrame]->flush();
     }
 
     void VulkanRenderer::bindDescriptorSets(VkCommandBuffer commandBuffer, uint32_t index) {
-        uint32_t size = surfacesBuffers[currentFrame]->getAlignmentSize();
-        uint32_t offset = size * index;
+        uint32_t surfaceBufferOffset = surfacesBuffers[currentFrame]->getAlignmentSize() * index;
         vkCmdBindDescriptorSets(commandBuffer,
                                 VK_PIPELINE_BIND_POINT_GRAPHICS,
                                 pipelineLayout,
                                 0, 1,
                                 &surfacesDescriptorSets[currentFrame],
-                                1, &offset);
+                                1, &surfaceBufferOffset);
     }
 
     void VulkanRenderer::createResources() {
@@ -92,8 +91,8 @@ namespace z0 {
         loadShaders();
     };
 
-    void VulkanRenderer::createUniformBuffers(VkDeviceSize size, uint32_t count) {
-        for (auto &uboBuffer: surfacesBuffers) {
+    void VulkanRenderer::createUniformBuffers(std::vector<std::unique_ptr<VulkanBuffer>>& buffers, VkDeviceSize size, uint32_t count) {
+        for (auto &uboBuffer: buffers) {
             uboBuffer = std::make_unique<VulkanBuffer>(
                     vulkanDevice,
                     size,
