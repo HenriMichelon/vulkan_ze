@@ -10,6 +10,7 @@
 
 #include "z0/vulkan/vulkan_buffer.hpp"
 #include "z0/log.hpp"
+#include "z0/vulkan/vulkan_stats.hpp"
 
 #include <cassert>
 #include <cstring>
@@ -43,6 +44,9 @@ namespace z0 {
         alignmentSize = getAlignment(instanceSize, minOffsetAlignment);
         bufferSize = alignmentSize * instanceCount;
         createBuffer(usageFlags, memoryPropertyFlags);
+#ifdef VULKAN_STATS
+        VulkanStats::get().buffersCount += 1;
+#endif
     }
 
     VulkanBuffer::~VulkanBuffer() {

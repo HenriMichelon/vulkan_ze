@@ -6,6 +6,7 @@
 */
 #include "z0/vulkan/vulkan_descriptors.hpp"
 #include "z0/log.hpp"
+#include "z0/vulkan/vulkan_stats.hpp"
 
 #include <cassert>
 #include <stdexcept>
@@ -113,6 +114,9 @@ namespace z0 {
         if (vkAllocateDescriptorSets(vulkanDevice.getDevice(), &allocInfo, &descriptor) != VK_SUCCESS) {
             return false;
         }
+#ifdef VULKAN_STATS
+        VulkanStats::get().descriptorSetsCount += 1;
+#endif
         return true;
     }
 

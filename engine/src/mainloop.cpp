@@ -1,5 +1,6 @@
 #include "z0/mainloop.hpp"
 #include "z0/viewport.hpp"
+#include "z0/vulkan/vulkan_stats.hpp"
 
 #include <chrono>
 
@@ -27,6 +28,9 @@ namespace z0 {
             process(rootNode, deltaTime);
             viewport->process(deltaTime);
         }
+#ifdef VULKAN_STATS
+        VulkanStats::get().display();
+#endif
     }
 
     void MainLoop::ready(const std::shared_ptr<Node>& node) {

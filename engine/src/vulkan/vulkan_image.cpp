@@ -5,6 +5,7 @@
 #include "z0/vulkan/vulkan_image.hpp"
 #include "z0/vulkan/vulkan_buffer.hpp"
 #include "z0/log.hpp"
+#include "z0/vulkan/vulkan_stats.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -44,6 +45,10 @@ namespace z0 {
         generateMipmaps(format);
         textureImageView = vulkanDevice.createImageView(textureImage, format, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
         createTextureSampler();
+
+#ifdef VULKAN_STATS
+        VulkanStats::get().imagesCount += 1;
+#endif
     }
 
     std::shared_ptr<VulkanImage> VulkanImage::createFromFile(VulkanDevice &device, const std::string &filepath) {

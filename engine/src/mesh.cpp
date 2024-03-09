@@ -129,7 +129,7 @@ namespace z0 {
             std::shared_ptr<StandardMaterial> material = std::make_shared<StandardMaterial>();
             if (mat.pbrData.baseColorTexture.has_value()) {
                 std::shared_ptr<Image> image = images[mat.pbrData.baseColorTexture.value().textureIndex];
-                material->albedo_texture = std::make_shared<ImageTexture>(image);
+                material->albedoTexture = std::make_shared<ImageTexture>(image);
             }
             materials.push_back(material);
         }

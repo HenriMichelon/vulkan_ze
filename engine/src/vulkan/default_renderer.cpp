@@ -30,15 +30,15 @@ namespace z0 {
         if (auto meshInstance = dynamic_cast<MeshInstance*>(node.get())) {
             meshes.push_back(meshInstance);
             for(const auto& material : meshInstance->getMesh()->getMaterials()) {
-                if (material->albedo_texture != nullptr) {
-                   textures.insert(material->albedo_texture);
+                if (material->albedoTexture != nullptr) {
+                   textures.insert(material->albedoTexture);
                 }
             }
             for(const auto& material : meshInstance->getMesh()->getMaterials()) {
-                if (material->albedo_texture != nullptr) {
-                    auto it = textures.find(material->albedo_texture) ;
+                if (material->albedoTexture != nullptr) {
+                    auto it = textures.find(material->albedoTexture) ;
                     auto index = std::distance(std::begin(textures), it);
-                    texturesIndices[material->albedo_texture->getId()] = static_cast<int32_t>(index);
+                    texturesIndices[material->albedoTexture->getId()] = static_cast<int32_t>(index);
                 }
             }
         }
@@ -67,10 +67,10 @@ namespace z0 {
                 ubo.model = meshInstance->transform.mat4();
                 for (const auto &surface: meshInstance->getMesh()->getSurfaces()) {
                     auto material = meshInstance->getMesh()->getMaterials()[surface->materialIndex];
-                    if (material->albedo_texture == nullptr) {
+                    if (material->albedoTexture == nullptr) {
                         ubo.textureIndex = -1;
                     } else {
-                        ubo.textureIndex = texturesIndices[material->albedo_texture->getId()];
+                        ubo.textureIndex = texturesIndices[material->albedoTexture->getId()];
                     }
                     writeUniformBuffer(&ubo, surfaceIndex);
                     surfaceIndex += 1;
@@ -81,7 +81,6 @@ namespace z0 {
 
     void DefaultRenderer::recordCommands(VkCommandBuffer commandBuffer) {
         if (meshes.empty()) return;
-        vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_NONE);
         vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
         bindShader(commandBuffer, *vertShader);
         bindShader(commandBuffer, *fragShader);
@@ -89,6 +88,10 @@ namespace z0 {
         for (const auto&meshInstance: meshes) {
             if (meshInstance->getMesh()->isValid()) {
                 for (const auto& surface: meshInstance->getMesh()->getSurfaces()) {
+                    auto material = meshInstance->getMesh()->getMaterials()[surface->materialIndex];
+                    vkCmdSetCullMode(commandBuffer,
+                                     material->cullMode == CULLMODE_DISABLED ? VK_CULL_MODE_NONE :
+                                     material->cullMode == CULLMODE_BACK ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_FRONT_BIT);
                     bindDescriptorSets(commandBuffer, surfaceIndex);
                     surface->_model->draw(commandBuffer);
                     surfaceIndex += 1;

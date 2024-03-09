@@ -20,11 +20,9 @@ private:
 class RootNode: public z0::Node {
 public:
     void onReady() override {
-
-        std::shared_ptr<z0::Mesh> meshMulti = std::make_shared<z0::Mesh>("models/locker_1.glb");
-
+        std::shared_ptr<z0::Mesh> meshMulti = std::make_shared<z0::Mesh>("models/multi cube.glb");
         node1 = std::make_shared<Cube>(meshMulti);
-        node1->transform.scale = glm::vec3{.01f};
+        node1->transform.scale = glm::vec3{1.01f};
         addChild(node1);
 
     }
