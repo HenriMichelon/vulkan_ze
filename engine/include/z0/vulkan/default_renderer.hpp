@@ -14,8 +14,10 @@ namespace z0 {
             glm::mat4 view{1.0f};
             glm::mat4 inverseView{1.0f};
         };
+        struct ModelUniformBufferObject {
+            glm::mat4 matrix;
+        };
         struct SurfaceUniformBufferObject {
-            glm::mat4 model;
             alignas(16) int32_t textureIndex{-1};
             alignas(16) glm::vec4 albedoColor;
         };
@@ -35,6 +37,7 @@ namespace z0 {
 
         std::unique_ptr<VulkanDescriptorPool> globalPool {};
         std::vector<std::unique_ptr<VulkanBuffer>> globalBuffers{MAX_FRAMES_IN_FLIGHT};
+        std::vector<std::unique_ptr<VulkanBuffer>> modelsBuffers{MAX_FRAMES_IN_FLIGHT};
         std::vector<std::unique_ptr<VulkanBuffer>> surfacesBuffers{MAX_FRAMES_IN_FLIGHT};
 
         void update(float delta) override;

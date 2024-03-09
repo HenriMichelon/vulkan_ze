@@ -68,9 +68,11 @@ namespace z0 {
 
         uint32_t surfaceIndex = 0;
         for (const auto&meshInstance: meshes) {
-            SurfaceUniformBufferObject surfaceUbo { meshInstance->worldTransform };
+            ModelUniformBufferObject modelUbo { meshInstance->worldTransform };
+            writeUniformBuffer(modelsBuffers, &modelUbo, surfaceIndex);
             if (meshInstance->getMesh()->isValid()) {
                 for (const auto &surface: meshInstance->getMesh()->getSurfaces()) {
+                    SurfaceUniformBufferObject surfaceUbo { };
                     if (auto standardMaterial = dynamic_cast<StandardMaterial*>(surface->material.get())) {
                         surfaceUbo.albedoColor = standardMaterial->albedoColor.color;
                         if (standardMaterial->albedoTexture == nullptr) {
@@ -104,9 +106,10 @@ namespace z0 {
                     } else {
                         vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_NONE);
                     }
-                    std::array<uint32_t, 2> offsets = {
-                            0, // globalBuffers
-                            static_cast<uint32_t>(surfacesBuffers[currentFrame]->getAlignmentSize() * surfaceIndex),
+                    std::array<uint32_t, 3> offsets = {
+                        0, // globalBuffers
+                        static_cast<uint32_t>(modelsBuffers[currentFrame]->getAlignmentSize() * surfaceIndex),
+                        static_cast<uint32_t>(surfacesBuffers[currentFrame]->getAlignmentSize() * surfaceIndex),
                     };
                     bindDescriptorSets(commandBuffer, offsets.size(), offsets.data());
                     mesh->_getModel()->draw(commandBuffer, surface->firstVertexIndex, surface->indexCount);
@@ -121,33 +124,40 @@ namespace z0 {
         globalPool = VulkanDescriptorPool::Builder(vulkanDevice)
                 .setMaxSets(MAX_FRAMES_IN_FLIGHT)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // global UBO
+                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // model UBO
                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // surfaces UBO
                 .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT) // textures
                 .build();
 
-        VkDeviceSize size = sizeof(SurfaceUniformBufferObject);
+        VkDeviceSize modelBufferSize = sizeof(ModelUniformBufferObject);
+        VkDeviceSize surfaceBufferSize = sizeof(SurfaceUniformBufferObject);
         uint32_t surfaceCount = 0;
         for (const auto& meshInstance: meshes) {
             if (meshInstance->getMesh()->isValid()) {
                 surfaceCount += meshInstance->getMesh()->getSurfaces().size();
             }
         }
-        createUniformBuffers(surfacesBuffers, size, surfaceCount);
         createUniformBuffers(globalBuffers, sizeof(GobalUniformBufferObject));
+        createUniformBuffers(modelsBuffers, modelBufferSize, surfaceCount);
+        createUniformBuffers(surfacesBuffers, surfaceBufferSize, surfaceCount);
         globalSetLayout = VulkanDescriptorSetLayout::Builder(vulkanDevice)
             .addBinding(0, // global UBO
-                        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-                        VK_SHADER_STAGE_ALL_GRAPHICS)
-            .addBinding(1, // surfaces UBO
+                    VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                    VK_SHADER_STAGE_ALL_GRAPHICS)
+            .addBinding(1, // textures
                        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                       VK_SHADER_STAGE_ALL_GRAPHICS,
+                       VK_SHADER_STAGE_FRAGMENT_BIT,
                        textures.size())
-            .addBinding(2, // textures
+            .addBinding(2, // model UBO
                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-                        VK_SHADER_STAGE_ALL_GRAPHICS)
+                        VK_SHADER_STAGE_VERTEX_BIT)
+            .addBinding(3, // surfaces UBO
+                        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                        VK_SHADER_STAGE_FRAGMENT_BIT)
             .build();
         for (int i = 0; i < surfacesDescriptorSets.size(); i++) {
-            auto bufferInfo = surfacesBuffers[i]->descriptorInfo(size);
+            auto surfaceBufferInfo = surfacesBuffers[i]->descriptorInfo(surfaceBufferSize);
+            auto modelBufferInfo = modelsBuffers[i]->descriptorInfo(modelBufferSize);
             auto globalBufferInfo = globalBuffers[i]->descriptorInfo(sizeof(GobalUniformBufferObject));
             std::vector<VkDescriptorImageInfo> imagesInfo{};
             for(const auto& texture : textures) {
@@ -156,7 +166,8 @@ namespace z0 {
             if (!VulkanDescriptorWriter(*globalSetLayout, *globalPool)
                 .writeBuffer(0, &globalBufferInfo)
                 .writeImage(1, imagesInfo.data())
-                .writeBuffer(2, &bufferInfo)
+                .writeBuffer(2, &modelBufferInfo)
+                .writeBuffer(3, &surfaceBufferInfo)
                 .build(surfacesDescriptorSets[i])) {
                 die("Cannot allocate descriptor set");
             }
