@@ -16,13 +16,12 @@ namespace z0 {
         static std::vector<VkVertexInputBindingDescription2EXT> getBindingDescription();
         static std::vector<VkVertexInputAttributeDescription2EXT> getAttributeDescription();
 
-        void draw(VkCommandBuffer commandBuffer);
+        void draw(VkCommandBuffer commandBuffer, uint32_t first, uint32_t count);
 
     private:
-        bool hasIndexBuffer {false};
+        VulkanDevice& device;
         uint32_t vertexCount{0};
         uint32_t indexCount{0};
-        VulkanDevice& device;
         std::unique_ptr<VulkanBuffer> vertexBuffer;
         std::unique_ptr<VulkanBuffer> indexBuffer;
 
@@ -33,5 +32,7 @@ namespace z0 {
     public:
         VulkanModel(const VulkanModel&) = delete;
         VulkanModel &operator=(const VulkanModel&) = delete;
+        VulkanModel(const VulkanModel&&) = delete;
+        VulkanModel &&operator=(const VulkanModel&&) = delete;
     };
 }

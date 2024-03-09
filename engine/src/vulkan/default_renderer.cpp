@@ -86,14 +86,15 @@ namespace z0 {
         bindShader(commandBuffer, *fragShader);
         uint32_t surfaceIndex = 0;
         for (const auto&meshInstance: meshes) {
-            if (meshInstance->getMesh()->isValid()) {
-                for (const auto& surface: meshInstance->getMesh()->getSurfaces()) {
-                    auto material = meshInstance->getMesh()->getMaterials()[surface->materialIndex];
+            auto mesh = meshInstance->getMesh();
+            if (mesh->isValid()) {
+                for (const auto& surface: mesh->getSurfaces()) {
+                    auto material = mesh->getMaterials()[surface->materialIndex];
                     vkCmdSetCullMode(commandBuffer,
                                      material->cullMode == CULLMODE_DISABLED ? VK_CULL_MODE_NONE :
                                      material->cullMode == CULLMODE_BACK ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_FRONT_BIT);
                     bindDescriptorSets(commandBuffer, surfaceIndex);
-                    surface->_model->draw(commandBuffer);
+                    mesh->_getModel()->draw(commandBuffer, surface->firstVertexIndex, surface->indexCount);
                     surfaceIndex += 1;
                 }
             }

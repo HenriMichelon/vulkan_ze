@@ -68,9 +68,8 @@ namespace  z0 {
 
     void VulkanModel::createIndexBuffers(const std::vector<uint32_t> &indices) {
         indexCount = static_cast<uint32_t>(indices.size());
-        hasIndexBuffer = indexCount > 0;
-        if (!hasIndexBuffer) {
-            return;
+        if (indexCount <= 0) {
+            die("Unindexed meshes aren't supported");
         }
         VkDeviceSize bufferSize = sizeof (indices[0]) * indexCount;
         uint32_t  indexSize = sizeof(indices[0]);
@@ -94,22 +93,16 @@ namespace  z0 {
         stagingBuffer.copyTo(*indexBuffer, bufferSize);
     }
 
-    void VulkanModel::draw(VkCommandBuffer commandBuffer) {
+    void VulkanModel::draw(VkCommandBuffer commandBuffer, uint32_t firstIndex, uint32_t count) {
         bind(commandBuffer);
-        if (hasIndexBuffer) {
-            vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);
-        } else {
-            vkCmdDraw(commandBuffer, vertexCount, 1, 0, 0);
-        }
+        vkCmdDrawIndexed(commandBuffer, count, 1, firstIndex, 0, 0);
     }
 
     void VulkanModel::bind(VkCommandBuffer commandBuffer) {
         VkBuffer buffers[] = { vertexBuffer->getBuffer() };
         VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
-        if (hasIndexBuffer) {
-            vkCmdBindIndexBuffer(commandBuffer, indexBuffer->getBuffer(), 0, VK_INDEX_TYPE_UINT32);
-        }
+        vkCmdBindIndexBuffer(commandBuffer, indexBuffer->getBuffer(), 0, VK_INDEX_TYPE_UINT32);
     }
 
     std::vector<VkVertexInputBindingDescription2EXT> VulkanModel::getBindingDescription() {

@@ -6,11 +6,11 @@
 namespace z0 {
 
     struct MeshSurface {
-        std::vector<Vertex> vertices{};
-        std::vector<uint32_t> indices{};
+        uint32_t firstVertexIndex;
+        uint32_t indexCount;
         uint32_t materialIndex;
 
-        std::shared_ptr<VulkanModel> _model;
+        MeshSurface(uint32_t first, uint32_t count): firstVertexIndex{first}, indexCount{count} {};
     };
 
     class Mesh: public Resource {
@@ -29,8 +29,14 @@ namespace z0 {
 
     private:
         std::string name {};
+        std::vector<Vertex> vertices{};
+        std::vector<uint32_t> indices{};
+        std::shared_ptr<VulkanModel> model;
         std::vector<std::shared_ptr<MeshSurface>> surfaces{};
         std::vector<std::shared_ptr<StandardMaterial>> materials{};
+
+    public:
+        std::shared_ptr<VulkanModel> _getModel() const { return model; };
     };
 
 }

@@ -10,6 +10,7 @@
 
 namespace z0 {
 
+    // https://fastgltf.readthedocs.io/v0.7.x/tools.html
     // https://github.com/vblanco20-1/vulkan-guide/blob/all-chapters-1.3-wip/chapter-5/vk_loader.cpp
     std::shared_ptr<Image> loadImage(fastgltf::Asset& asset, fastgltf::Image& image) {
         std::shared_ptr<VulkanImage> newImage;
@@ -22,7 +23,8 @@ namespace z0 {
                     assert(filePath.uri.isLocalPath()); // We're only capable of loading
                     const std::string path(filePath.uri.path().begin(),
                                            filePath.uri.path().end()); // Thanks C++.
-                    unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrChannels, STBI_rgb_alpha);
+                    unsigned char* data = stbi_load(path.c_str(), &width, &height,
+                                                    &nrChannels, STBI_rgb_alpha);
                     if (data) {
                         VkDeviceSize imageSize = width * height * STBI_rgb_alpha;
                         newImage = std::make_shared<VulkanImage>(Application::getViewport()._getDevice(),
@@ -34,7 +36,8 @@ namespace z0 {
                 },
                 [&](fastgltf::sources::Vector& vector) {
                     unsigned char* data = stbi_load_from_memory(vector.bytes.data(), static_cast<int>(vector.bytes.size()),
-                                                                &width, &height, &nrChannels, STBI_rgb_alpha);
+                                                                &width, &height,
+                                                                &nrChannels, STBI_rgb_alpha);
                     if (data) {
                         VkDeviceSize imageSize = width * height * STBI_rgb_alpha;
                         newImage = std::make_shared<VulkanImage>(Application::getViewport()._getDevice(),
@@ -55,7 +58,8 @@ namespace z0 {
                            [&](fastgltf::sources::Vector& vector) {
                                unsigned char* data = stbi_load_from_memory(vector.bytes.data() + bufferView.byteOffset,
                                                                            static_cast<int>(bufferView.byteLength),
-                                                                           &width, &height, &nrChannels, STBI_rgb_alpha);
+                                                                           &width, &height,
+                                                                           &nrChannels, STBI_rgb_alpha);
                                if (data) {
                                    VkDeviceSize imageSize = width * height * STBI_rgb_alpha;
                                    newImage = std::make_shared<VulkanImage>(Application::getViewport()._getDevice(),
@@ -67,7 +71,8 @@ namespace z0 {
                            [&](fastgltf::sources::Array& array) {
                                unsigned char* data = stbi_load_from_memory(array.bytes.data() + bufferView.byteOffset,
                                                                            static_cast<int>(bufferView.byteLength),
-                                                                           &width, &height, &nrChannels, STBI_rgb_alpha);
+                                                                           &width, &height,
+                                                                           &nrChannels, STBI_rgb_alpha);
                                if (data) {
                                    VkDeviceSize imageSize = width * height * STBI_rgb_alpha;
                                    newImage = std::make_shared<VulkanImage>(Application::getViewport()._getDevice(),
@@ -137,32 +142,34 @@ namespace z0 {
             materials.push_back(std::make_shared<StandardMaterial>());
         }
 
+        indices.clear();
+        vertices.clear();
         for (fastgltf::Mesh& mesh : gltf.meshes) {
             name += "[" + mesh.name + "]";
             for (auto&& p : mesh.primitives) {
-                std::shared_ptr<MeshSurface> surface = std::make_shared<MeshSurface>();
+                std::shared_ptr<MeshSurface> surface = std::make_shared<MeshSurface>(
+                        static_cast<uint32_t>(indices.size()),
+                        static_cast<uint32_t>(gltf.accessors[p.indicesAccessor.value()].count));
+                size_t initial_vtx = vertices.size();
                 // load indexes
                 {
                     fastgltf::Accessor& indexaccessor = gltf.accessors[p.indicesAccessor.value()];
-                    surface->indices.reserve(indexaccessor.count);
+                    indices.reserve(indices.size() + indexaccessor.count);
                     fastgltf::iterateAccessor<std::uint32_t>(gltf, indexaccessor,
                                                              [&](std::uint32_t idx) {
-                                                                 surface->indices.push_back(idx);
+                                                                 indices.push_back(idx + initial_vtx);
                                                              });
                 }
                 // load vertex positions
                 {
                     fastgltf::Accessor& posAccessor = gltf.accessors[p.findAttribute("POSITION")->second];
-                    surface->vertices.resize(posAccessor.count);
+                    vertices.resize(vertices.size() + posAccessor.count);
                     fastgltf::iterateAccessorWithIndex<glm::vec3>(gltf, posAccessor,
                                                                   [&](glm::vec3 v, size_t index) {
-                                                                      Vertex newvtx;
-                                                                      newvtx.position = v;
-                                                                      newvtx.normal = { 1, 0, 0 };
-                                                                      newvtx.color = glm::vec4 { 1.f };
-                                                                      newvtx.uv.x = 0;
-                                                                      newvtx.uv.y = 0;
-                                                                      surface->vertices[index] = newvtx;
+                                                                      Vertex newvtx {
+                                                                          .position = v,
+                                                                      };
+                                                                      vertices[index + initial_vtx] = newvtx;
                                                                   });
                 }
                 // load vertex normals
@@ -170,7 +177,7 @@ namespace z0 {
                 if (normals != p.attributes.end()) {
                     fastgltf::iterateAccessorWithIndex<glm::vec3>(gltf, gltf.accessors[(*normals).second],
                                                                   [&](glm::vec3 v, size_t index) {
-                                                                      surface->vertices[index].normal = v;
+                                                                      vertices[index + initial_vtx].normal = v;
                                                                   });
                 }
                 // load UVs
@@ -178,8 +185,10 @@ namespace z0 {
                 if (uv != p.attributes.end()) {
                     fastgltf::iterateAccessorWithIndex<glm::vec2>(gltf, gltf.accessors[(*uv).second],
                                                                   [&](glm::vec2 v, size_t index) {
-                                                                      surface->vertices[index].uv.x = v.x;
-                                                                      surface->vertices[index].uv.y = v.y;
+                                                                      vertices[index + initial_vtx].uv= {
+                                                                          v.x,
+                                                                          v.y
+                                                                      };
                                                                   });
                 }
                 // load vertex colors
@@ -187,19 +196,16 @@ namespace z0 {
                 if (colors != p.attributes.end()) {
                     fastgltf::iterateAccessorWithIndex<glm::vec4>(gltf, gltf.accessors[(*colors).second],
                                                                   [&](glm::vec4 v, size_t index) {
-                                                                      surface->vertices[index].color = v;
+                                                                      vertices[index + initial_vtx].color = v;
                                                                   });
                 }
 
                 if (p.materialIndex.has_value()) {
                     surface->materialIndex = p.materialIndex.value();
                 };
-                surface->_model = std::make_shared<VulkanModel>(
-                        Application::getViewport()._getDevice(),
-                        surface->vertices,
-                        surface->indices);
                 surfaces.push_back(surface);
             }
+            model = std::make_shared<VulkanModel>(Application::getViewport()._getDevice(), vertices, indices);
         }
         std::cout << name << std::endl;
     }
