@@ -3,7 +3,7 @@
 
 namespace z0 {
 
-    Image::Image(const std::filesystem::path& filename) {
+    Image::Image(const std::filesystem::path& filename): Resource{filename.string()} {
         loadFromFile(filename);
     }
 

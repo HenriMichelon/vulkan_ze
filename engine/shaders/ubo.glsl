@@ -4,4 +4,5 @@ layout(binding = 0) uniform UniformBufferObject  {
     mat4 view;
     mat4 inverseView;
     int textureIndex;
+    vec4 albedoColor;
 } ubo;

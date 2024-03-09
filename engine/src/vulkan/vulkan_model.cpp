@@ -26,7 +26,7 @@ namespace std {
     struct hash<z0::Vertex>{
         size_t operator()(z0::Vertex const &vertex) const {
             size_t seed = 0;
-            z0::hashCombine(seed, vertex.position, vertex.color, vertex.normal, vertex.uv);
+            z0::hashCombine(seed, vertex.position, vertex.normal, vertex.uv);
             return seed;
         }
     };
@@ -130,21 +130,13 @@ namespace  z0 {
                 nullptr,
                 1,
                 0,
-                VK_FORMAT_R32G32B32A32_SFLOAT,
-                offsetof(Vertex, color)
-        });
-        attributeDescriptions.push_back({
-                VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT,
-                nullptr,
-                2,
-                0,
                 VK_FORMAT_R32G32B32_SFLOAT,
                 offsetof(Vertex, normal)
         });
         attributeDescriptions.push_back({
                 VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT,
                 nullptr,
-                3,
+                2,
                 0,
                 VK_FORMAT_R32G32_SFLOAT,
                 offsetof(Vertex, uv)

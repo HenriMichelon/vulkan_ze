@@ -22,6 +22,13 @@ namespace z0 {
         updateTransform(glm::mat4{1.0f});
     }
 
+    void Node::rotate_degree(glm::vec3 rotation) {
+        rotate({
+            glm::radians(rotation.x),
+            glm::radians(rotation.y),
+            glm::radians(rotation.z) });
+    }
+
     void Node::scale(glm::vec3 s) {
         _scale = s;
         localTransform = mat4();

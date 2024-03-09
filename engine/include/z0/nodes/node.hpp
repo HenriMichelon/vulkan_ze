@@ -23,6 +23,7 @@ namespace z0 {
         std::string toString() const override { return name.empty() ? Object::toString() : name; };
 
         void rotate(glm::vec3 rotation);
+        void rotate_degree(glm::vec3 rotation);
         void scale(glm::vec3 scale);
 
         bool operator==(const Node& other) const { return id == other.id;}

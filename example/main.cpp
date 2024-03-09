@@ -7,12 +7,11 @@ public:
     RootNode(): z0::Node("Main") {}
 
     void onReady() override {
-        std::shared_ptr<Node> model = z0::Loader::loadModelFromFile("models/tc.glb", true);
+        std::shared_ptr<Node> model = z0::Loader::loadModelFromFile("models/free_1972_datsun_240k_gt.glb", false);
         addChild(model);
-        printTree(std::cout);
-        model->scale(glm::vec3{ 5 });
-        float angle = glm::radians(180.0);
-        //model->rotate({ angle, .0, .0f });
+        //printTree(std::cout);
+        model->scale(glm::vec3{ 0.2 });
+        model->rotate_degree({ 190.0, 45.0, -10.0 });
     }
 
     void onProcess(float delta) override {

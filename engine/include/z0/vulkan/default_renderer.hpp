@@ -15,6 +15,7 @@ namespace z0 {
             glm::mat4 view{1.0f};
             glm::mat4 inverseView{1.0f};
             alignas(16) int32_t textureIndex{-1};
+            alignas(16) glm::vec4 albedoColor;
         };
 
         DefaultRenderer(VulkanDevice& device, const std::string& shaderDirectory);

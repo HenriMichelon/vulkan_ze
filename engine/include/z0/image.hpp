@@ -8,8 +8,8 @@ namespace z0 {
 
     class Image: public Resource {
     public:
-        Image() = default;
-        Image(const std::shared_ptr<VulkanImage>& image): vulkanImage{image} {};
+        Image(std::string name = ""): Resource(name) {}
+        Image(const std::shared_ptr<VulkanImage>& image, std::string name = ""): Resource{name}, vulkanImage{image} {};
         Image(const std::filesystem::path& filename);
 
         bool isValid() override { return vulkanImage != nullptr; }

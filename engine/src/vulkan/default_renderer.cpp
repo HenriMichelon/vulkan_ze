@@ -71,6 +71,7 @@ namespace z0 {
                 ubo.model = meshInstance->worldTransform;
                 for (const auto &surface: meshInstance->getMesh()->getSurfaces()) {
                     if (auto standardMaterial = dynamic_cast<StandardMaterial*>(surface->material.get())) {
+                        ubo.albedoColor = standardMaterial->albedoColor.color;
                         if (standardMaterial->albedoTexture == nullptr) {
                             ubo.textureIndex = -1;
                         } else {

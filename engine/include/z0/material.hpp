@@ -12,16 +12,18 @@ namespace z0 {
     };
 
     class Material: public Resource {
+    public:
+        explicit Material(std::string name = ""): Resource(name) {}
     };
 
     class StandardMaterial: public Material {
     public:
-        Color                       albedoColor {1.0f, 1.0f, 1.0f, 1.0f};
+        Color                       albedoColor {0.8f, 0.3f, 0.5f, 1.0f };
         std::shared_ptr<Texture>    albedoTexture;
         CullMode                    cullMode { CULLMODE_BACK };
 
+        explicit StandardMaterial(std::string name = ""): Material(name) {}
         bool isValid() override { return true; }
-
     };
 
 }

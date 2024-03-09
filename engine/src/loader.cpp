@@ -16,6 +16,7 @@ namespace z0 {
     std::shared_ptr<Image> loadImage(fastgltf::Asset& asset, fastgltf::Image& image) {
         std::shared_ptr<VulkanImage> newImage;
         int width, height, nrChannels;
+        std::string name;
         std::visit(
             fastgltf::visitor {
                 [](auto& arg) {},
@@ -50,6 +51,7 @@ namespace z0 {
                 [&](fastgltf::sources::BufferView& view) {
                     auto& bufferView = asset.bufferViews[view.bufferViewIndex];
                     auto& buffer = asset.buffers[bufferView.bufferIndex];
+                    name = bufferView.name;
 
                     std::visit(fastgltf::visitor {
                            // We only care about VectorWithMime here, because we
@@ -87,7 +89,7 @@ namespace z0 {
                 },
             },
         image.data);
-        return newImage == nullptr ? nullptr : std::make_shared<Image>(newImage);
+        return newImage == nullptr ? nullptr : std::make_shared<Image>(newImage, name);
     }
 
     // https://fastgltf.readthedocs.io/v0.7.x/overview.html
@@ -111,17 +113,27 @@ namespace z0 {
         // load all textures
         std::vector<std::shared_ptr<Image>> images;
         for (fastgltf::Image& image : gltf.images) {
-            images.push_back(loadImage(gltf, image));
+            std::shared_ptr<Image> newImage = loadImage(gltf, image);
+            //std::cout << newImage->toString() << std::endl;
+            images.push_back(newImage);
         }
 
         // load all materials
         std::vector<std::shared_ptr<StandardMaterial>> materials{};
         for (fastgltf::Material& mat : gltf.materials) {
-            std::shared_ptr<StandardMaterial> material = std::make_shared<StandardMaterial>();
+            std::shared_ptr<StandardMaterial> material = std::make_shared<StandardMaterial>(mat.name.data());
             if (mat.pbrData.baseColorTexture.has_value()) {
-                std::shared_ptr<Image> image = images[mat.pbrData.baseColorTexture.value().textureIndex];
+                std::cout << material->toString() << std::endl;
+                auto imageIndex = gltf.textures[mat.pbrData.baseColorTexture.value().textureIndex].imageIndex.value();
+                std::shared_ptr<Image> image = images[imageIndex];
                 material->albedoTexture = std::make_shared<ImageTexture>(image);
             }
+            material->albedoColor = Color{
+                mat.pbrData.baseColorFactor[0],
+                mat.pbrData.baseColorFactor[1],
+                mat.pbrData.baseColorFactor[2],
+                mat.pbrData.baseColorFactor[3],
+            };
             material->cullMode = forceBackFaceCulling ? CULLMODE_BACK : mat.doubleSided ? CULLMODE_DISABLED : CULLMODE_BACK;
             materials.push_back(material);
         }
@@ -177,14 +189,6 @@ namespace z0 {
                                                                           v.x,
                                                                           v.y
                                                                       };
-                                                                  });
-                }
-                // load vertex colors
-                auto colors = p.findAttribute("COLOR_0");
-                if (colors != p.attributes.end()) {
-                    fastgltf::iterateAccessorWithIndex<glm::vec4>(gltf, gltf.accessors[(*colors).second],
-                                                                  [&](glm::vec4 v, size_t index) {
-                                                                      vertices[index + initial_vtx].color = v;
                                                                   });
                 }
                 // associate material to surface and keep track of all materials used in the Mesh
@@ -248,7 +252,7 @@ namespace z0 {
                 rootNode->addChild(node);
             }
         }
-        rootNode->rotate({glm::radians(180.f), 0.0f, 0.0f});
+        //rootNode->rotate({glm::radians(180.f), 0.0f, 0.0f});
 
         return rootNode;
     }
