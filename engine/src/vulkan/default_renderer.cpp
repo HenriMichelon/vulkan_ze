@@ -59,7 +59,7 @@ namespace z0 {
         camera.setViewTarget({ 0.0f, 0.0f, 0.0f});
         camera.setPerspectiveProjection(glm::radians(50.0f), getAspectRatio(), 0.1f, 100.0f);
 
-        UniformBufferObject ubo{
+        SurfaceUniformBufferObject ubo{
             .projection = camera.getProjection(),
             .view = camera.getView(),
             .inverseView = camera.getInverseView(),
@@ -104,13 +104,6 @@ namespace z0 {
                         vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_NONE);
                     }
                     bindDescriptorSets(commandBuffer, surfaceIndex);
-                    /*PushConstants push = { meshInstance->worldTransform };
-                    vkCmdPushConstants(commandBuffer,
-                                       pipelineLayout,
-                                       VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                                       0,
-                                       sizeof(PushConstants),
-                                       &push);*/
                     mesh->_getModel()->draw(commandBuffer, surface->firstVertexIndex, surface->indexCount);
                     surfaceIndex += 1;
                 }
@@ -120,7 +113,7 @@ namespace z0 {
 
     void DefaultRenderer::createDescriptorSetLayout() {
         if (meshes.empty()) return;
-        VkDeviceSize size = sizeof(UniformBufferObject);
+        VkDeviceSize size = sizeof(SurfaceUniformBufferObject);
         uint32_t surfaceCount = 0;
         for (const auto& meshInstance: meshes) {
             if (meshInstance->getMesh()->isValid()) {

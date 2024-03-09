@@ -9,7 +9,7 @@ namespace z0 {
 
     class DefaultRenderer: public VulkanRenderer {
     public:
-        struct UniformBufferObject {
+        struct SurfaceUniformBufferObject {
             glm::mat4 model;
             glm::mat4 projection{1.0f};
             glm::mat4 view{1.0f};
@@ -17,10 +17,6 @@ namespace z0 {
             alignas(16) int32_t textureIndex{-1};
             alignas(16) glm::vec4 albedoColor;
         };
-
-        /*struct PushConstants {
-            glm::mat4 model;
-        };*/
 
         DefaultRenderer(VulkanDevice& device, const std::string& shaderDirectory);
         ~DefaultRenderer();
