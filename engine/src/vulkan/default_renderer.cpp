@@ -121,7 +121,7 @@ namespace z0 {
             }
         }
         createUniformBuffers(surfacesBuffers, size, surfaceCount);
-        surfacesSetLayout = VulkanDescriptorSetLayout::Builder(vulkanDevice)
+        globalSetLayout = VulkanDescriptorSetLayout::Builder(vulkanDevice)
             .addBinding(0,
                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
                         VK_SHADER_STAGE_ALL_GRAPHICS)
@@ -136,7 +136,7 @@ namespace z0 {
             for(const auto& texture : textures) {
                 imagesInfo.push_back(texture->getImage()._getImage().imageInfo());
             }
-            if (!VulkanDescriptorWriter(*surfacesSetLayout, *globalPool)
+            if (!VulkanDescriptorWriter(*globalSetLayout, *globalPool)
                 .writeBuffer(0, &bufferInfo)
                 .writeImage(1, imagesInfo.data())
                 .build(surfacesDescriptorSets[i])) {

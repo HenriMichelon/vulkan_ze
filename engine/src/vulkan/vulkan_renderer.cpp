@@ -19,6 +19,7 @@ namespace z0 {
         globalPool = VulkanDescriptorPool::Builder(vulkanDevice)
             .setMaxSets(MAX_FRAMES_IN_FLIGHT)
             .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, MAX_FRAMES_IN_FLIGHT)
+            .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT)
             .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT)
             .build();
 
@@ -76,13 +77,15 @@ namespace z0 {
     }
 
     void VulkanRenderer::bindDescriptorSets(VkCommandBuffer commandBuffer, uint32_t index) {
-        uint32_t surfaceBufferOffset = surfacesBuffers[currentFrame]->getAlignmentSize() * index;
+        std::array<uint32_t, 1> offsets = {
+            static_cast<uint32_t>(surfacesBuffers[currentFrame]->getAlignmentSize() * index)
+        };
         vkCmdBindDescriptorSets(commandBuffer,
                                 VK_PIPELINE_BIND_POINT_GRAPHICS,
                                 pipelineLayout,
                                 0, 1,
                                 &surfacesDescriptorSets[currentFrame],
-                                1, &surfaceBufferOffset);
+                                static_cast<uint32_t>(offsets.size()), offsets.data());
     }
 
     void VulkanRenderer::createResources() {
@@ -109,7 +112,7 @@ namespace z0 {
         const VkPipelineLayoutCreateInfo pipelineLayoutInfo{
                 .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
                 .setLayoutCount = 1,
-                .pSetLayouts = surfacesSetLayout->getDescriptorSetLayout(),
+                .pSetLayouts = globalSetLayout->getDescriptorSetLayout(),
                 .pushConstantRangeCount = 0,
                 .pPushConstantRanges = nullptr
         };
@@ -284,7 +287,7 @@ namespace z0 {
                 next_stage,
                 filename,
                 code,
-                surfacesSetLayout->getDescriptorSetLayout(),
+                globalSetLayout->getDescriptorSetLayout(),
                 nullptr);
         buildShader(*shader);
         return shader;

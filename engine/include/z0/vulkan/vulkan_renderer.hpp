@@ -22,8 +22,10 @@ namespace z0 {
         VulkanDevice& vulkanDevice;
         VkPipelineLayout pipelineLayout { VK_NULL_HANDLE };
         std::unique_ptr<VulkanDescriptorPool> globalPool {};
+        std::unique_ptr<VulkanDescriptorSetLayout> globalSetLayout {};
+        std::vector<std::unique_ptr<VulkanBuffer>> globalBuffers{MAX_FRAMES_IN_FLIGHT};
+
         std::vector<std::unique_ptr<VulkanBuffer>> surfacesBuffers{MAX_FRAMES_IN_FLIGHT};
-        std::unique_ptr<VulkanDescriptorSetLayout> surfacesSetLayout {};
         std::vector<VkDescriptorSet> surfacesDescriptorSets{MAX_FRAMES_IN_FLIGHT};
 
         VulkanRenderer(VulkanDevice& device, std::string shaderDirectory);
