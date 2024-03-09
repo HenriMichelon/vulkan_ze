@@ -32,7 +32,9 @@ namespace z0 {
     //protected:
         glm::vec3 position {};
         glm::mat4 localTransform {};
+        glm::mat4 normalLocalTransform {};
         glm::mat4 worldTransform {};
+        glm::mat4 normalWorldTransform {};
 
     protected:
         std::string name;

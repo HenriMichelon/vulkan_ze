@@ -62,14 +62,16 @@ namespace z0 {
         GobalUniformBufferObject globalUbo{
             .projection = camera.getProjection(),
             .view = camera.getView(),
-            .inverseView = camera.getInverseView(),
         };
         writeUniformBuffer(globalBuffers, &globalUbo);
 
         uint32_t modelIndex = 0;
         uint32_t surfaceIndex = 0;
         for (const auto&meshInstance: meshes) {
-            ModelUniformBufferObject modelUbo { meshInstance->worldTransform };
+            ModelUniformBufferObject modelUbo {
+                .matrix = meshInstance->worldTransform,
+                .normalMatrix = meshInstance->normalWorldTransform,
+            };
             writeUniformBuffer(modelsBuffers, &modelUbo, modelIndex);
             if (meshInstance->getMesh()->isValid()) {
                 for (const auto &surface: meshInstance->getMesh()->getSurfaces()) {
@@ -160,10 +162,11 @@ namespace z0 {
                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
                         VK_SHADER_STAGE_FRAGMENT_BIT)
             .build();
+
         for (int i = 0; i < surfacesDescriptorSets.size(); i++) {
-            auto surfaceBufferInfo = surfacesBuffers[i]->descriptorInfo(surfaceBufferSize);
-            auto modelBufferInfo = modelsBuffers[i]->descriptorInfo(modelBufferSize);
             auto globalBufferInfo = globalBuffers[i]->descriptorInfo(sizeof(GobalUniformBufferObject));
+            auto modelBufferInfo = modelsBuffers[i]->descriptorInfo(modelBufferSize);
+            auto surfaceBufferInfo = surfacesBuffers[i]->descriptorInfo(surfaceBufferSize);
             std::vector<VkDescriptorImageInfo> imagesInfo{};
             for(const auto& texture : textures) {
                 imagesInfo.push_back(texture->getImage()._getImage().imageInfo());

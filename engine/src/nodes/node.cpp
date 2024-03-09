@@ -11,6 +11,7 @@ namespace z0 {
 
     void Node::updateTransform(const glm::mat4& parentMatrix) {
         worldTransform = parentMatrix * localTransform;
+        normalWorldTransform = normalLocalTransform;
         for (auto child : children) {
             child->updateTransform(worldTransform);
         }
@@ -19,12 +20,14 @@ namespace z0 {
     void Node::translate(glm::vec3 pos) {
         position = pos;
         localTransform = mat4();
+        normalLocalTransform = normalMatrix();
         updateTransform(glm::mat4{1.0f});
     }
 
     void Node::rotate(glm::vec3 rot) {
         _rotation = rot;
         localTransform = mat4();
+        normalLocalTransform = normalMatrix();
         updateTransform(glm::mat4{1.0f});
     }
 
@@ -38,6 +41,7 @@ namespace z0 {
     void Node::scale(glm::vec3 s) {
         _scale = s;
         localTransform = mat4();
+        normalLocalTransform = normalMatrix();
         updateTransform(glm::mat4{1.0f});
     }
 
