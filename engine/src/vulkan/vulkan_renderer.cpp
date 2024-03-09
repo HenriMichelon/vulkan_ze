@@ -18,9 +18,9 @@ namespace z0 {
     {
         globalPool = VulkanDescriptorPool::Builder(vulkanDevice)
             .setMaxSets(MAX_FRAMES_IN_FLIGHT)
-            .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, MAX_FRAMES_IN_FLIGHT)
             .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT)
             .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT)
+            .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT)
             .build();
 
         // Create command buffers
@@ -77,8 +77,9 @@ namespace z0 {
     }
 
     void VulkanRenderer::bindDescriptorSets(VkCommandBuffer commandBuffer, uint32_t index) {
-        std::array<uint32_t, 1> offsets = {
-            static_cast<uint32_t>(surfacesBuffers[currentFrame]->getAlignmentSize() * index)
+        std::array<uint32_t, 2> offsets = {
+            static_cast<uint32_t>(surfacesBuffers[currentFrame]->getAlignmentSize() * index),
+            0
         };
         vkCmdBindDescriptorSets(commandBuffer,
                                 VK_PIPELINE_BIND_POINT_GRAPHICS,

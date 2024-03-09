@@ -32,7 +32,7 @@ namespace z0 {
 
         // Helpers function for children classes
         void createResources();
-        void createUniformBuffers(std::vector<std::unique_ptr<VulkanBuffer>>& buffers, VkDeviceSize size = VK_WHOLE_SIZE, uint32_t count = 1);
+        void createUniformBuffers(std::vector<std::unique_ptr<VulkanBuffer>>& buffers, VkDeviceSize size, uint32_t count = 1);
         void writeUniformBuffer(const std::vector<std::unique_ptr<VulkanBuffer>>& buffers, void *data, uint32_t index = 1);
         void bindDescriptorSets(VkCommandBuffer commandBuffer, uint32_t index);
         void bindShader(VkCommandBuffer commandBuffer, VulkanShader& shader);
