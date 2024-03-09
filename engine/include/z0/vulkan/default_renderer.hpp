@@ -10,19 +10,12 @@ namespace z0 {
     class DefaultRenderer: public VulkanRenderer {
     public:
         struct GobalUniformBufferObject {
-            glm::mat4 model;
             glm::mat4 projection{1.0f};
             glm::mat4 view{1.0f};
             glm::mat4 inverseView{1.0f};
-            alignas(16) int32_t textureIndex{-1};
-            alignas(16) glm::vec4 albedoColor;
         };
-
         struct SurfaceUniformBufferObject {
             glm::mat4 model;
-            glm::mat4 projection{1.0f};
-            glm::mat4 view{1.0f};
-            glm::mat4 inverseView{1.0f};
             alignas(16) int32_t textureIndex{-1};
             alignas(16) glm::vec4 albedoColor;
         };

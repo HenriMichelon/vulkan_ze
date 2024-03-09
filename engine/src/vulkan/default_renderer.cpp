@@ -16,7 +16,7 @@ namespace z0 {
     void DefaultRenderer::loadScene(const std::shared_ptr<Node>& root) {
         rootNode = root;
         createMeshIndices(rootNode);
-        createResources(); //sizeof(PushConstants));
+        createResources();
     }
 
     void DefaultRenderer::createMeshIndices(std::shared_ptr<Node>& parent) {
@@ -59,26 +59,27 @@ namespace z0 {
         camera.setViewTarget({ 0.0f, 0.0f, 0.0f});
         camera.setPerspectiveProjection(glm::radians(50.0f), getAspectRatio(), 0.1f, 100.0f);
 
-        SurfaceUniformBufferObject ubo{
+        GobalUniformBufferObject globalUbo{
             .projection = camera.getProjection(),
             .view = camera.getView(),
             .inverseView = camera.getInverseView(),
         };
+        writeUniformBuffer(globalBuffers, &globalUbo);
 
         uint32_t surfaceIndex = 0;
         for (const auto&meshInstance: meshes) {
-            ubo.model = meshInstance->worldTransform;
+            SurfaceUniformBufferObject surfaceUbo { meshInstance->worldTransform };
             if (meshInstance->getMesh()->isValid()) {
                 for (const auto &surface: meshInstance->getMesh()->getSurfaces()) {
                     if (auto standardMaterial = dynamic_cast<StandardMaterial*>(surface->material.get())) {
-                        ubo.albedoColor = standardMaterial->albedoColor.color;
+                        surfaceUbo.albedoColor = standardMaterial->albedoColor.color;
                         if (standardMaterial->albedoTexture == nullptr) {
-                            ubo.textureIndex = -1;
+                            surfaceUbo.textureIndex = -1;
                         } else {
-                            ubo.textureIndex = texturesIndices[standardMaterial->albedoTexture->getId()];
+                            surfaceUbo.textureIndex = texturesIndices[standardMaterial->albedoTexture->getId()];
                         }
                     }
-                    writeUniformBuffer(surfacesBuffers, &ubo, surfaceIndex);
+                    writeUniformBuffer(surfacesBuffers, &surfaceUbo, surfaceIndex);
                     surfaceIndex += 1;
                 }
             }
@@ -123,28 +124,28 @@ namespace z0 {
         createUniformBuffers(surfacesBuffers, size, surfaceCount);
         createUniformBuffers(globalBuffers, sizeof(GobalUniformBufferObject));
         globalSetLayout = VulkanDescriptorSetLayout::Builder(vulkanDevice)
-            .addBinding(0,
+            .addBinding(0, // global UBO
                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
                         VK_SHADER_STAGE_ALL_GRAPHICS)
-            .addBinding(1,
-                        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                        VK_SHADER_STAGE_ALL_GRAPHICS,
-                        textures.size())
-            .addBinding(2,
+            .addBinding(1, // surfaces UBO
+                       VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                       VK_SHADER_STAGE_ALL_GRAPHICS,
+                       textures.size())
+            .addBinding(2, // textures
                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
                         VK_SHADER_STAGE_ALL_GRAPHICS)
             .build();
         for (int i = 0; i < surfacesDescriptorSets.size(); i++) {
             auto bufferInfo = surfacesBuffers[i]->descriptorInfo(size);
-            auto globalBufferInfo = globalBuffers[i]->descriptorInfo();
+            auto globalBufferInfo = globalBuffers[i]->descriptorInfo(sizeof(GobalUniformBufferObject));
             std::vector<VkDescriptorImageInfo> imagesInfo{};
             for(const auto& texture : textures) {
                 imagesInfo.push_back(texture->getImage()._getImage().imageInfo());
             }
             if (!VulkanDescriptorWriter(*globalSetLayout, *globalPool)
-                .writeBuffer(0, &bufferInfo)
+                .writeBuffer(0, &globalBufferInfo)
                 .writeImage(1, imagesInfo.data())
-                .writeBuffer(2, &globalBufferInfo)
+                .writeBuffer(2, &bufferInfo)
                 .build(surfacesDescriptorSets[i])) {
                 die("Cannot allocate descriptor set");
             }
