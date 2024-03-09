@@ -18,6 +18,10 @@ namespace z0 {
             alignas(16) glm::vec4 albedoColor;
         };
 
+        /*struct PushConstants {
+            glm::mat4 model;
+        };*/
+
         DefaultRenderer(VulkanDevice& device, const std::string& shaderDirectory);
         ~DefaultRenderer();
 

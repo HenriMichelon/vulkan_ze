@@ -17,7 +17,7 @@ public:
 
     void onProcess(float delta) override {
         float angle = delta * glm::radians(90.0f) / 2;
-        rotate({ .0, angle, .0 });
+        //rotate({ .0, angle, .0 });
     }
 };
 

@@ -10,5 +10,5 @@ namespace z0 {
         //WINDOW_MODE_FULLSCREEN_EXCLUSIVE= 4,
     };
 
-    const int WINDOW_CLEAR_COLOR[] {128, 128, 128 };
+    const int WINDOW_CLEAR_COLOR[] { 0, 0, 0 };
 }

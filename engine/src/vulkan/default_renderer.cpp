@@ -16,7 +16,9 @@ namespace z0 {
     void DefaultRenderer::loadScene(const std::shared_ptr<Node>& root) {
         rootNode = root;
         createMeshIndices(rootNode);
-        loadResources();
+        createDescriptorSetLayout();
+        createPipelineLayout();//sizeof(PushConstants));
+        loadShaders();
     }
 
     void DefaultRenderer::createMeshIndices(std::shared_ptr<Node>& parent) {
@@ -67,8 +69,8 @@ namespace z0 {
 
         uint32_t surfaceIndex = 0;
         for (const auto&meshInstance: meshes) {
+            ubo.model = meshInstance->worldTransform;
             if (meshInstance->getMesh()->isValid()) {
-                ubo.model = meshInstance->worldTransform;
                 for (const auto &surface: meshInstance->getMesh()->getSurfaces()) {
                     if (auto standardMaterial = dynamic_cast<StandardMaterial*>(surface->material.get())) {
                         ubo.albedoColor = standardMaterial->albedoColor.color;
@@ -104,6 +106,13 @@ namespace z0 {
                         vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_NONE);
                     }
                     bindDescriptorSets(commandBuffer, surfaceIndex);
+                    /*PushConstants push = { meshInstance->worldTransform };
+                    vkCmdPushConstants(commandBuffer,
+                                       pipelineLayout,
+                                       VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                                       0,
+                                       sizeof(PushConstants),
+                                       &push);*/
                     mesh->_getModel()->draw(commandBuffer, surface->firstVertexIndex, surface->indexCount);
                     surfaceIndex += 1;
                 }

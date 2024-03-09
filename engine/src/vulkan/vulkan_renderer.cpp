@@ -68,24 +68,6 @@ namespace z0 {
         if (pipelineLayout != VK_NULL_HANDLE) vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
     }
 
-    void VulkanRenderer::loadResources() {
-        // Create Pipeline Layout
-        // https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Introduction
-        createDescriptorSetLayout();
-        if (globalSetLayout == nullptr) return;
-        const VkPipelineLayoutCreateInfo pipelineLayoutInfo{
-                .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-                .setLayoutCount = 1,
-                .pSetLayouts = globalSetLayout->getDescriptorSetLayout(),
-                .pushConstantRangeCount = 0,
-                .pPushConstantRanges = nullptr
-        };
-        if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
-            die("failed to create pipeline layout!");
-        }
-        loadShaders();
-    }
-
     void VulkanRenderer::writeUniformBuffer(void *data, uint32_t index) {
         uint32_t size = uboBuffers[currentFrame]->getAlignmentSize();
         uboBuffers[currentFrame]->writeToBuffer(data, size, size * index);
@@ -96,7 +78,8 @@ namespace z0 {
         uint32_t size = uboBuffers[currentFrame]->getAlignmentSize();
         uint32_t offset = size * index;
         vkCmdBindDescriptorSets(commandBuffer,
-                                VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
+                                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                pipelineLayout,
                                 0, 1,
                                 &globalDescriptorSets[currentFrame],
                                 1, &offset);
@@ -113,6 +96,20 @@ namespace z0 {
                     vulkanDevice.getDeviceProperties().limits.minUniformBufferOffsetAlignment
             );
             uboBuffer->map();
+        }
+    }
+
+    void VulkanRenderer::createPipelineLayout(uint32_t pushConstantSize) {
+        pushConstantRange.size = pushConstantSize;
+        const VkPipelineLayoutCreateInfo pipelineLayoutInfo{
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+                .setLayoutCount = 1,
+                .pSetLayouts = globalSetLayout->getDescriptorSetLayout(),
+                .pushConstantRangeCount = 0,
+                .pPushConstantRanges = nullptr
+        };
+        if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+            die("failed to create pipeline layout!");
         }
     }
 
@@ -270,7 +267,6 @@ namespace z0 {
         // Use RGBA color write mask
         VkColorComponentFlags color_component_flags[] = {VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_A_BIT};
         vkCmdSetColorWriteMaskEXT(commandBuffer, 0, 1, color_component_flags);
-
     }
 
     std::unique_ptr<VulkanShader> VulkanRenderer::createShader(const std::string& filename,

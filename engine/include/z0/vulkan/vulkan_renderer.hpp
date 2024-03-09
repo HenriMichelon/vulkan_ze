@@ -25,11 +25,12 @@ namespace z0 {
         std::unique_ptr<VulkanDescriptorPool> globalPool {};
         std::unique_ptr<VulkanDescriptorSetLayout> globalSetLayout {};
         std::vector<VkDescriptorSet> globalDescriptorSets{MAX_FRAMES_IN_FLIGHT};
+        VkPushConstantRange pushConstantRange = { VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT };
 
         VulkanRenderer(VulkanDevice& device, std::string shaderDirectory);
 
         // Helpers function for children classes
-        void loadResources();
+        void createPipelineLayout(uint32_t pushConstantSize = 0);
         void createUniformBuffers(VkDeviceSize size, uint32_t count);
         void writeUniformBuffer(void *data, uint32_t index);
         void bindDescriptorSets(VkCommandBuffer commandBuffer, uint32_t index);
