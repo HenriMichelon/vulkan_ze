@@ -123,7 +123,7 @@ namespace z0 {
         for (fastgltf::Material& mat : gltf.materials) {
             std::shared_ptr<StandardMaterial> material = std::make_shared<StandardMaterial>(mat.name.data());
             if (mat.pbrData.baseColorTexture.has_value()) {
-                std::cout << material->toString() << std::endl;
+                //std::cout << material->toString() << std::endl;
                 auto imageIndex = gltf.textures[mat.pbrData.baseColorTexture.value().textureIndex].imageIndex.value();
                 std::shared_ptr<Image> image = images[imageIndex];
                 material->albedoTexture = std::make_shared<ImageTexture>(image);

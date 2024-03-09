@@ -22,6 +22,7 @@ namespace z0 {
         virtual void printTree(std::ostream&, int tab=0);
         std::string toString() const override { return name.empty() ? Object::toString() : name; };
 
+        void translate(glm::vec3 rotation);
         void rotate(glm::vec3 rotation);
         void rotate_degree(glm::vec3 rotation);
         void scale(glm::vec3 scale);

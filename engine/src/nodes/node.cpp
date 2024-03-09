@@ -16,6 +16,12 @@ namespace z0 {
         }
     }
 
+    void Node::translate(glm::vec3 pos) {
+        position = pos;
+        localTransform = mat4();
+        updateTransform(glm::mat4{1.0f});
+    }
+
     void Node::rotate(glm::vec3 rot) {
         _rotation = rot;
         localTransform = mat4();
