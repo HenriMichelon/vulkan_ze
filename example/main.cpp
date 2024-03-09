@@ -4,17 +4,20 @@
 
 class RootNode: public z0::Node {
 public:
+    RootNode(): z0::Node("Main") {}
+
     void onReady() override {
         std::shared_ptr<Node> model = z0::Loader::loadModelFromFile("models/tc.glb", true);
         addChild(model);
-        model->scale(glm::vec3{ 0.04 });
-        float angle = glm::radians(45.0f);
-        //model->rotate({ angle, .0f, .0f });
+        printTree(std::cout);
+        model->scale(glm::vec3{ 5 });
+        float angle = glm::radians(180.0);
+        //model->rotate({ angle, .0, .0f });
     }
 
     void onProcess(float delta) override {
         float angle = delta * glm::radians(90.0f) / 2;
-        //rotate({ .0, angle, .0 });
+        //rotate({ .0, angle, angle });
     }
 };
 

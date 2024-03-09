@@ -4,7 +4,7 @@ namespace z0 {
 
     Node::id_t Node::currentId = 0;
 
-    Node::Node(): id{currentId++}  {
+    Node::Node(const std::string _name): id{currentId++}, name{_name}   {
         localTransform = mat4();
         updateTransform(glm::mat4{1.0f});
     }
@@ -93,6 +93,14 @@ namespace z0 {
                         invScale.z * (c1 * c2),
                 }
         };
+    }
+
+    void Node::printTree(std::ostream& out, int tab) {
+        for (int i = 0; i < (tab*2); i++) {
+            out << " ";
+        }
+        out << toString() << std::endl;
+        for (auto child: children) child->printTree(out, tab+1);
     }
 
 }

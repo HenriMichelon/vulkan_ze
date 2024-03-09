@@ -90,15 +90,6 @@ namespace z0 {
         return newImage == nullptr ? nullptr : std::make_shared<Image>(newImage);
     }
 
-    void translateReferential(const std::shared_ptr<Mesh> mesh) {
-        return;
-        auto angle = glm::radians(180.f);
-        glm::mat4 rotationMatrix = glm::rotate(glm::mat4 {1.0f}, angle, {1.0f, 0.0f, 0.0f});
-        for (auto& vertex: mesh->getVertices()) {
-            vertex.position = rotationMatrix * glm::vec4{vertex.position, 1.0f};
-        }
-    }
-
     // https://fastgltf.readthedocs.io/v0.7.x/overview.html
     // https://github.com/vblanco20-1/vulkan-guide/blob/all-chapters-1.3-wip/chapter-5/vk_loader.cpp
     std::shared_ptr<Node> Loader::loadModelFromFile(const std::filesystem::path& filename, bool forceBackFaceCulling) {
@@ -205,22 +196,20 @@ namespace z0 {
                 mesh->getSurfaces().push_back(surface);
             }
             meshes.push_back(mesh);
-            std::cout << mesh->getName() << std::endl;
         }
 
         // load all nodes and their meshes
-        std::shared_ptr<Node> rootNode = std::make_shared<Node>();
+        std::vector<std::shared_ptr<Node>> nodes;
         for (fastgltf::Node& node : gltf.nodes) {
             std::shared_ptr<Node> newNode;
+            std::string name{node.name.data()};
             // find if the node has a mesh, and if it does hook it to the mesh pointer and allocate it with the meshnode class
             if (node.meshIndex.has_value()) {
                 auto mesh = meshes[*node.meshIndex];
-                translateReferential(mesh);
                 mesh->_buildModel();
-                newNode = std::make_shared<MeshInstance>(mesh);
+                newNode = std::make_shared<MeshInstance>(mesh, name);
             } else {
-                newNode = std::make_shared<Node>();
-                std::cout << "Node" << std::endl;
+                newNode = std::make_shared<Node>(name);
             }
 
             std::visit(fastgltf::visitor { [&](fastgltf::Node::TransformMatrix matrix) {
@@ -240,8 +229,26 @@ namespace z0 {
                                                newNode->localTransform = tm * rm * sm;
                                            } },
                        node.transform);
-            rootNode->addChild(newNode);
+            newNode->updateTransform(glm::mat4{1.0f});
+            nodes.push_back(newNode);
         }
+
+        for (int i = 0; i < gltf.nodes.size(); i++) {
+            fastgltf::Node& node = gltf.nodes[i];
+            std::shared_ptr<Node>& sceneNode = nodes[i];
+            for (auto& c : node.children) {
+                sceneNode->addChild(nodes[c]);
+            }
+        }
+
+        // find the top nodes, with no parents
+        std::shared_ptr<Node> rootNode = std::make_shared<Node>(filename.string());
+        for (auto& node : nodes) {
+            if (node->getParent() == nullptr) {
+                rootNode->addChild(node);
+            }
+        }
+        rootNode->rotate({glm::radians(180.f), 0.0f, 0.0f});
 
         return rootNode;
     }
