@@ -1,8 +1,8 @@
-layout(binding = 0) uniform UniformBufferObject  {
+layout(set = 0, binding = 0) uniform SurfaceUniformBufferObject  {
     mat4 model;
     mat4 projection;
     mat4 view;
     mat4 inverseView;
     int textureIndex;
     vec4 albedoColor;
-} ubo;
+} surface;

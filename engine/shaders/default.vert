@@ -10,7 +10,7 @@ layout(location = 0) out vec2 UV;
 
 
 void main() {
-    vec4 globalPosition = ubo.model * vec4(position, 1.0);
-    gl_Position = ubo.projection * ubo.view * globalPosition;
+    vec4 globalPosition = surface.model * vec4(position, 1.0);
+    gl_Position = surface.projection * surface.view * globalPosition;
     UV = uv;
 }

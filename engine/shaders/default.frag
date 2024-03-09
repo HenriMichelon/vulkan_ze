@@ -9,10 +9,10 @@ layout(location = 0) in vec2 UV;
 layout(location = 0) out vec4 ALBEDO;
 
 void main() {
-    if (ubo.textureIndex == -1) {
-        ALBEDO = ubo.albedoColor;
+    if (surface.textureIndex == -1) {
+        ALBEDO = surface.albedoColor;
     } else {
-        ALBEDO = texture(texSampler[ubo.textureIndex], UV);
-        ALBEDO.a = ubo.albedoColor.a;
+        ALBEDO = texture(texSampler[surface.textureIndex], UV);
+        ALBEDO.a = surface.albedoColor.a;
     }
 }
