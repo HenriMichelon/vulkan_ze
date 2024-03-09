@@ -33,6 +33,10 @@ namespace z0 {
         std::unordered_set<std::shared_ptr<Texture>> textures {};
         std::map<Resource::rid_t, int32_t> texturesIndices {};
 
+        std::unique_ptr<VulkanDescriptorPool> globalPool {};
+        std::vector<std::unique_ptr<VulkanBuffer>> globalBuffers{MAX_FRAMES_IN_FLIGHT};
+        std::vector<std::unique_ptr<VulkanBuffer>> surfacesBuffers{MAX_FRAMES_IN_FLIGHT};
+
         void update(float delta) override;
         void recordCommands(VkCommandBuffer commandBuffer) override;
         void createDescriptorSetLayout() override;

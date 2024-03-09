@@ -104,7 +104,11 @@ namespace z0 {
                     } else {
                         vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_NONE);
                     }
-                    bindDescriptorSets(commandBuffer, surfaceIndex);
+                    std::array<uint32_t, 2> offsets = {
+                            0, // globalBuffers
+                            static_cast<uint32_t>(surfacesBuffers[currentFrame]->getAlignmentSize() * surfaceIndex),
+                    };
+                    bindDescriptorSets(commandBuffer, offsets.size(), offsets.data());
                     mesh->_getModel()->draw(commandBuffer, surface->firstVertexIndex, surface->indexCount);
                     surfaceIndex += 1;
                 }
@@ -114,6 +118,13 @@ namespace z0 {
 
     void DefaultRenderer::createDescriptorSetLayout() {
         if (meshes.empty()) return;
+        globalPool = VulkanDescriptorPool::Builder(vulkanDevice)
+                .setMaxSets(MAX_FRAMES_IN_FLIGHT)
+                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // global UBO
+                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // surfaces UBO
+                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT) // textures
+                .build();
+
         VkDeviceSize size = sizeof(SurfaceUniformBufferObject);
         uint32_t surfaceCount = 0;
         for (const auto& meshInstance: meshes) {

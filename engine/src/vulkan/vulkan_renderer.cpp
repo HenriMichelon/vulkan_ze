@@ -16,13 +16,6 @@ namespace z0 {
     VulkanRenderer::VulkanRenderer(VulkanDevice &dev, std::string sDir) :
         vulkanDevice{dev}, device(dev.getDevice()), shaderDirectory(std::move(sDir))
     {
-        globalPool = VulkanDescriptorPool::Builder(vulkanDevice)
-            .setMaxSets(MAX_FRAMES_IN_FLIGHT)
-            .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // global UBO
-            .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // surfaces UBO
-            .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT) // textures
-            .build();
-
         // Create command buffers
         // https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Command_buffers
         {
@@ -76,17 +69,14 @@ namespace z0 {
         buffers[currentFrame]->flush();
     }
 
-    void VulkanRenderer::bindDescriptorSets(VkCommandBuffer commandBuffer, uint32_t index) {
-        std::array<uint32_t, 2> offsets = {
-            0, // globalBuffers
-            static_cast<uint32_t>(surfacesBuffers[currentFrame]->getAlignmentSize() * index),
-        };
+    void VulkanRenderer::bindDescriptorSets(VkCommandBuffer commandBuffer, uint32_t count, uint32_t *offsets) {
+
         vkCmdBindDescriptorSets(commandBuffer,
                                 VK_PIPELINE_BIND_POINT_GRAPHICS,
                                 pipelineLayout,
                                 0, 1,
                                 &surfacesDescriptorSets[currentFrame],
-                                static_cast<uint32_t>(offsets.size()), offsets.data());
+                                count, offsets);
     }
 
     void VulkanRenderer::createResources() {
