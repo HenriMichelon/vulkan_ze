@@ -68,6 +68,7 @@ namespace z0 {
         if (pipelineLayout != VK_NULL_HANDLE) vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
     }
 
+
     void VulkanRenderer::writeUniformBuffer(void *data, uint32_t index) {
         uint32_t size = uboBuffers[currentFrame]->getAlignmentSize();
         uboBuffers[currentFrame]->writeToBuffer(data, size, size * index);
@@ -84,6 +85,13 @@ namespace z0 {
                                 &globalDescriptorSets[currentFrame],
                                 1, &offset);
     }
+
+
+    void VulkanRenderer::createResources(uint32_t pushConstantSize) {
+        createDescriptorSetLayout();
+        createPipelineLayout(pushConstantSize);
+        loadShaders();
+    };
 
     void VulkanRenderer::createUniformBuffers(VkDeviceSize size, uint32_t count) {
         for (auto &uboBuffer: uboBuffers) {

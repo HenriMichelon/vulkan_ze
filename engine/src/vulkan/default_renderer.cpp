@@ -16,9 +16,7 @@ namespace z0 {
     void DefaultRenderer::loadScene(const std::shared_ptr<Node>& root) {
         rootNode = root;
         createMeshIndices(rootNode);
-        createDescriptorSetLayout();
-        createPipelineLayout();//sizeof(PushConstants));
-        loadShaders();
+        createResources(); //sizeof(PushConstants));
     }
 
     void DefaultRenderer::createMeshIndices(std::shared_ptr<Node>& parent) {

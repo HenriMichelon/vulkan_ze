@@ -30,7 +30,7 @@ namespace z0 {
         VulkanRenderer(VulkanDevice& device, std::string shaderDirectory);
 
         // Helpers function for children classes
-        void createPipelineLayout(uint32_t pushConstantSize = 0);
+        void createResources(uint32_t pushConstantSize = 0);
         void createUniformBuffers(VkDeviceSize size, uint32_t count);
         void writeUniformBuffer(void *data, uint32_t index);
         void bindDescriptorSets(VkCommandBuffer commandBuffer, uint32_t index);
@@ -60,6 +60,7 @@ namespace z0 {
         void beginRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex);
         void endRendering(VkCommandBuffer commandBuffer,uint32_t imageIndex);
         void buildShader(VulkanShader& shader);
+        void createPipelineLayout(uint32_t pushConstantSize = 0);
         std::vector<char> readFile(const std::string& fileName);
 
         virtual void update(float delta) = 0;
