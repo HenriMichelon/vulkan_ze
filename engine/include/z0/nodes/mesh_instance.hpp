@@ -1,17 +1,17 @@
 #pragma once
 
 #include "z0/mesh.hpp"
-#include "node.hpp"
 
 namespace z0 {
 
     class MeshInstance: public Node {
     public:
-        MeshInstance() {};
-        MeshInstance(std::shared_ptr<Mesh> _mesh): mesh{_mesh} {};
+        MeshInstance() = default;
+        MeshInstance(const std::shared_ptr<Mesh>& _mesh): mesh{_mesh} {};
 
-        void setMesg(std::shared_ptr<Mesh> _mesh) { mesh = _mesh; };
+        void setMesh(const std::shared_ptr<Mesh>& _mesh) { mesh = _mesh; };
         std::shared_ptr<Mesh> getMesh() const { return mesh; }
+        bool isValid() const { return mesh != nullptr; }
 
     private:
         std::shared_ptr<Mesh> mesh;

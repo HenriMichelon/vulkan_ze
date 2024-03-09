@@ -1,9 +1,9 @@
 #pragma once
 
 #include "z0/vulkan/window_helper.hpp"
-#include "z0/nodes/node.hpp"
 #include "z0/application_config.hpp"
 #include "z0/vulkan/vulkan_instance.hpp"
+#include "z0/scene.hpp"
 
 namespace z0 {
 
@@ -11,9 +11,9 @@ namespace z0 {
 
     class MainLoop: public Object {
     public:
-        MainLoop(const ApplicationConfig& applicationConfig);
+        explicit MainLoop(const ApplicationConfig& applicationConfig);
 
-        void start(const std::shared_ptr<Node>& rootNode);
+        void start(const std::shared_ptr<Scene>& scene);
 
         static MainLoop& get();
 
@@ -21,6 +21,7 @@ namespace z0 {
         VulkanInstance vulkanInstance;
         std::shared_ptr<Viewport> viewport;
         const ApplicationConfig& applicationConfig;
+        std::shared_ptr<Scene> currentScene;
 
         void ready(const std::shared_ptr<Node>& node);
         void process(const std::shared_ptr<Node>& node, float delta);
@@ -36,6 +37,7 @@ namespace z0 {
 
     class Application {
     public:
+        static Scene& getCurrentScene() { return *MainLoop::get().currentScene; }
         static Viewport& getViewport() { return *MainLoop::get().viewport; }
         static const std::filesystem::path getDirectory() { return MainLoop::get().applicationConfig.appDir; }
     };

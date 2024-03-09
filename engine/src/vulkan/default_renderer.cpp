@@ -29,16 +29,20 @@ namespace z0 {
     void DefaultRenderer::createMeshIndex(std::shared_ptr<Node>& node) {
         if (auto meshInstance = dynamic_cast<MeshInstance*>(node.get())) {
             meshes.push_back(meshInstance);
-            for(const auto& material : meshInstance->getMesh()->getMaterials()) {
-                if (material->albedoTexture != nullptr) {
-                   textures.insert(material->albedoTexture);
+            for(const auto& material : meshInstance->getMesh()->_getMaterials()) {
+                if (auto standardMaterial = dynamic_cast<StandardMaterial*>(material.get())) {
+                    if (standardMaterial->albedoTexture != nullptr) {
+                        textures.insert(standardMaterial->albedoTexture);
+                    }
                 }
             }
-            for(const auto& material : meshInstance->getMesh()->getMaterials()) {
-                if (material->albedoTexture != nullptr) {
-                    auto it = textures.find(material->albedoTexture) ;
-                    auto index = std::distance(std::begin(textures), it);
-                    texturesIndices[material->albedoTexture->getId()] = static_cast<int32_t>(index);
+            for(const auto& material : meshInstance->getMesh()->_getMaterials()) {
+                if (auto standardMaterial = dynamic_cast<StandardMaterial*>(material.get())) {
+                    if (standardMaterial->albedoTexture != nullptr) {
+                        auto it = textures.find(standardMaterial->albedoTexture) ;
+                        auto index = std::distance(std::begin(textures), it);
+                        texturesIndices[standardMaterial->albedoTexture->getId()] = static_cast<int32_t>(index);
+                    }
                 }
             }
         }
@@ -66,11 +70,12 @@ namespace z0 {
             if (meshInstance->getMesh()->isValid()) {
                 ubo.model = meshInstance->transform.mat4();
                 for (const auto &surface: meshInstance->getMesh()->getSurfaces()) {
-                    auto material = meshInstance->getMesh()->getMaterials()[surface->materialIndex];
-                    if (material->albedoTexture == nullptr) {
-                        ubo.textureIndex = -1;
-                    } else {
-                        ubo.textureIndex = texturesIndices[material->albedoTexture->getId()];
+                    if (auto standardMaterial = dynamic_cast<StandardMaterial*>(surface->material.get())) {
+                        if (standardMaterial->albedoTexture == nullptr) {
+                            ubo.textureIndex = -1;
+                        } else {
+                            ubo.textureIndex = texturesIndices[standardMaterial->albedoTexture->getId()];
+                        }
                     }
                     writeUniformBuffer(&ubo, surfaceIndex);
                     surfaceIndex += 1;
@@ -89,10 +94,14 @@ namespace z0 {
             auto mesh = meshInstance->getMesh();
             if (mesh->isValid()) {
                 for (const auto& surface: mesh->getSurfaces()) {
-                    auto material = mesh->getMaterials()[surface->materialIndex];
-                    vkCmdSetCullMode(commandBuffer,
-                                     material->cullMode == CULLMODE_DISABLED ? VK_CULL_MODE_NONE :
-                                     material->cullMode == CULLMODE_BACK ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_FRONT_BIT);
+                    if (auto standardMaterial = dynamic_cast<StandardMaterial*>(surface->material.get())) {
+                        vkCmdSetCullMode(commandBuffer,
+                                         standardMaterial->cullMode == CULLMODE_DISABLED ? VK_CULL_MODE_NONE :
+                                         standardMaterial->cullMode == CULLMODE_BACK ? VK_CULL_MODE_BACK_BIT
+                                                                             : VK_CULL_MODE_FRONT_BIT);
+                    } else {
+                        vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_NONE);
+                    }
                     bindDescriptorSets(commandBuffer, surfaceIndex);
                     mesh->_getModel()->draw(commandBuffer, surface->firstVertexIndex, surface->indexCount);
                     surfaceIndex += 1;

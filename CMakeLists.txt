@@ -60,6 +60,9 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/image.cpp
         ${Z0_ENGINE_DIR}/src/texture.cpp
         ${Z0_ENGINE_DIR}/src/resource.cpp
+        engine/include/z0/scene.hpp
+        engine/src/loader.cpp
+        engine/include/z0/loader.hpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC ${Z0_ENGINE_DIR}/include)
 

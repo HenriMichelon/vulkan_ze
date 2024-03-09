@@ -19,4 +19,5 @@ namespace z0 {
         rid_t id;
         static rid_t currentId;
     };
+
 }

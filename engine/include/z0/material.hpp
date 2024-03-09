@@ -12,7 +12,6 @@ namespace z0 {
     };
 
     class Material: public Resource {
-
     };
 
     class StandardMaterial: public Material {

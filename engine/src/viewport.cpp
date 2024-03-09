@@ -1,7 +1,5 @@
 #include "z0/vulkan/default_renderer.hpp"
 #include "z0/mainloop.hpp"
-#include "z0/mesh.hpp"
-#include "z0/nodes/mesh_instance.hpp"
 
 namespace z0 {
 
