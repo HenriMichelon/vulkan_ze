@@ -8,7 +8,6 @@ layout(location = 2) in vec2 uv;
 
 layout(location = 0) out vec2 UV;
 
-
 void main() {
     vec4 globalPosition = model.matrix * vec4(position, 1.0);
     gl_Position = global.projection * global.view * globalPosition;

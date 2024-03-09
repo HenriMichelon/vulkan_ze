@@ -66,10 +66,11 @@ namespace z0 {
         };
         writeUniformBuffer(globalBuffers, &globalUbo);
 
+        uint32_t modelIndex = 0;
         uint32_t surfaceIndex = 0;
         for (const auto&meshInstance: meshes) {
             ModelUniformBufferObject modelUbo { meshInstance->worldTransform };
-            writeUniformBuffer(modelsBuffers, &modelUbo, surfaceIndex);
+            writeUniformBuffer(modelsBuffers, &modelUbo, modelIndex);
             if (meshInstance->getMesh()->isValid()) {
                 for (const auto &surface: meshInstance->getMesh()->getSurfaces()) {
                     SurfaceUniformBufferObject surfaceUbo { };
@@ -85,6 +86,7 @@ namespace z0 {
                     surfaceIndex += 1;
                 }
             }
+            modelIndex += 1;
         }
     }
 
@@ -129,7 +131,11 @@ namespace z0 {
                 .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT) // textures
                 .build();
 
+        createUniformBuffers(globalBuffers, sizeof(GobalUniformBufferObject));
+
         VkDeviceSize modelBufferSize = sizeof(ModelUniformBufferObject);
+        createUniformBuffers(modelsBuffers, modelBufferSize, meshes.size());
+
         VkDeviceSize surfaceBufferSize = sizeof(SurfaceUniformBufferObject);
         uint32_t surfaceCount = 0;
         for (const auto& meshInstance: meshes) {
@@ -137,9 +143,8 @@ namespace z0 {
                 surfaceCount += meshInstance->getMesh()->getSurfaces().size();
             }
         }
-        createUniformBuffers(globalBuffers, sizeof(GobalUniformBufferObject));
-        createUniformBuffers(modelsBuffers, modelBufferSize, surfaceCount);
         createUniformBuffers(surfacesBuffers, surfaceBufferSize, surfaceCount);
+
         globalSetLayout = VulkanDescriptorSetLayout::Builder(vulkanDevice)
             .addBinding(0, // global UBO
                     VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
