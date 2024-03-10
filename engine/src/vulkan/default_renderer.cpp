@@ -62,6 +62,7 @@ namespace z0 {
         GobalUniformBufferObject globalUbo{
             .projection = camera.getProjection(),
             .view = camera.getView(),
+            .cameraPosition = camera.getPosition()
         };
         writeUniformBuffer(globalBuffers, &globalUbo);
 

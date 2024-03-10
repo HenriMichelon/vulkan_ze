@@ -1,9 +1,16 @@
+struct DirectionalLight {
+    vec3 direction;
+    vec4 color;
+    vec4 ambient;
+    vec3 diffuse;
+    vec4 specular;
+};
+
 layout(set = 0, binding = 0) uniform GlobalUniformBufferObject  {
     mat4 projection;
     mat4 view;
-    vec3 directionalLightDirection;
-    vec4 directionalLightColor;
-    vec4 ambientLightColor;
+    vec3 cameraPosition;
+    DirectionalLight directionalLight;
 } global;
 
 layout(binding = 1) uniform sampler2D texSampler[100]; // put a limit into the default renderer
@@ -16,4 +23,8 @@ layout(set = 0, binding = 2) uniform ModelUniformBufferObject  {
 layout(set = 0, binding = 3) uniform SurfaceUniformBufferObject  {
     int textureIndex;
     vec4 albedoColor;
-} surface;
+    float shininess;
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+} material;
