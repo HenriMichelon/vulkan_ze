@@ -11,7 +11,7 @@ public:
         std::shared_ptr<Node> model = z0::Loader::loadModelFromFile("models/cube.glb", false);
         addChild(model);
         printTree(std::cout);
-        model->scale(glm::vec3{ 15.2 });
+        model->scale(glm::vec3{ 1.2 });
         model->rotate_degree({ 190.0, 45.0, -10.0 });
         //model->translate({.5, 0., 0.0});
     }

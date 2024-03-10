@@ -98,6 +98,8 @@ namespace z0 {
         vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
         bindShader(commandBuffer, *vertShader);
         bindShader(commandBuffer, *fragShader);
+
+        uint32_t modelIndex = 0;
         uint32_t surfaceIndex = 0;
         for (const auto&meshInstance: meshes) {
             auto mesh = meshInstance->getMesh();
@@ -113,7 +115,7 @@ namespace z0 {
                     }
                     std::array<uint32_t, 3> offsets = {
                         0, // globalBuffers
-                        static_cast<uint32_t>(modelsBuffers[currentFrame]->getAlignmentSize() * surfaceIndex),
+                        static_cast<uint32_t>(modelsBuffers[currentFrame]->getAlignmentSize() * modelIndex),
                         static_cast<uint32_t>(surfacesBuffers[currentFrame]->getAlignmentSize() * surfaceIndex),
                     };
                     bindDescriptorSets(commandBuffer, offsets.size(), offsets.data());
@@ -121,6 +123,7 @@ namespace z0 {
                     surfaceIndex += 1;
                 }
             }
+            modelIndex += 1;
         }
     }
 

@@ -70,7 +70,6 @@ namespace z0 {
     }
 
     void VulkanRenderer::bindDescriptorSets(VkCommandBuffer commandBuffer, uint32_t count, uint32_t *offsets) {
-
         vkCmdBindDescriptorSets(commandBuffer,
                                 VK_PIPELINE_BIND_POINT_GRAPHICS,
                                 pipelineLayout,
