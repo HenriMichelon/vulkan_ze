@@ -26,24 +26,29 @@ layout(location = 0) out vec4 COLOR;
 
 void main() {
     vec3 color = material.albedoColor.rgb;
-    if (material.textureIndex != -1) {
-        //color = texture(texSampler[material.textureIndex], UV).rgb;
+    if (material.diffuseIndex != -1) {
+        color = texture(texSampler[material.diffuseIndex], UV).rgb;
     }
 
     // ambient
-    vec3 ambient = global.directionalLight.ambient.w * global.directionalLight.ambient.rgb * material.ambient;
+    vec3 ambient = global.directionalLight.ambient.w * global.directionalLight.ambient.rgb * color;
 
     // diffuse
     float diff = max(dot(NORMAL, global.directionalLight.direction), 0.0);
-    vec3 diffuse = diff * global.directionalLight.color.rgb * global.directionalLight.color.w * material.diffuse;
+    vec3 diffuse = diff * global.directionalLight.color.rgb * global.directionalLight.color.w * color;
 
     // specular
-    vec3 viewDir = normalize(global.cameraPosition - POSITION);
-    vec3 reflectDir = reflect(-global.directionalLight.direction, NORMAL);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
-    vec3 specular = global.directionalLight.specular.w * spec * global.directionalLight.color.rgb * material.specular;
+    if (material.specularIndex != -1) {
+        vec3 viewDir = normalize(global.cameraPosition - POSITION);
+        vec3 reflectDir = reflect(-global.directionalLight.direction, NORMAL);
+        float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+        vec3 specular = global.directionalLight.specular.w * spec * global.directionalLight.color.rgb *
+            //vec3(0.1,0.1,0.1);
+            texture(texSampler[0], UV).rgb*2;
+        diffuse = diffuse + specular;
+    }
 
-    vec3 result = (ambient + diffuse + specular) * color;
+    vec3 result = (ambient + diffuse) * material.albedoColor.rgb;
     COLOR = vec4(result, 1.0);
 
 }

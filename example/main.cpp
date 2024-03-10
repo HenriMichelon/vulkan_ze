@@ -1,6 +1,7 @@
 #include "z0/mainloop.hpp"
 #include "z0/scene.hpp"
 #include "z0/loader.hpp"
+#include "z0/nodes/mesh_instance.hpp"
 
 class RootNode: public z0::Node {
 public:
@@ -8,17 +9,18 @@ public:
 
     void onReady() override {
         //std::shared_ptr<Node> model = z0::Loader::loadModelFromFile("models/free_1972_datsun_240k_gt.glb", false);
-        std::shared_ptr<Node> model = z0::Loader::loadModelFromFile("models/cube.glb", false);
+        std::shared_ptr<z0::Node> model = z0::Loader::loadModelFromFile("models/cube2.glb", false);
+
         addChild(model);
         printTree(std::cout);
         model->scale(glm::vec3{ 1.2 });
-        model->rotate_degree({ 190.0, 45.0, -10.0 });
+        model->rotate_degree({ -16.0, -25.0, 10.0 });
         //model->translate({.5, 0., 0.0});
     }
 
     void onProcess(float delta) override {
-        float angle = delta * glm::radians(90.0f) / 5;
-        rotate({ .0, angle, .0 });
+        float angle = delta * glm::radians(90.0f) / 2;
+        //rotate({ .0, angle, .0 });
     }
 };
 

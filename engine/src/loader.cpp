@@ -96,7 +96,7 @@ namespace z0 {
     // https://github.com/vblanco20-1/vulkan-guide/blob/all-chapters-1.3-wip/chapter-5/vk_loader.cpp
     std::shared_ptr<Node> Loader::loadModelFromFile(const std::filesystem::path& filename, bool forceBackFaceCulling) {
         std::filesystem::path filepath = Application::getDirectory() / filename;
-        fastgltf::Parser parser {};
+        fastgltf::Parser parser {fastgltf::Extensions::KHR_materials_specular};
         constexpr auto gltfOptions =
                 fastgltf::Options::DontRequireValidAssetMember |
                 fastgltf::Options::AllowDouble |
@@ -134,6 +134,13 @@ namespace z0 {
                 mat.pbrData.baseColorFactor[2],
                 mat.pbrData.baseColorFactor[3],
             };
+            if (mat.specular != nullptr) {
+                if (mat.specular->specularColorTexture.has_value()) {
+                    auto imageIndex = gltf.textures[mat.specular->specularColorTexture.value().textureIndex].imageIndex.value();
+                    std::shared_ptr<Image> image = images[imageIndex];
+                    material->specularTexture = std::make_shared<ImageTexture>(image);
+                }
+            }
             material->cullMode = forceBackFaceCulling ? CULLMODE_BACK : mat.doubleSided ? CULLMODE_DISABLED : CULLMODE_BACK;
             materials.push_back(material);
         }

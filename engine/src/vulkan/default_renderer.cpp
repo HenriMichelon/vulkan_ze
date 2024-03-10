@@ -34,6 +34,9 @@ namespace z0 {
                     if (standardMaterial->albedoTexture != nullptr) {
                         textures.insert(standardMaterial->albedoTexture);
                     }
+                    if (standardMaterial->specularTexture != nullptr) {
+                        textures.insert(standardMaterial->specularTexture);
+                    }
                 }
             }
             for(const auto& material : meshInstance->getMesh()->_getMaterials()) {
@@ -42,6 +45,9 @@ namespace z0 {
                         auto it = textures.find(standardMaterial->albedoTexture) ;
                         auto index = std::distance(std::begin(textures), it);
                         texturesIndices[standardMaterial->albedoTexture->getId()] = static_cast<int32_t>(index);
+                        it = textures.find(standardMaterial->specularTexture) ;
+                        index = std::distance(std::begin(textures), it);
+                        texturesIndices[standardMaterial->specularTexture->getId()] = static_cast<int32_t>(index);
                     }
                 }
             }
@@ -79,10 +85,11 @@ namespace z0 {
                     SurfaceUniformBufferObject surfaceUbo { };
                     if (auto standardMaterial = dynamic_cast<StandardMaterial*>(surface->material.get())) {
                         surfaceUbo.albedoColor = standardMaterial->albedoColor.color;
-                        if (standardMaterial->albedoTexture == nullptr) {
-                            surfaceUbo.textureIndex = -1;
-                        } else {
-                            surfaceUbo.textureIndex = texturesIndices[standardMaterial->albedoTexture->getId()];
+                        if (standardMaterial->albedoTexture != nullptr) {
+                            surfaceUbo.diffuseIndex = texturesIndices[standardMaterial->albedoTexture->getId()];
+                        }
+                        if (standardMaterial->specularTexture != nullptr) {
+                            surfaceUbo.specularIndex = texturesIndices[standardMaterial->specularTexture->getId()];
                         }
                     }
                     writeUniformBuffer(surfacesBuffers, &surfaceUbo, surfaceIndex);

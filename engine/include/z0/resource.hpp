@@ -11,6 +11,7 @@ namespace z0 {
         Resource(std::string resName = ""): id{currentId++}, name{resName}  { }
 
         rid_t getId() const { return id; }
+        const std::string& getName() const { return name; }
         virtual bool isValid() = 0;
         bool operator==(const Resource& other) const { return id == other.id;}
         std::string toString() const override { return name.empty() ? Object::toString() : name; };

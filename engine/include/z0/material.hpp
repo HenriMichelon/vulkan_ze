@@ -20,6 +20,7 @@ namespace z0 {
     public:
         Color                       albedoColor {0.8f, 0.3f, 0.5f, 1.0f };
         std::shared_ptr<Texture>    albedoTexture;
+        std::shared_ptr<Texture>    specularTexture;
         CullMode                    cullMode { CULLMODE_BACK };
 
         explicit StandardMaterial(std::string name = ""): Material(name) {}
