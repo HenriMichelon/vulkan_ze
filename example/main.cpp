@@ -12,11 +12,11 @@ public:
         printTree(std::cout);
         model->scale(glm::vec3{ 0.2 });
         model->rotate_degree({ 190.0, 45.0, -10.0 });
-        model->translate({.5, -.5, 0.0});
+        model->translate({.5, 0., 0.0});
     }
 
     void onProcess(float delta) override {
-        float angle = delta * glm::radians(90.0f) / 2;
+        float angle = delta * glm::radians(90.0f) / 5;
         rotate({ .0, angle, .0 });
     }
 };

@@ -6,13 +6,14 @@ namespace z0 {
 
     Node::Node(const std::string _name): id{currentId++}, name{_name}   {
         localTransform = mat4();
+        normalLocalTransform = normalMatrix();
         updateTransform(glm::mat4{1.0f});
     }
 
     void Node::updateTransform(const glm::mat4& parentMatrix) {
         worldTransform = parentMatrix * localTransform;
-        normalWorldTransform = normalLocalTransform;
-        for (auto child : children) {
+        normalWorldTransform = parentMatrix * normalLocalTransform;
+        for (const auto& child : children) {
             child->updateTransform(worldTransform);
         }
     }
@@ -20,7 +21,6 @@ namespace z0 {
     void Node::translate(glm::vec3 pos) {
         position = pos;
         localTransform = mat4();
-        normalLocalTransform = normalMatrix();
         updateTransform(glm::mat4{1.0f});
     }
 

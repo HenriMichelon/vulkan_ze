@@ -13,6 +13,7 @@ void main() {
     if (surface.textureIndex != -1) {
         color = texture(texSampler[surface.textureIndex], UV);
     }
-    vec3 diffuseLight = global.ambientLightColor.xyz * global.ambientLightColor.w;
-    ALBEDO = vec4(diffuseLight * color.rgb, 1.0);
+    vec3 ambientLight = global.ambientLightColor.xyz * global.ambientLightColor.w;
+    vec3 directionalLight = ambientLight + global.directionalLightColor.w * global.directionalLightColor.rgb * max(dot(NORMAL, global.directionalLightDirection), 0);
+    ALBEDO = vec4(directionalLight * color.rgb, 1.0);
 }

@@ -12,8 +12,9 @@ namespace z0 {
         struct GobalUniformBufferObject {
             glm::mat4 projection{1.0f};
             glm::mat4 view{1.0f};
-            alignas(16) glm::vec3 directionToLight = glm::normalize(glm::vec3{1.f, -3.f, -1.f});
-            alignas(16) glm::vec4 ambientLightColor = { 1.0f, 1.0f, 1.0f, 1.0f }; // RGB + Intensity
+            alignas(16) glm::vec3 directionalLightDirection = glm::normalize(glm::vec3{1.f, -1.f, 1.f});
+            alignas(16) glm::vec4 directionalLightColor = { 1.0f, 1.0f, 1.0f, 10.0f }; // RGB + Intensity
+            alignas(16) glm::vec4 ambientLightColor = { 1.0f, 1.0f, 1.0f, 0.1f }; // RGB + Intensity
         };
         struct ModelUniformBufferObject {
             glm::mat4 matrix;

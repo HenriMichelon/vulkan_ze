@@ -1,7 +1,8 @@
 layout(set = 0, binding = 0) uniform GlobalUniformBufferObject  {
     mat4 projection;
     mat4 view;
-    vec3 directionToLight;
+    vec3 directionalLightDirection;
+    vec4 directionalLightColor;
     vec4 ambientLightColor;
 } global;
 
