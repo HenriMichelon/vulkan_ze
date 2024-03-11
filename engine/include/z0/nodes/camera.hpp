@@ -16,12 +16,16 @@ namespace z0 {
         void setViewTarget(glm::vec3 target, glm::vec3 up = glm::vec3{0.0f, -1.0f, 0.0f});
         //void setViewYXZ();
 
-        const glm::mat4& getProjection() const { return projectionMatrix; }
+        const glm::mat4& getProjection();
         const glm::mat4& getView() const { return viewMatrix; }
         const glm::mat4& getInverseView() const { return inverseViewMatrix; }
         const glm::vec3 getPosition() const { return glm::vec3(inverseViewMatrix[3]); }
 
     private:
+        float fovy;
+        float nearDistance;
+        float farDistance;
+        bool usePerspectiveProjection{false};
         glm::mat4 projectionMatrix{1.0f};
         glm::mat4 viewMatrix{1.0f};
         glm::mat4 inverseViewMatrix{1.0f};
