@@ -76,11 +76,17 @@ namespace z0 {
         updateTransform(glm::mat4{1.0f});
     }
 
-    void Node::addChild(const std::shared_ptr<Node>& node) {
-        children.push_back(node);
-        node->parent = this;
-        node->updateTransform(worldTransform);
+    void Node::addChild(const std::shared_ptr<Node> child) {
+        children.push_back(child);
+        child->parent = this;
+        child->updateTransform(worldTransform);
     }
+
+    /*void Node::addChildPtr(std::shared_ptr<Node> child) {
+        children.push_back(child);
+        child->parent = this;
+        child->updateTransform(worldTransform);
+    }*/
 
     void Node::removeChild(const std::shared_ptr<Node>& node) {
         children.remove(node);

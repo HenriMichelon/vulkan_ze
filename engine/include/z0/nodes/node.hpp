@@ -13,13 +13,12 @@ namespace z0 {
     public:
         using id_t = unsigned int;
 
-        Node(const std::string nodeName = "");
+        explicit Node(const std::string nodeName = "");
 
         virtual void onReady() {}
         virtual void onProcess(float delta) {}
 
-        void addChild(const std::shared_ptr<Node>& node);
-        void removeChild(const std::shared_ptr<Node>& node);
+        void removeChild(const std::shared_ptr<Node>& child);
         std::list<std::shared_ptr<Node>>& getChildren() { return children; }
         Node* getParent() { return parent; }
         void updateTransform(const glm::mat4& parentMatrix);
@@ -50,6 +49,14 @@ namespace z0 {
 
         bool operator==(const Node& other) const { return id == other.id;}
 
+        void addChild(const std::shared_ptr<Node> child);
+        template<typename T>
+        void addChild(T& node) {
+            std::shared_ptr<Node> child = std::make_shared<T>(std::move(node));
+            children.push_back(child);
+            child->parent = this;
+            child->updateTransform(worldTransform);
+        }
 
     protected:
         std::string name;
@@ -68,6 +75,7 @@ namespace z0 {
         Node* parent {nullptr};
 
         static id_t currentId;
+        //void addChildPtr(std::shared_ptr<Node> child);
 
         // Matrix corresponds to Translate * Ry * Rx * Rz * Scale
         // Rotations correspond to Tait-bryan angles of Y(1), X(2), Z(3)
