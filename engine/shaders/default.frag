@@ -30,21 +30,20 @@ void main() {
         color = texture(texSampler[material.diffuseIndex], UV).rgb;
     }
 
+    vec3 lightDir = normalize(-global.directionalLight.direction);
     // ambient
     vec3 ambient = global.directionalLight.ambient.w * global.directionalLight.ambient.rgb * color;
 
     // diffuse
-    float diff = max(dot(NORMAL, global.directionalLight.direction), 0.0);
+    float diff = max(dot(NORMAL,lightDir), 0.0);
     vec3 diffuse = diff * global.directionalLight.color.rgb * global.directionalLight.color.w * color;
 
     // specular
     if (material.specularIndex != -1) {
         vec3 viewDir = normalize(global.cameraPosition - POSITION);
-        vec3 reflectDir = reflect(-global.directionalLight.direction, NORMAL);
+        vec3 reflectDir = reflect(-lightDir, NORMAL);
         float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
-        vec3 specular = global.directionalLight.specular.w * spec * global.directionalLight.color.rgb *
-            //vec3(0.1,0.1,0.1);
-            texture(texSampler[material.specularIndex], UV).rgb*2;
+        vec3 specular = global.directionalLight.specular.w * spec * global.directionalLight.color.rgb *  texture(texSampler[material.specularIndex], UV).rgb;
         diffuse = diffuse + specular;
     }
 

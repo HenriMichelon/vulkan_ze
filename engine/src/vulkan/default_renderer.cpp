@@ -42,11 +42,13 @@ namespace z0 {
             for(const auto& material : meshInstance->getMesh()->_getMaterials()) {
                 if (auto standardMaterial = dynamic_cast<StandardMaterial*>(material.get())) {
                     if (standardMaterial->albedoTexture != nullptr) {
-                        auto it = textures.find(standardMaterial->albedoTexture) ;
+                        auto it = textures.find(standardMaterial->albedoTexture);
                         auto index = std::distance(std::begin(textures), it);
                         texturesIndices[standardMaterial->albedoTexture->getId()] = static_cast<int32_t>(index);
-                        it = textures.find(standardMaterial->specularTexture) ;
-                        index = std::distance(std::begin(textures), it);
+                    }
+                    if (standardMaterial->specularTexture != nullptr) {
+                        auto it = textures.find(standardMaterial->specularTexture) ;
+                        auto index = std::distance(std::begin(textures), it);
                         texturesIndices[standardMaterial->specularTexture->getId()] = static_cast<int32_t>(index);
                     }
                 }
