@@ -9,16 +9,42 @@ namespace z0 {
     public:
         struct DirectionalLight {
             alignas(16) glm::vec3 direction = glm::normalize(glm::vec3{-1.0f, .5f, 1.0f});
-            alignas(16) glm::vec4 color = { 1.0f, 1.0f, 1.0f, 0.5f }; // RGB + Intensity;
-            glm::vec4 ambient = { 1.0f, 1.0f, 1.0f, .02f }; // RGB + Intensity;
-            glm::vec4 diffuse = { 1.0f, 1.0f, 1.0f, 1.0f};
-            glm::vec4 specular = { 1.0f, 1.0f, 1.0f, 1.0f};
+            alignas(16) glm::vec4 color = { 1.0f, .0f, .0f, 0.25f }; // RGB + Intensity;
+            alignas(4) float specular = { 2.0f };
+        };
+        // https://learnopengl.com/Lighting/Light-casters
+        struct PointLight {
+            alignas(16) glm::vec3 position = glm::vec3{-1.5f, -0.f, -2.f};
+            alignas(16) glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f }; // RGB + Intensity;
+            alignas(4) float specular = { 2.0f };
+            alignas(4) float linear{0.09};
+            alignas(4) float quadratic{0.032};
+        };
+        struct SpotLight {
+            alignas(16) glm::vec3 position = { 0, 0, -2 };
+            alignas(16) glm::vec4 color = { 1.0f, 1.0f, 1.0f, 2.0f }; // RGB + Intensity;
+            alignas(4) float specular = { 2.0f };
+            alignas(4) float linear{0.14};
+            alignas(4) float quadratic{0.07};
+        };
+        struct FlashLight {
+            alignas(16) glm::vec3 position = { 0, 0, -2 };
+            alignas(16) glm::vec3 direction = glm::normalize(glm::vec3{0.f, .0f, 1.0f});
+            alignas(16) glm::vec4 color = { 1.0f, 1.0f, 1.0f, 2.0f }; // RGB + Intensity;
+            alignas(4) float cutOff = { glm::cos(glm::radians(10.f)) };
+            alignas(4) float outerCutOff = { glm::cos(glm::radians(45.f)) };
+            alignas(4) float specular = { 2.0f };
+            alignas(4) float linear{0.14};
+            alignas(4) float quadratic{0.07};
         };
         struct GobalUniformBufferObject {
             glm::mat4 projection{1.0f};
             glm::mat4 view{1.0f};
+            glm::vec4 ambient = { 1.0f, 1.0f, 1.0f, .0f }; // RGB + Intensity;
             alignas(16) glm::vec3 cameraPosition;
             alignas(16) DirectionalLight directionalLight;
+            alignas(4) bool haveDirectionalLight{true};
+            alignas(16) FlashLight light;
         };
         struct ModelUniformBufferObject {
             glm::mat4 matrix;
@@ -28,7 +54,7 @@ namespace z0 {
             alignas(4) int32_t diffuseIndex{-1};
             alignas(4) int32_t specularIndex{-1};
             alignas(16) glm::vec4 albedoColor;
-            alignas(4) float shininess{256.0f};
+            alignas(4) float shininess{32.0f};
         };
 
         DefaultRenderer(VulkanDevice& device, const std::string& shaderDirectory);
