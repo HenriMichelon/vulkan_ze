@@ -23,13 +23,19 @@ namespace z0 {
         if (currentCamera == nullptr) {
             if (auto camera = dynamic_cast<Camera*>(node.get())) {
                 currentCamera = camera;
-                std::cout << "Using camera " << currentCamera->toString() << std::endl;
+                log("Using camera", currentCamera->toString());
             }
         }
         if (directionalLight == nullptr) {
             if (auto light = dynamic_cast<DirectionalLight*>(node.get())) {
                 directionalLight = light;
-                std::cout << "Using directional light " << directionalLight->toString() << std::endl;
+                log("Using directional light", directionalLight->toString());
+            }
+        }
+        if (environement == nullptr) {
+            if (auto env = dynamic_cast<Environment*>(node.get())) {
+                environement = env;
+                log("Using environment", environement->toString());
             }
         }
         createMeshIndex(node);
@@ -88,6 +94,9 @@ namespace z0 {
                 .specular = directionalLight->getSpecularIntensity(),
             };
             globalUbo.haveDirectionalLight = true;
+        }
+        if (environement != nullptr) {
+            globalUbo.ambient = environement->getAmbientColorAndIntensity();
         }
         writeUniformBuffer(globalBuffers, &globalUbo);
 

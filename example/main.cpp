@@ -3,12 +3,17 @@
 #include "z0/loader.hpp"
 #include "z0/nodes/directional_light.hpp"
 #include "z0/nodes/camera.hpp"
+#include "z0/nodes/environment.hpp"
 
 class RootNode: public z0::Node {
 public:
     RootNode(): z0::Node("Main") {}
 
     void onReady() override {
+        std::shared_ptr<z0::Environment> environment = std::make_shared<z0::Environment>("Exterior");
+        environment->setAmbientColorAndIntensity({1.0f, 1.0f, 1.0f, 0.1f});
+        addChild(environment);
+
         std::shared_ptr<z0::Camera> camera = std::make_shared<z0::Camera>("Camera1");
         camera->setPosition({-0.0f, 0.0f, -5.0f });
         camera->setViewTarget({ 0.0f, 0.0f, 0.0f});
@@ -17,7 +22,7 @@ public:
 
         std::shared_ptr<z0::DirectionalLight> directionalLight = std::make_shared<z0::DirectionalLight> (
                 glm::vec3{-1.0f, .5f, 1.0f},
-                glm::vec4{ 1.0f, .0f, .0f, 1.25f },
+                glm::vec4{ 1.0f, .0f, .0f, 1.0f },
                 1.0f,
                 "Sun"
         );

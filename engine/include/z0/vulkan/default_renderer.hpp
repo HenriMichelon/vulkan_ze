@@ -4,6 +4,7 @@
 #include "z0/nodes/mesh_instance.hpp"
 #include "z0/nodes/camera.hpp"
 #include "z0/nodes/directional_light.hpp"
+#include "z0/nodes/environment.hpp"
 
 namespace z0 {
 
@@ -60,6 +61,7 @@ namespace z0 {
     private:
         Camera* currentCamera{nullptr};
         DirectionalLight* directionalLight;
+        Environment* environement;
 
         std::unique_ptr<VulkanShader> vertShader;
         std::unique_ptr<VulkanShader> fragShader;
