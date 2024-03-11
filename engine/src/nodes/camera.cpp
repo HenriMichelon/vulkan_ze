@@ -41,9 +41,9 @@ namespace z0 {
         viewMatrix[0][2] = w.x;
         viewMatrix[1][2] = w.y;
         viewMatrix[2][2] = w.z;
-        viewMatrix[3][0] = -glm::dot(u, position);
-        viewMatrix[3][1] = -glm::dot(v, position);
-        viewMatrix[3][2] = -glm::dot(w, position);
+        viewMatrix[3][0] = -glm::dot(u, _position);
+        viewMatrix[3][1] = -glm::dot(v, _position);
+        viewMatrix[3][2] = -glm::dot(w, _position);
 
         inverseViewMatrix = glm::mat4{1.f};
         inverseViewMatrix[0][0] = u.x;
@@ -55,13 +55,13 @@ namespace z0 {
         inverseViewMatrix[2][0] = w.x;
         inverseViewMatrix[2][1] = w.y;
         inverseViewMatrix[2][2] = w.z;
-        inverseViewMatrix[3][0] = position.x;
-        inverseViewMatrix[3][1] = position.y;
-        inverseViewMatrix[3][2] = position.z;
+        inverseViewMatrix[3][0] = _position.x;
+        inverseViewMatrix[3][1] = _position.y;
+        inverseViewMatrix[3][2] = _position.z;
     }
 
     void Camera::setViewTarget(glm::vec3 target, glm::vec3 up) {
-        setViewDirection(target - position, up);
+        setViewDirection(target - _position, up);
     }
 
     /*void Camera::setViewYXZ() {

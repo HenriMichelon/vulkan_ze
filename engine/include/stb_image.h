@@ -2859,7 +2859,7 @@ static void stbi__idct_simd(stbi_uc *out, int out_stride, short data[64])
       uint8x8_t p6 = vqrshrun_n_s16(row6, 1);
       uint8x8_t p7 = vqrshrun_n_s16(row7, 1);
 
-      // again, these can translate into one instruction, but often don't.
+      // again, these can setPosition into one instruction, but often don't.
 #define dct_trn8_8(x, y) { uint8x8x2_t t = vtrn_u8(x, y); x = t.val[0]; y = t.val[1]; }
 #define dct_trn8_16(x, y) { uint16x4x2_t t = vtrn_u16(vreinterpret_u16_u8(x), vreinterpret_u16_u8(y)); x = vreinterpret_u8_u16(t.val[0]); y = vreinterpret_u8_u16(t.val[1]); }
 #define dct_trn8_32(x, y) { uint32x2x2_t t = vtrn_u32(vreinterpret_u32_u8(x), vreinterpret_u32_u8(y)); x = vreinterpret_u8_u32(t.val[0]); y = vreinterpret_u8_u32(t.val[1]); }

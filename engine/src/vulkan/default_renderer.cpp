@@ -63,7 +63,7 @@ namespace z0 {
 
     void DefaultRenderer::update(float delta) {
         Camera camera{};
-        camera.position = { -0.0f, 0.0f, -5.0f };
+        camera.setPosition({-0.0f, 0.0f, -5.0f });
         camera.setViewTarget({ 0.0f, 0.0f, 0.0f});
         camera.setPerspectiveProjection(glm::radians(50.0f), getAspectRatio(), 0.1f, 100.0f);
 
@@ -78,8 +78,8 @@ namespace z0 {
         uint32_t surfaceIndex = 0;
         for (const auto&meshInstance: meshes) {
             ModelUniformBufferObject modelUbo {
-                .matrix = meshInstance->worldTransform,
-                .normalMatrix = meshInstance->normalWorldTransform,
+                .matrix = meshInstance->getGlobalTransform(),
+                .normalMatrix = meshInstance->getGlobalNormalTransform(),
             };
             writeUniformBuffer(modelsBuffers, &modelUbo, modelIndex);
             if (meshInstance->getMesh()->isValid()) {

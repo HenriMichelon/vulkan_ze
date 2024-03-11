@@ -5,6 +5,10 @@
 
 namespace z0 {
 
+    const glm::vec3 VECTOR_AXIS_X = glm::vec3{1.0f, 0.0f, 0.0f};
+    const glm::vec3 VECTOR_AXIS_Y = glm::vec3{0.0f, 1.0f, 0.0f};
+    const glm::vec3 VECTOR_AXIS_Z = glm::vec3{0.0f, 0.0f, 1.0f};
+
     class Node: public Object {
     public:
         using id_t = unsigned int;
@@ -21,30 +25,47 @@ namespace z0 {
         void updateTransform(const glm::mat4& parentMatrix);
         virtual void printTree(std::ostream&, int tab=0);
         std::string toString() const override { return name.empty() ? Object::toString() : name; };
+        std::shared_ptr<Node> duplicate();
 
-        void translate(glm::vec3 rotation);
-        void rotate(glm::vec3 rotation);
-        void rotate_degree(glm::vec3 rotation);
-        void scale(glm::vec3 scale);
+        void setPosition(glm::vec3 position);
+        glm::vec3 getPosition() const { return _position; };
+
+        void setRotation(glm::vec3 orientation);
+        void setRotationDegrees(glm::vec3 orient);
+        void setRotationX(float angle);
+        void setRotationY(float angle);
+        void setRotationZ(float angle);
+        glm::vec3 getRotation() const { return _orientation; };
+
+        void setScale(glm::vec3 scale);
+        glm::vec3 getScale() const { return _scale; }
+
+        // rotation around the position
+        void rotateX(float angle);
+        void rotateY(float angle);
+        void rotateZ(float angle);
+
+        glm::mat4 getGlobalTransform() const { return worldTransform; }
+        glm::mat4 getGlobalNormalTransform() const { return normalWorldTransform; }
 
         bool operator==(const Node& other) const { return id == other.id;}
 
-    //protected:
-        glm::vec3 position {};
-        glm::mat4 localTransform {};
+
+    protected:
+        std::string name;
+        glm::vec3 _position {};
+        std::list<std::shared_ptr<Node>> children;
+        virtual std::shared_ptr<Node> duplicateInstance();
+
+    private:
+        glm::vec3 _orientation {};
+        glm::vec3 _scale {1.0f, 1.0f, 1.0f };
         glm::mat4 normalLocalTransform {};
         glm::mat4 worldTransform {};
         glm::mat4 normalWorldTransform {};
 
-    protected:
-        std::string name;
-        std::list<std::shared_ptr<Node>> children;
-
-    private:
         id_t id;
         Node* parent {nullptr};
-        glm::vec3 _rotation {};
-        glm::vec3 _scale {1.0f, 1.0f, 1.0f };
 
         static id_t currentId;
 
@@ -53,5 +74,9 @@ namespace z0 {
         // https://en.wikipedia.org/wiki/Euler_angles#Rotation_matrix
         glm::mat4 mat4() const;
         glm::mat3 normalMatrix() const;
+        void decomposeLocalMatrix();
+
+    public:
+        glm::mat4 localTransform {};
     };
 }

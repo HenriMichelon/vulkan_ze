@@ -7,4 +7,8 @@ namespace z0 {
         return n + (mesh != nullptr ? "[" + mesh->getName() + "]" : "[]");
     }
 
+    std::shared_ptr<Node> MeshInstance::duplicateInstance() {
+        return std::make_shared<MeshInstance>(*this);
+    }
+
 }
