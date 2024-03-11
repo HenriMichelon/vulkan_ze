@@ -2,32 +2,27 @@
 
 #include "z0/vulkan/vulkan_renderer.hpp"
 #include "z0/nodes/mesh_instance.hpp"
+#include "z0/nodes/camera.hpp"
+#include "z0/nodes/directional_light.hpp"
 
 namespace z0 {
 
     class DefaultRenderer: public VulkanRenderer {
     public:
-        struct DirectionalLight {
-            alignas(16) glm::vec3 direction = glm::normalize(glm::vec3{-1.0f, .5f, 1.0f});
-            alignas(16) glm::vec4 color = { 1.0f, .0f, .0f, 0.25f }; // RGB + Intensity;
-            alignas(4) float specular = { 2.0f };
+        struct DirectionalLightUniform {
+            alignas(16) glm::vec3 direction = { 0.0f, 0.0f, 0.0f };
+            alignas(16) glm::vec4 color = { 0.0f, 0.0f, 0.0f, 0.0f }; // RGB + Intensity;
+            alignas(4) float specular = { 1.0f };
         };
         // https://learnopengl.com/Lighting/Light-casters
-        struct PointLight {
+        struct PointLightUniform {
             alignas(16) glm::vec3 position = glm::vec3{-1.5f, -0.f, -2.f};
             alignas(16) glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f }; // RGB + Intensity;
             alignas(4) float specular = { 2.0f };
             alignas(4) float linear{0.09};
             alignas(4) float quadratic{0.032};
         };
-        struct SpotLight {
-            alignas(16) glm::vec3 position = { 0, 0, -2 };
-            alignas(16) glm::vec4 color = { 1.0f, 1.0f, 1.0f, 2.0f }; // RGB + Intensity;
-            alignas(4) float specular = { 2.0f };
-            alignas(4) float linear{0.14};
-            alignas(4) float quadratic{0.07};
-        };
-        struct FlashLight {
+        struct SpotLightUniform {
             alignas(16) glm::vec3 position = { 0, 0, -2 };
             alignas(16) glm::vec3 direction = glm::normalize(glm::vec3{0.f, .0f, 1.0f});
             alignas(16) glm::vec4 color = { 1.0f, 1.0f, 1.0f, 2.0f }; // RGB + Intensity;
@@ -42,9 +37,9 @@ namespace z0 {
             glm::mat4 view{1.0f};
             glm::vec4 ambient = { 1.0f, 1.0f, 1.0f, .0f }; // RGB + Intensity;
             alignas(16) glm::vec3 cameraPosition;
-            alignas(16) DirectionalLight directionalLight;
-            alignas(4) bool haveDirectionalLight{true};
-            alignas(16) FlashLight light;
+            alignas(16) DirectionalLightUniform directionalLight;
+            alignas(4) bool haveDirectionalLight{false};
+            alignas(16) SpotLightUniform light;
         };
         struct ModelUniformBufferObject {
             glm::mat4 matrix;
@@ -63,6 +58,9 @@ namespace z0 {
         void loadScene(const std::shared_ptr<Node>& rootNode);
 
     private:
+        Camera* currentCamera{nullptr};
+        DirectionalLight* directionalLight;
+
         std::unique_ptr<VulkanShader> vertShader;
         std::unique_ptr<VulkanShader> fragShader;
         std::shared_ptr<Node> rootNode;
@@ -80,7 +78,7 @@ namespace z0 {
         void createDescriptorSetLayout() override;
         void loadShaders() override;
 
-        void createMeshIndices(std::shared_ptr<Node>& parent);
+        void loadNode(std::shared_ptr<Node>& parent);
         void createMeshIndex(std::shared_ptr<Node>& node);
 
     public:

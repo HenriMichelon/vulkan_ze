@@ -1,4 +1,5 @@
 #include "z0/nodes/camera.hpp"
+#include "z0/mainloop.hpp"
 
 #include <cassert>
 #include <limits>
@@ -15,7 +16,8 @@ namespace z0 {
         projectionMatrix[3][2] = -_near / (_far - _near);
     }
 
-    void Camera::setPerspectiveProjection(float fovy, float aspect, float _near, float _far) {
+    void Camera::setPerspectiveProjection(float fovy, float _near, float _far) {
+        float aspect = z0::Application::getViewport().getAspectRatio();
         assert(glm::abs(aspect - std::numeric_limits<float>::epsilon()) > 0.0f);
         const float tanHalfFovy = tan(fovy / 2.f);
         projectionMatrix = glm::mat4{0.0f};

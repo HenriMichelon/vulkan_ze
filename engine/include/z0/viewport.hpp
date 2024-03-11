@@ -17,6 +17,7 @@ namespace z0 {
 
         MSAA getMSAA() const;
         void setMSAA(MSAA samples);
+        float getAspectRatio() const;
 
         void process(float delta);
         bool shouldClose() { return window.shouldClose(); }

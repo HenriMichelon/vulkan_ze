@@ -15,14 +15,26 @@ namespace z0 {
 
     void DefaultRenderer::loadScene(const std::shared_ptr<Node>& root) {
         rootNode = root;
-        createMeshIndices(rootNode);
+        loadNode(rootNode);
         createResources();
     }
 
-    void DefaultRenderer::createMeshIndices(std::shared_ptr<Node>& parent) {
-        createMeshIndex(parent);
-        for(auto& node: parent->getChildren()) {
-            createMeshIndices(node);
+    void DefaultRenderer::loadNode(std::shared_ptr<Node>& node) {
+        if (currentCamera == nullptr) {
+            if (auto camera = dynamic_cast<Camera*>(node.get())) {
+                currentCamera = camera;
+                std::cout << "Using camera " << currentCamera->toString() << std::endl;
+            }
+        }
+        if (directionalLight == nullptr) {
+            if (auto light = dynamic_cast<DirectionalLight*>(node.get())) {
+                directionalLight = light;
+                std::cout << "Using directional light " << directionalLight->toString() << std::endl;
+            }
+        }
+        createMeshIndex(node);
+        for(auto& child: node->getChildren()) {
+            loadNode(child);
         }
     }
 
@@ -62,16 +74,21 @@ namespace z0 {
     }
 
     void DefaultRenderer::update(float delta) {
-        Camera camera{};
-        camera.setPosition({-0.0f, 0.0f, -5.0f });
-        camera.setViewTarget({ 0.0f, 0.0f, 0.0f});
-        camera.setPerspectiveProjection(glm::radians(50.0f), getAspectRatio(), 0.1f, 100.0f);
+        if (meshes.empty() || currentCamera == nullptr) return;
 
         GobalUniformBufferObject globalUbo{
-            .projection = camera.getProjection(),
-            .view = camera.getView(),
-            .cameraPosition = camera.getPosition()
+            .projection = currentCamera->getProjection(),
+            .view = currentCamera->getView(),
+            .cameraPosition = currentCamera->getPosition(),
         };
+        if (directionalLight != nullptr) {
+            globalUbo.directionalLight = {
+                .direction = directionalLight->getDirection(),
+                .color = directionalLight->getColorAndIntensity(),
+                .specular = directionalLight->getSpecularIntensity(),
+            };
+            globalUbo.haveDirectionalLight = true;
+        }
         writeUniformBuffer(globalBuffers, &globalUbo);
 
         uint32_t modelIndex = 0;
@@ -103,7 +120,7 @@ namespace z0 {
     }
 
     void DefaultRenderer::recordCommands(VkCommandBuffer commandBuffer) {
-        if (meshes.empty()) return;
+        if (meshes.empty() || currentCamera == nullptr) return;
         vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
         bindShader(commandBuffer, *vertShader);
         bindShader(commandBuffer, *fragShader);
@@ -137,7 +154,7 @@ namespace z0 {
     }
 
     void DefaultRenderer::createDescriptorSetLayout() {
-        if (meshes.empty()) return;
+        if (meshes.empty() || currentCamera == nullptr) return;
         globalPool = VulkanDescriptorPool::Builder(vulkanDevice)
                 .setMaxSets(MAX_FRAMES_IN_FLIGHT)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // global UBO

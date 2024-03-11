@@ -80,8 +80,10 @@ namespace z0 {
 
     void VulkanRenderer::createResources() {
         createDescriptorSetLayout();
-        createPipelineLayout();
-        loadShaders();
+        if (globalSetLayout != nullptr) {
+            createPipelineLayout();
+            loadShaders();
+        }
     };
 
     void VulkanRenderer::createUniformBuffers(std::vector<std::unique_ptr<VulkanBuffer>>& buffers, VkDeviceSize size, uint32_t count) {

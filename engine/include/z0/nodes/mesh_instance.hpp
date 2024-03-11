@@ -6,7 +6,7 @@ namespace z0 {
 
     class MeshInstance: public Node {
     public:
-        explicit MeshInstance(const std::string name = ""): Node{name} {}
+        explicit MeshInstance(const std::string name = ""): Node{name} { }
         explicit MeshInstance(const std::shared_ptr<Mesh>& _mesh, const std::string name = ""): mesh{_mesh}, Node{name} {};
 
         void setMesh(const std::shared_ptr<Mesh>& _mesh) { mesh = _mesh; };

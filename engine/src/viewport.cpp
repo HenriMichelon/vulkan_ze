@@ -44,6 +44,10 @@ namespace z0 {
         die("not implemented");
     }
 
+    float Viewport::getAspectRatio() const {
+        return vulkanRenderer->getAspectRatio();
+    }
+
     void Viewport::loadScene(const std::shared_ptr<Node>& rootNode) {
         vulkanRenderer->loadScene(rootNode);
     }

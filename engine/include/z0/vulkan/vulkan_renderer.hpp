@@ -15,7 +15,9 @@ namespace z0 {
         ~VulkanRenderer();
 
         void drawFrame(float delta);
-
+        float getAspectRatio() const {
+            return static_cast<float>(vulkanDevice.getSwapChainExtent().width) / static_cast<float>(vulkanDevice.getSwapChainExtent().height);
+        }
     protected:
         uint32_t currentFrame = 0;
         VkDevice device;
@@ -35,9 +37,6 @@ namespace z0 {
         std::unique_ptr<VulkanShader> createShader(const std::string& filename,
                                                    VkShaderStageFlagBits stage,
                                                    VkShaderStageFlags next_stage);
-        float getAspectRatio() const {
-            return static_cast<float>(vulkanDevice.getSwapChainExtent().width) / static_cast<float>(vulkanDevice.getSwapChainExtent().height);
-        }
 
     private:
         std::string shaderDirectory;
