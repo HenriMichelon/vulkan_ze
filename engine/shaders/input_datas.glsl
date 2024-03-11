@@ -22,7 +22,7 @@ layout(set = 0, binding = 2) uniform ModelUniformBufferObject  {
 
 layout(set = 0, binding = 3) uniform SurfaceUniformBufferObject  {
     int diffuseIndex;
+    int specularIndex;
     vec4 albedoColor;
     float shininess;
-    int specularIndex;
 } material;

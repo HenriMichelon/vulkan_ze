@@ -44,7 +44,7 @@ void main() {
         float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
         vec3 specular = global.directionalLight.specular.w * spec * global.directionalLight.color.rgb *
             //vec3(0.1,0.1,0.1);
-            texture(texSampler[0], UV).rgb*2;
+            texture(texSampler[material.specularIndex], UV).rgb*2;
         diffuse = diffuse + specular;
     }
 

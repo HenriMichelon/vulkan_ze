@@ -12,25 +12,25 @@ namespace z0 {
         struct DirectionalLight {
             alignas(16) glm::vec3 direction = glm::normalize(glm::vec3{1.f, -0.8f, -1.0f});
             alignas(16) glm::vec4 color = { 1.0f, 1.0f, 1.0f, 0.5f }; // RGB + Intensity;
-            alignas(16) glm::vec4 ambient = { 1.0f, 1.0f, 1.0f, .02f }; // RGB + Intensity;
-            alignas(16) glm::vec4 diffuse = { 1.0f, 1.0f, 1.0f, 1.0f};
-            alignas(16) glm::vec4 specular = { 1.0f, 1.0f, 1.0f, 1.0f};
+            glm::vec4 ambient = { 1.0f, 1.0f, 1.0f, .02f }; // RGB + Intensity;
+            glm::vec4 diffuse = { 1.0f, 1.0f, 1.0f, 1.0f};
+            glm::vec4 specular = { 1.0f, 1.0f, 1.0f, 1.0f};
         };
         struct GobalUniformBufferObject {
-            alignas(16) glm::mat4 projection{1.0f};
-            alignas(16) glm::mat4 view{1.0f};
+            glm::mat4 projection{1.0f};
+            glm::mat4 view{1.0f};
             alignas(16) glm::vec3 cameraPosition;
             alignas(16) DirectionalLight directionalLight;
         };
         struct ModelUniformBufferObject {
-            alignas(16) glm::mat4 matrix;
-            alignas(16) glm::mat4 normalMatrix;
+            glm::mat4 matrix;
+            glm::mat4 normalMatrix;
         };
         struct SurfaceUniformBufferObject {
-            alignas(16) int32_t diffuseIndex{-1};
+            alignas(4) int32_t diffuseIndex{-1};
+            alignas(4) int32_t specularIndex{-1};
             alignas(16) glm::vec4 albedoColor;
-            alignas(16) float shininess{256.0f};
-            alignas(16) int32_t specularIndex{-1};
+            alignas(4) float shininess{256.0f};
         };
 
         DefaultRenderer(VulkanDevice& device, const std::string& shaderDirectory);
