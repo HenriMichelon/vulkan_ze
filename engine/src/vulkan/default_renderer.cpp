@@ -37,10 +37,10 @@ namespace z0 {
                 log("Using environment", environement->toString());
             }
         }
-        if (omniLights.size() < 10) {
-            if (auto omniLight = dynamic_cast<OmniLight *>(node.get())) {
-                omniLights.push_back(omniLight);
-            }
+        if (auto spotLight = dynamic_cast<SpotLight *>(node.get())) {
+            spotLights.push_back(spotLight);
+        } else if (auto omniLight = dynamic_cast<OmniLight *>(node.get())) {
+            omniLights.push_back(omniLight);
         }
         createMeshIndex(node);
         for(auto& child: node->getChildren()) {
@@ -103,15 +103,32 @@ namespace z0 {
             globalUbo.ambient = environement->getAmbientColorAndIntensity();
         }
         globalUbo.pointLightsCount = omniLights.size();
-        for(int i=0; i < globalUbo.pointLightsCount; i++) {
-            globalUbo.pointLights[i].position = omniLights[i]->getPosition();
-            globalUbo.pointLights[i].color = omniLights[i]->getColorAndIntensity();
-            globalUbo.pointLights[i].specular = omniLights[i]->getSpecularIntensity();
-            globalUbo.pointLights[i].constant = omniLights[i]->getAttenuation();
-            globalUbo.pointLights[i].linear = omniLights[i]->getLinear();
-            globalUbo.pointLights[i].quadratic = omniLights[i]->getQuadratic();
-        }
+        globalUbo.spotLightsCount = spotLights.size();
         writeUniformBuffer(globalBuffers, &globalUbo);
+
+        auto pointLights =  std::make_unique<PointLightUniform[]>(globalUbo.pointLightsCount);
+        for(int i=0; i < globalUbo.pointLightsCount; i++) {
+            pointLights[i].position = omniLights[i]->getPosition();
+            pointLights[i].color = omniLights[i]->getColorAndIntensity();
+            pointLights[i].specular = omniLights[i]->getSpecularIntensity();
+            pointLights[i].constant = omniLights[i]->getAttenuation();
+            pointLights[i].linear = omniLights[i]->getLinear();
+            pointLights[i].quadratic = omniLights[i]->getQuadratic();
+        }
+        writeUniformBuffer(pointLightBuffers, pointLights.get());
+
+        auto spotLightsArray =  std::make_unique<SpotLightUniform[]>(globalUbo.spotLightsCount);
+        for(int i=0; i < globalUbo.spotLightsCount; i++) {
+            spotLightsArray[i].position = spotLights[i]->getPosition();
+            spotLightsArray[i].color = spotLights[i]->getColorAndIntensity();
+            spotLightsArray[i].specular = spotLights[i]->getSpecularIntensity();
+            spotLightsArray[i].constant = spotLights[i]->getAttenuation();
+            spotLightsArray[i].linear = spotLights[i]->getLinear();
+            spotLightsArray[i].quadratic = spotLights[i]->getQuadratic();
+            spotLightsArray[i].cutOff = spotLights[i]->getCutOff();
+            spotLightsArray[i].outerCutOff = spotLights[i]->getOuterCutOff();
+        }
+        writeUniformBuffer(spotLightBuffers, spotLightsArray.get());
 
         uint32_t modelIndex = 0;
         uint32_t surfaceIndex = 0;
@@ -161,10 +178,12 @@ namespace z0 {
                     } else {
                         vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_NONE);
                     }
-                    std::array<uint32_t, 3> offsets = {
+                    std::array<uint32_t, 5> offsets = {
                         0, // globalBuffers
                         static_cast<uint32_t>(modelsBuffers[currentFrame]->getAlignmentSize() * modelIndex),
                         static_cast<uint32_t>(surfacesBuffers[currentFrame]->getAlignmentSize() * surfaceIndex),
+                        0, // pointLightBuffers
+                        0, // spotLightBuffers
                     };
                     bindDescriptorSets(commandBuffer, offsets.size(), offsets.data());
                     mesh->_getModel()->draw(commandBuffer, surface->firstVertexIndex, surface->indexCount);
@@ -180,16 +199,21 @@ namespace z0 {
         globalPool = VulkanDescriptorPool::Builder(vulkanDevice)
                 .setMaxSets(MAX_FRAMES_IN_FLIGHT)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // global UBO
+                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT) // textures
                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // model UBO
                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // surfaces UBO
-                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT) // textures
+                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // pointlightarray UBO
+                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // spotlightarray UBO
                 .build();
 
+        // Global UBO
         createUniformBuffers(globalBuffers, sizeof(GobalUniformBufferObject));
 
+        // Models UBO
         VkDeviceSize modelBufferSize = sizeof(ModelUniformBufferObject);
         createUniformBuffers(modelsBuffers, modelBufferSize, meshes.size());
 
+        // Surface materials UBO
         VkDeviceSize surfaceBufferSize = sizeof(SurfaceUniformBufferObject);
         uint32_t surfaceCount = 0;
         for (const auto& meshInstance: meshes) {
@@ -198,6 +222,14 @@ namespace z0 {
             }
         }
         createUniformBuffers(surfacesBuffers, surfaceBufferSize, surfaceCount);
+
+        // PointLight array UBO
+        VkDeviceSize pointLightBufferSize = sizeof(PointLightUniform) * (omniLights.size()+ (omniLights.empty() ? 1 : 0));
+        createUniformBuffers(pointLightBuffers, pointLightBufferSize);
+
+        // SpotLight array UBO
+        VkDeviceSize spotLightBufferSize = sizeof(SpotLightUniform) * (spotLights.size()+ (spotLights.empty() ? 1 : 0));
+        createUniformBuffers(spotLightBuffers, spotLightBufferSize);
 
         globalSetLayout = VulkanDescriptorSetLayout::Builder(vulkanDevice)
             .addBinding(0, // global UBO
@@ -213,12 +245,20 @@ namespace z0 {
             .addBinding(3, // surfaces UBO
                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
                         VK_SHADER_STAGE_FRAGMENT_BIT)
+            .addBinding(4, // PointLight array UBO
+                        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                        VK_SHADER_STAGE_FRAGMENT_BIT)
+            .addBinding(5, // SpotLight array UBO
+                        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                        VK_SHADER_STAGE_FRAGMENT_BIT)
             .build();
 
         for (int i = 0; i < surfacesDescriptorSets.size(); i++) {
             auto globalBufferInfo = globalBuffers[i]->descriptorInfo(sizeof(GobalUniformBufferObject));
             auto modelBufferInfo = modelsBuffers[i]->descriptorInfo(modelBufferSize);
             auto surfaceBufferInfo = surfacesBuffers[i]->descriptorInfo(surfaceBufferSize);
+            auto pointLightBufferInfo = pointLightBuffers[i]->descriptorInfo(pointLightBufferSize);
+            auto spotLightBufferInfo = spotLightBuffers[i]->descriptorInfo(spotLightBufferSize);
             std::vector<VkDescriptorImageInfo> imagesInfo{};
             for(const auto& texture : textures) {
                 imagesInfo.push_back(texture->getImage()._getImage().imageInfo());
@@ -228,6 +268,8 @@ namespace z0 {
                 .writeImage(1, imagesInfo.data())
                 .writeBuffer(2, &modelBufferInfo)
                 .writeBuffer(3, &surfaceBufferInfo)
+                .writeBuffer(4, &pointLightBufferInfo)
+                .writeBuffer(5, &spotLightBufferInfo)
                 .build(surfacesDescriptorSets[i])) {
                 die("Cannot allocate descriptor set");
             }

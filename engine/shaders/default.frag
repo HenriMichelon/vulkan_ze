@@ -75,9 +75,11 @@ void main() {
     if (global.haveDirectionalLight) {
         diffuse = calcDirectionalLight(global.directionalLight, color);
     }
-
     for(int i = 0; i < global.pointLightsCount; i++) {
-        diffuse += calcPointLight(global.pointLights[i], color);
+        diffuse += calcPointLight(pointLights.lights[i], color);
+    }
+    for(int i = 0; i < global.spotLightsCount; i++) {
+        diffuse += calcSpotLight(spotLights.lights[i], color);
     }
 
     //diffuse += calcSpotLight(global.light, color);

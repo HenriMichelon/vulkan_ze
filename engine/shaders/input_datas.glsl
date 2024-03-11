@@ -32,8 +32,8 @@ layout(set = 0, binding = 0) uniform GlobalUniformBufferObject  {
     vec3 cameraPosition;
     DirectionalLight directionalLight;
     bool haveDirectionalLight;
-    PointLight pointLights[10];
     int pointLightsCount;
+    int spotLightsCount;
 } global;
 
 layout(binding = 1) uniform sampler2D texSampler[100]; // put a limit into the default renderer
@@ -49,3 +49,11 @@ layout(set = 0, binding = 3) uniform SurfaceUniformBufferObject  {
     vec4 albedoColor;
     float shininess;
 } material;
+
+layout(set = 0, binding = 4) uniform PointLightArray {
+    PointLight lights[1];
+} pointLights;
+
+layout(set = 0, binding = 5) uniform SpotLightArray {
+    SpotLight lights[1];
+} spotLights;

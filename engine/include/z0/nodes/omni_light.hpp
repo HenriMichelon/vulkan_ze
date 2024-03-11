@@ -22,6 +22,8 @@ namespace z0 {
         void setAttenuation(float _attenuation) { attenuation = _attenuation;}
 
     private:
+        // http://learnwebgl.brown37.net/09_lights/lights_attenuation.html
+        // https://learnopengl.com/Lighting/Light-casters
         float attenuation{1.0};
         float linear{0.14};
         float quadratic{0.07};

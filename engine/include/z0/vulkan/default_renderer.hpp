@@ -6,6 +6,7 @@
 #include "z0/nodes/directional_light.hpp"
 #include "z0/nodes/environment.hpp"
 #include "z0/nodes/omni_light.hpp"
+#include "z0/nodes/spot_light.hpp"
 
 namespace z0 {
 
@@ -16,9 +17,8 @@ namespace z0 {
             alignas(16) glm::vec4 color = { 0.0f, 0.0f, 0.0f, 0.0f }; // RGB + Intensity;
             alignas(4) float specular = { 1.0f };
         };
-        // https://learnopengl.com/Lighting/Light-casters
         struct PointLightUniform {
-            alignas(16) glm::vec3 position = glm::vec3{0.0f, 0.0f, 0.0f};
+            alignas(16) glm::vec3 position = {0.0f, 0.0f, 0.0f};
             alignas(16) glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f }; // RGB + Intensity;
             alignas(4) float specular = { 1.0f };
             alignas(4) float constant = { 1.0f };
@@ -26,15 +26,15 @@ namespace z0 {
             alignas(4) float quadratic{0.0};
         };
         struct SpotLightUniform {
-            alignas(16) glm::vec3 position = { 0, 0, -2 };
+            alignas(16) glm::vec3 position = { 0.0f, 0.0f, 0.0f };
             alignas(16) glm::vec3 direction = glm::normalize(glm::vec3{0.f, .0f, 1.0f});
-            alignas(16) glm::vec4 color = { 1.0f, 1.0f, 1.0f, 2.0f }; // RGB + Intensity;
+            alignas(16) glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f }; // RGB + Intensity;
             alignas(4) float cutOff = { glm::cos(glm::radians(10.f)) };
-            alignas(4) float outerCutOff = { glm::cos(glm::radians(45.f)) };
-            alignas(4) float specular = { 2.0f };
+            alignas(4) float outerCutOff = { glm::cos(glm::radians(15.f)) };
+            alignas(4) float specular = { 1.0f };
             alignas(4) float constant = { 1.0f };
-            alignas(4) float linear{0.14};
-            alignas(4) float quadratic{0.07};
+            alignas(4) float linear{0.0};
+            alignas(4) float quadratic{0.00};
         };
         struct GobalUniformBufferObject {
             glm::mat4 projection{1.0f};
@@ -43,8 +43,8 @@ namespace z0 {
             alignas(16) glm::vec3 cameraPosition;
             alignas(16) DirectionalLightUniform directionalLight;
             alignas(4) bool haveDirectionalLight{false};
-            alignas(16) PointLightUniform pointLights[10];
             alignas(4) uint32_t pointLightsCount{0};
+            alignas(4) uint32_t spotLightsCount{0};
         };
         struct ModelUniformBufferObject {
             glm::mat4 matrix;
@@ -67,6 +67,7 @@ namespace z0 {
         DirectionalLight* directionalLight;
         Environment* environement;
         std::vector<OmniLight*> omniLights;
+        std::vector<SpotLight*> spotLights;
 
         std::unique_ptr<VulkanShader> vertShader;
         std::unique_ptr<VulkanShader> fragShader;
@@ -79,6 +80,8 @@ namespace z0 {
         std::vector<std::unique_ptr<VulkanBuffer>> globalBuffers{MAX_FRAMES_IN_FLIGHT};
         std::vector<std::unique_ptr<VulkanBuffer>> modelsBuffers{MAX_FRAMES_IN_FLIGHT};
         std::vector<std::unique_ptr<VulkanBuffer>> surfacesBuffers{MAX_FRAMES_IN_FLIGHT};
+        std::vector<std::unique_ptr<VulkanBuffer>> pointLightBuffers{MAX_FRAMES_IN_FLIGHT};
+        std::vector<std::unique_ptr<VulkanBuffer>> spotLightBuffers{MAX_FRAMES_IN_FLIGHT};
 
         void update(float delta) override;
         void recordCommands(VkCommandBuffer commandBuffer) override;
