@@ -10,3 +10,5 @@ This project uses the following Vulkan extensions :
 **Please note :**
 - This project was made for learning purpose
 - This engine is not intended for general use
+
+Released under the [MIT license](https://github.com/HenriMichelon/zero_zero/blob/main/LICENCE.txt).
