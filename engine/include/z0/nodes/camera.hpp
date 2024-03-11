@@ -5,11 +5,14 @@
 namespace z0 {
     class Camera: public Node {
     public:
-        explicit Camera(const std::string nodeName = ""): Node{nodeName} {}
+        explicit Camera(const std::string nodeName = "Camera"): Node{nodeName} {
+            setPerspectiveProjection(glm::radians(75.0f), 0.1f, 1000.0f);
+        }
+
         void setOrthographicProjection(float left, float right,
                                        float top, float bottom,
                                        float near, float far);
-        void setPerspectiveProjection(float fovy,
+        void setPerspectiveProjection(float fov,
                                       float near, float far);
 
         void setViewDirection(glm::vec3 direction, glm::vec3 up = glm::vec3{0.0f, -1.0f, 0.0f});
@@ -22,7 +25,7 @@ namespace z0 {
         const glm::vec3 getPosition() const { return glm::vec3(inverseViewMatrix[3]); }
 
     private:
-        float fovy;
+        float fov;
         float nearDistance;
         float farDistance;
         bool usePerspectiveProjection{false};

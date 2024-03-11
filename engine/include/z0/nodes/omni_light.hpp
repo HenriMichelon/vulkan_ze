@@ -1,0 +1,30 @@
+#pragma once
+
+#include "z0/nodes/light.hpp"
+
+namespace z0 {
+
+    class OmniLight: public Light {
+    public:
+        explicit OmniLight(const std::string name = "OmniLight"): Light{name} {};
+        explicit OmniLight(float linear,
+                           float quadratic,
+                           float attenuation = 1.0f,
+                           glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f},
+                           float specular = 1.0f,
+                           const std::string nodeName = "OmniLight");
+
+        float getLinear() const { return linear; }
+        void setLinear(float _linear) { linear = _linear; }
+        float getQuadratic() const { return quadratic; }
+        void setQuadratic(float _quadratic) { quadratic = _quadratic;}
+        float getAttenuation() const { return attenuation; }
+        void setAttenuation(float _attenuation) { attenuation = _attenuation;}
+
+    private:
+        float attenuation{1.0};
+        float linear{0.14};
+        float quadratic{0.07};
+    };
+
+}

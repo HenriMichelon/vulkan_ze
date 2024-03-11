@@ -1,6 +1,5 @@
 #include "z0/vulkan/default_renderer.hpp"
 #include "z0/log.hpp"
-#include "z0/nodes/camera.hpp"
 
 namespace z0 {
 
@@ -36,6 +35,11 @@ namespace z0 {
             if (auto env = dynamic_cast<Environment*>(node.get())) {
                 environement = env;
                 log("Using environment", environement->toString());
+            }
+        }
+        if (omniLights.size() < 10) {
+            if (auto omniLight = dynamic_cast<OmniLight *>(node.get())) {
+                omniLights.push_back(omniLight);
             }
         }
         createMeshIndex(node);
@@ -97,6 +101,15 @@ namespace z0 {
         }
         if (environement != nullptr) {
             globalUbo.ambient = environement->getAmbientColorAndIntensity();
+        }
+        globalUbo.pointLightsCount = omniLights.size();
+        for(int i=0; i < globalUbo.pointLightsCount; i++) {
+            globalUbo.pointLights[i].position = omniLights[i]->getPosition();
+            globalUbo.pointLights[i].color = omniLights[i]->getColorAndIntensity();
+            globalUbo.pointLights[i].specular = omniLights[i]->getSpecularIntensity();
+            globalUbo.pointLights[i].constant = omniLights[i]->getAttenuation();
+            globalUbo.pointLights[i].linear = omniLights[i]->getLinear();
+            globalUbo.pointLights[i].quadratic = omniLights[i]->getQuadratic();
         }
         writeUniformBuffer(globalBuffers, &globalUbo);
 

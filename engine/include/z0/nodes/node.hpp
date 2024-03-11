@@ -13,7 +13,7 @@ namespace z0 {
     public:
         using id_t = unsigned int;
 
-        explicit Node(const std::string nodeName = "");
+        explicit Node(const std::string nodeName = "Node");
 
         virtual void onReady() {}
         virtual void onProcess(float delta) {}

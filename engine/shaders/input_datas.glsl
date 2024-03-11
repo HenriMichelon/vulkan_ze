@@ -8,6 +8,7 @@ struct PointLight {
     vec3 position;
     vec4 color;
     float specular;
+    float constant;
     float linear;
     float quadratic;
 };
@@ -19,6 +20,7 @@ struct SpotLight {
     float cutOff;
     float outerCutOff;
     float specular;
+    float constant;
     float linear;
     float quadratic;
 };
@@ -30,7 +32,8 @@ layout(set = 0, binding = 0) uniform GlobalUniformBufferObject  {
     vec3 cameraPosition;
     DirectionalLight directionalLight;
     bool haveDirectionalLight;
-    SpotLight light;
+    PointLight pointLights[10];
+    int pointLightsCount;
 } global;
 
 layout(binding = 1) uniform sampler2D texSampler[100]; // put a limit into the default renderer

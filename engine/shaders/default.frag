@@ -23,42 +23,39 @@ vec3 calcDirectionalLight(DirectionalLight light, vec3 color) {
 }
 
 vec3 calcPointLight(PointLight light, vec3 color) {
-    float distance    = length(global.light.position - POSITION);
-    float attenuation = 1.0 / (1.0 + global.light.linear * distance + global.light.quadratic * (distance * distance));
-    vec3 lightDir = normalize(global.light.position - POSITION);
+    float dist = length(light.position - POSITION);
+    float attenuation = 1.0 / (light.constant + light.linear * dist + light.quadratic * (dist * dist));
+    vec3 lightDir = normalize(light.position - POSITION);
     float diff = max(dot(NORMAL, lightDir), 0.0);
-    vec3 diffuse = attenuation * diff * global.light.color.rgb * global.light.color.w * color;
+    vec3 diffuse = attenuation * diff * light.color.rgb * light.color.w * color;
     if (material.specularIndex != -1) {
         vec3 viewDir = normalize(global.cameraPosition - POSITION);
         vec3 reflectDir = reflect(-lightDir, NORMAL);
         float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
-        vec3 specular = global.light.specular * spec * global.light.color.rgb * texture(texSampler[material.specularIndex], UV).rgb;
+        vec3 specular = attenuation * light.specular * spec * color.rgb * texture(texSampler[material.specularIndex], UV).rgb;
         return attenuation * diffuse + specular;
     }
     return diffuse;
 }
 
 vec3 calcSpotLight(SpotLight light, vec3 color) {
-    float distance    = length(global.light.position - POSITION);
-    float attenuation = 1.0 / (1.0 + global.light.linear * distance + global.light.quadratic * (distance * distance));
-    vec3 lightDir = normalize(global.light.position - POSITION);
+    float dist = length(light.position - POSITION);
+    float attenuation = 1.0 / (light.constant + light.linear * dist + light.quadratic * (dist * dist));
+    vec3 lightDir = normalize(light.position - POSITION);
 
-    float theta = dot(lightDir, -global.light.direction);
-    float epsilon   = global.light.cutOff - global.light.outerCutOff;
-    float intensity = clamp((theta - global.light.outerCutOff) / epsilon, 0.0, 1.0);
+    float theta = dot(lightDir, -light.direction);
+    float epsilon   = light.cutOff - light.outerCutOff;
+    float intensity = clamp((theta - light.outerCutOff) / epsilon, 0.0, 1.0);
 
-    if (theta > global.light.outerCutOff)
+    if (theta > light.outerCutOff)
     {
-        // diffuse
         float diff = max(dot(NORMAL, lightDir), 0.0);
-        vec3 diffuse = intensity * attenuation * diff * global.light.color.rgb * global.light.color.w * color;
-
-        // specular
+        vec3 diffuse = intensity * attenuation * diff * light.color.rgb * light.color.w * color;
         if (material.specularIndex != -1) {
             vec3 viewDir = normalize(global.cameraPosition - POSITION);
             vec3 reflectDir = reflect(-lightDir, NORMAL);
             float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
-            vec3 specular = intensity * attenuation * global.light.specular * spec * global.light.color.rgb * texture(texSampler[material.specularIndex], UV).rgb;
+            vec3 specular = intensity * attenuation * light.specular * spec * light.color.rgb * texture(texSampler[material.specularIndex], UV).rgb;
             return diffuse + specular;
         }
         return diffuse;
@@ -79,7 +76,10 @@ void main() {
         diffuse = calcDirectionalLight(global.directionalLight, color);
     }
 
-    //diffuse += calcPointLight(global.light, color);
+    for(int i = 0; i < global.pointLightsCount; i++) {
+        diffuse += calcPointLight(global.pointLights[i], color);
+    }
+
     //diffuse += calcSpotLight(global.light, color);
 
     vec3 result = (ambient + diffuse) * material.albedoColor.rgb;

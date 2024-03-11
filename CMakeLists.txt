@@ -25,6 +25,9 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/include/z0/nodes/node.hpp
         ${Z0_ENGINE_DIR}/include/z0/nodes/camera.hpp
         ${Z0_ENGINE_DIR}/include/z0/nodes/mesh_instance.hpp
+        ${Z0_ENGINE_DIR}/include/z0/nodes/light.hpp
+        ${Z0_ENGINE_DIR}/include/z0/nodes/directional_light.hpp
+        ${Z0_ENGINE_DIR}/include/z0/nodes/environment.hpp
         ${Z0_ENGINE_DIR}/include/z0/application_config.hpp
         ${Z0_ENGINE_DIR}/include/z0/mainloop.hpp
         ${Z0_ENGINE_DIR}/include/z0/log.hpp
@@ -64,9 +67,9 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/texture.cpp
         ${Z0_ENGINE_DIR}/src/resource.cpp
         ${Z0_ENGINE_DIR}/src/loader.cpp
-        engine/include/z0/nodes/light.hpp
-        engine/include/z0/nodes/directional_light.hpp
-        engine/include/z0/nodes/environment.hpp
+        engine/include/z0/nodes/omni_light.hpp
+        engine/src/nodes/omni_light.cpp
+
 )
 target_include_directories(${PROJECT_NAME} PUBLIC ${Z0_ENGINE_DIR}/include)
 

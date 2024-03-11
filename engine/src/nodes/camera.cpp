@@ -17,13 +17,13 @@ namespace z0 {
     }
 
     void Camera::setPerspectiveProjection(float _fovy, float _near, float _far) {
-        fovy = _fovy;
+        fov = _fovy;
         nearDistance = _near;
         farDistance = _far;
         usePerspectiveProjection = true;
         float aspect = z0::Application::getViewport().getAspectRatio();
         assert(glm::abs(aspect - std::numeric_limits<float>::epsilon()) > 0.0f);
-        const float tanHalfFovy = tan(fovy / 2.f);
+        const float tanHalfFovy = tan(fov / 2.f);
         projectionMatrix = glm::mat4{0.0f};
         projectionMatrix[0][0] = 1.f / (aspect * tanHalfFovy);
         projectionMatrix[1][1] = 1.f / (tanHalfFovy);
@@ -34,7 +34,7 @@ namespace z0 {
 
     const glm::mat4& Camera::getProjection() {
         if (usePerspectiveProjection) {
-            setPerspectiveProjection(fovy, nearDistance, farDistance);
+            setPerspectiveProjection(fov, nearDistance, farDistance);
         }
         return projectionMatrix;
     }
