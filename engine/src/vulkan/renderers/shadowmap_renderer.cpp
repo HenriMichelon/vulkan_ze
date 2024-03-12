@@ -8,7 +8,7 @@ namespace z0 {
 
     ShadowMapRenderer::ShadowMapRenderer(VulkanDevice &dev,
                                          const std::string& sDir) :
-         VulkanRenderer{dev, sDir}
+         VulkanRenderer{dev, sDir, false}
      {
          createResources();
      }
@@ -36,10 +36,22 @@ namespace z0 {
 
     void ShadowMapRenderer::recordCommands(VkCommandBuffer commandBuffer) {
         bindShader(commandBuffer, *vertShader);
+        VkShaderStageFlagBits stageFlagBits{VK_SHADER_STAGE_FRAGMENT_BIT};
+        vkCmdBindShadersEXT(commandBuffer, 1, &stageFlagBits, VK_NULL_HANDLE);
+        vkCmdSetRasterizationSamplesEXT(commandBuffer, VK_SAMPLE_COUNT_1_BIT);
+        vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
         for (const auto&meshInstance: meshes) {
             auto mesh = meshInstance->getMesh();
             if (mesh->isValid()) {
                 for (const auto& surface: mesh->getSurfaces()) {
+                    if (auto standardMaterial = dynamic_cast<StandardMaterial*>(surface->material.get())) {
+                        vkCmdSetCullMode(commandBuffer,
+                                         standardMaterial->cullMode == CULLMODE_DISABLED ? VK_CULL_MODE_NONE :
+                                         standardMaterial->cullMode == CULLMODE_BACK ? VK_CULL_MODE_BACK_BIT
+                                                                                     : VK_CULL_MODE_FRONT_BIT);
+                    } else {
+                        vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_NONE);
+                    }
                     bindDescriptorSets(commandBuffer);
                     mesh->_getModel()->draw(commandBuffer, surface->firstVertexIndex, surface->indexCount);
                 }
@@ -59,7 +71,7 @@ namespace z0 {
         globalSetLayout = VulkanDescriptorSetLayout::Builder(vulkanDevice)
             .addBinding(0, // global UBO
                     VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                    VK_SHADER_STAGE_ALL_GRAPHICS)
+                    VK_SHADER_STAGE_VERTEX_BIT)
             .build();
 
         for (int i = 0; i < descriptorSets.size(); i++) {

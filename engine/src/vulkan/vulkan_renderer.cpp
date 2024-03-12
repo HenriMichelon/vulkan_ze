@@ -11,8 +11,8 @@
 
 namespace z0 {
 
-    VulkanRenderer::VulkanRenderer(VulkanDevice &dev, std::string sDir) :
-        vulkanDevice{dev}, device(dev.getDevice()), shaderDirectory(std::move(sDir))
+    VulkanRenderer::VulkanRenderer(VulkanDevice &dev, std::string sDir, bool present) :
+        vulkanDevice{dev}, device(dev.getDevice()), shaderDirectory(std::move(sDir)), presentToSwapChain(present)
     {
         // Create command buffers
         // https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Command_buffers
@@ -117,23 +117,26 @@ namespace z0 {
     void VulkanRenderer::drawFrame() {
         vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
         uint32_t imageIndex;
-        VkResult result = vkAcquireNextImageKHR(device,
-                              vulkanDevice.getSwapChain(),
-                              UINT64_MAX,
-                              imageAvailableSemaphores[currentFrame],
-                              VK_NULL_HANDLE,
-                              &imageIndex);
-        if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-            vulkanDevice.recreateSwapChain();
-            cleanupImagesResources();
-            createImagesResources();
-            return;
-        } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-            die("failed to acquire swap chain image!");
+
+        if (presentToSwapChain) {
+            VkResult result = vkAcquireNextImageKHR(device,
+                                                    vulkanDevice.getSwapChain(),
+                                                    UINT64_MAX,
+                                                    imageAvailableSemaphores[currentFrame],
+                                                    VK_NULL_HANDLE,
+                                                    &imageIndex);
+            if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+                vulkanDevice.recreateSwapChain();
+                cleanupImagesResources();
+                createImagesResources();
+                return;
+            } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+                die("failed to acquire swap chain image!");
+            }
         }
+
         vkResetFences(device, 1, &inFlightFences[currentFrame]);
 
-        // Record command buffer
         {
             vkResetCommandBuffer(commandBuffers[currentFrame], 0);
             const VkCommandBufferBeginInfo beginInfo{
@@ -153,26 +156,29 @@ namespace z0 {
             }
         }
 
-        const VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
-        {
-            const VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
-            const VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-            update();
-            const VkSubmitInfo submitInfo{
-                    .sType                  = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-                    .waitSemaphoreCount     = 1,
-                    .pWaitSemaphores        = waitSemaphores,
-                    .pWaitDstStageMask      = waitStages,
-                    .commandBufferCount     = 1,
-                    .pCommandBuffers        = &commandBuffers[currentFrame],
-                    .signalSemaphoreCount   = 1,
-                    .pSignalSemaphores      = signalSemaphores
-            };
-            if (vkQueueSubmit(vulkanDevice.getGraphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
-                die("failed to submit draw command buffer!");
+
+
+        if (presentToSwapChain) {
+            const VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
+            {
+                const VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
+                const VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+                update();
+                const VkSubmitInfo submitInfo{
+                        .sType                  = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+                        .waitSemaphoreCount     = 1,
+                        .pWaitSemaphores        = waitSemaphores,
+                        .pWaitDstStageMask      = waitStages,
+                        .commandBufferCount     = 1,
+                        .pCommandBuffers        = &commandBuffers[currentFrame],
+                        .signalSemaphoreCount   = 1,
+                        .pSignalSemaphores      = signalSemaphores
+                };
+                if (vkQueueSubmit(vulkanDevice.getGraphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
+                    die("failed to submit draw command buffer!");
+                }
             }
-        }
-        {
+
             const VkSwapchainKHR swapChains[] = {vulkanDevice.getSwapChain()};
             const VkPresentInfoKHR presentInfo{
                     .sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
@@ -183,7 +189,7 @@ namespace z0 {
                     .pImageIndices      = &imageIndex,
                     .pResults           = nullptr // Optional
             };
-            result = vkQueuePresentKHR(vulkanDevice.getPresentQueue(), &presentInfo);
+            VkResult result = vkQueuePresentKHR(vulkanDevice.getPresentQueue(), &presentInfo);
             if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || vulkanDevice.getWindowHelper().windowResized) {
                 vulkanDevice.recreateSwapChain();
                 cleanupImagesResources();
@@ -191,7 +197,17 @@ namespace z0 {
             } else if (result != VK_SUCCESS) {
                 die("failed to present swap chain image!");
             }
-
+        } else {
+            const VkSubmitInfo submitInfo{
+                    .sType                  = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+                    .waitSemaphoreCount     = 0,
+                    .commandBufferCount     = 1,
+                    .pCommandBuffers        = &commandBuffers[currentFrame],
+                    .signalSemaphoreCount   = 0,
+            };
+            if (vkQueueSubmit(vulkanDevice.getGraphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
+                die("failed to submit draw command buffer!");
+            }
         }
         currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     }

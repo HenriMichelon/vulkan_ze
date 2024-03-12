@@ -103,7 +103,7 @@ namespace z0 {
 
     void SceneRenderer::drawFrame() {
         if (!shadowMaps.empty()) {
-            //shadowMapRenderer.drawFrame();
+            shadowMapRenderer.drawFrame();
         }
         VulkanRenderer::drawFrame();
     }

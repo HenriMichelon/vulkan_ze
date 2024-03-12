@@ -35,7 +35,7 @@ namespace z0 {
                     1.0f}}};
         const VkClearValue depthClearValue { .depthStencil = {1.0f, 0} };
 
-        VulkanRenderer(VulkanDevice& device, std::string shaderDirectory);
+        VulkanRenderer(VulkanDevice& device, std::string shaderDirectory, bool presentToSwapChain = true);
 
         // Helpers function for children classes
         void createResources();
@@ -53,6 +53,7 @@ namespace z0 {
         std::vector<VkSemaphore> imageAvailableSemaphores;
         std::vector<VkSemaphore> renderFinishedSemaphores;
         std::vector<VkFence> inFlightFences;
+        bool presentToSwapChain;
 
         void buildShader(VulkanShader& shader);
         void createPipelineLayout();
