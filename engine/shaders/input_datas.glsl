@@ -6,13 +6,13 @@ struct DirectionalLight {
 
 struct PointLight {
     vec3 position;
-    vec3 direction;
     vec4 color;
     float specular;
     float constant;
     float linear;
     float quadratic;
     bool isSpot;
+    vec3 direction;
     float cutOff;
     float outerCutOff;
 };

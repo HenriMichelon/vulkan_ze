@@ -19,13 +19,13 @@ namespace z0 {
         };
         struct PointLightUniform {
             alignas(16) glm::vec3 position = { 0.0f, 0.0f, 0.0f };
-            alignas(16) glm::vec3 direction = glm::normalize(glm::vec3{0.f, .0f, 1.0f});
             alignas(16) glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f }; // RGB + Intensity;
             alignas(4) float specular = { 1.0f };
             alignas(4) float constant = { 1.0f };
             alignas(4) float linear{0.0};
             alignas(4) float quadratic{0.00};
             alignas(4) bool isSpot{false};
+            alignas(16) glm::vec3 direction = glm::normalize(glm::vec3{0.f, .0f, .0f});
             alignas(4) float cutOff = { glm::cos(glm::radians(10.f)) };
             alignas(4) float outerCutOff = { glm::cos(glm::radians(15.f)) };
         };

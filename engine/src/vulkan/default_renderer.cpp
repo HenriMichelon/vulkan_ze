@@ -121,6 +121,7 @@ namespace z0 {
             pointLightsArray[i].quadratic = omniLights[i]->getQuadratic();
             if (auto spot = dynamic_cast<SpotLight*>(omniLights[i])) {
                 pointLightsArray[i].isSpot = true;
+                pointLightsArray[i].direction = spot->getDirection();
                 pointLightsArray[i].cutOff = spot->getCutOff();
                 pointLightsArray[i].outerCutOff =spot->getOuterCutOff();
             }

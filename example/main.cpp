@@ -13,28 +13,40 @@ public:
 
     void onReady() override {
         z0::Environment environment{};
-        environment.setAmbientColorAndIntensity({1.0f, 1.0f, 1.0f, 0.02f});
+        environment.setAmbientColorAndIntensity({1.0f, 1.0f, 1.0f, 0.1f});
         addChild(environment);
 
         z0::Camera camera{};
-        camera.setPosition({-0.0f, -5.0f, -10.0f });
+        camera.setPosition({-0.0f, -15.0f, -0.000001f });
         //camera.setViewDirection({.0, .0, 1.0}, {0.0, -1.0, 0.0 });
         camera.setViewTarget({ 0.0f, -0.0f, 0.0f});
         addChild(camera);
 
-        z0::DirectionalLight directionalLight{glm::vec3{0.0f, .5f, 1.0f}};
+        z0::DirectionalLight directionalLight{glm::vec3{0.0f, .5f, 0.5f}};
         directionalLight.setColorAndIntensity({1.0f, 1.0f, 1.0f, 1.0f});
-        addChild(directionalLight);
+        //addChild(directionalLight);
 
-        model1 = z0::Loader::loadModelFromFile("models/survival_guitar_backpack.glb", false);
-        //model1 = z0::Loader::loadModelFromFile("models/crate.glb", false);
-        model1->setPosition({0.0, -2.8, -2.0});
-        model1->setScale(glm::vec3{0.01});
-        model1->setRotationDegrees({-180.0, -30.0, 0.0});
+        /*z0::OmniLight omniLight1 {0.07, 0.017};
+        omniLight1.setPosition({0.0f, -6.0f, 0.f});
+        addChild(omniLight1);*/
+
+        z0::SpotLight spotLight1{{0.0, 1.0f, 0.0f},
+                                 45.0, 55.0,
+                                 0.027, 0.0028};
+        spotLight1.setSpecularIntensity(10.0);
+        spotLight1.setPosition({0.0f, -5.0f, 0.f});
+        spotLight1.setColorAndIntensity({1.0f, 1.0f, 1.0f, 2.0f});
+        addChild(spotLight1);
+
+        //model1 = z0::Loader::loadModelFromFile("models/survival_guitar_backpack.glb", false);
+        model1 = z0::Loader::loadModelFromFile("models/light.glb", false);
+        model1->setPosition(spotLight1.getPosition());
+        //model1->setScale(glm::vec3{0.01});
+        //model1->setRotationDegrees({-180.0, -30.0, 0.0});
         addChild(model1);
 
         floor = z0::Loader::loadModelFromFile("models/floor.glb", false);
-        floor->setScale(glm::vec3{1.0});
+        //floor->setScale(glm::vec3{1.0});
         floor->setRotationDegrees({-180.0, 0.0, 0.0});
         addChild(floor);
 
