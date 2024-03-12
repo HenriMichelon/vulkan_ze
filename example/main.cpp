@@ -24,7 +24,7 @@ public:
 
         z0::DirectionalLight directionalLight{glm::vec3{0.0f, .5f, 0.5f}};
         directionalLight.setColorAndIntensity({1.0f, 1.0f, 1.0f, 1.0f});
-        //addChild(directionalLight);
+        addChild(directionalLight);
 
         /*z0::OmniLight omniLight1 {0.07, 0.017};
         omniLight1.setPosition({0.0f, -6.0f, 0.f});
@@ -33,10 +33,10 @@ public:
         z0::SpotLight spotLight1{{0.0, 1.0f, -1.0f},
                                  45.0, 55.0,
                                  0.027, 0.0028};
-        spotLight1.setSpecularIntensity(1.0);
+        spotLight1.setSpecularIntensity(10.0);
         spotLight1.setPosition({0.0f, -10.0f, 10.f});
         spotLight1.setColorAndIntensity({1.0f, 1.0f, 1.0f, 2.0f});
-        addChild(spotLight1);
+        //addChild(spotLight1);
 
         //model1 = z0::Loader::loadModelFromFile("models/survival_guitar_backpack.glb", false);
         model1 = z0::Loader::loadModelFromFile("models/light.glb", false);
