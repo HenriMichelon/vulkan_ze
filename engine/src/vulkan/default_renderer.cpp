@@ -15,6 +15,7 @@ namespace z0 {
     void DefaultRenderer::loadScene(const std::shared_ptr<Node>& root) {
         rootNode = root;
         loadNode(rootNode);
+        createImagesIndex(rootNode);
         createResources();
     }
 
@@ -40,39 +41,46 @@ namespace z0 {
         if (auto omniLight = dynamic_cast<OmniLight *>(node.get())) {
             omniLights.push_back(omniLight);
         }
-        createMeshIndex(node);
+        createImagesList(node);
         for(auto& child: node->getChildren()) {
             loadNode(child);
         }
     }
 
-    void DefaultRenderer::createMeshIndex(std::shared_ptr<Node>& node) {
+    void DefaultRenderer::createImagesList(std::shared_ptr<Node>& node) {
         if (auto meshInstance = dynamic_cast<MeshInstance*>(node.get())) {
             meshes.push_back(meshInstance);
             for(const auto& material : meshInstance->getMesh()->_getMaterials()) {
-                if (auto standardMaterial = dynamic_cast<StandardMaterial*>(material.get())) {
+                if (auto standardMaterial = dynamic_cast<StandardMaterial *>(material.get())) {
                     if (standardMaterial->albedoTexture != nullptr) {
-                        textures.insert(standardMaterial->albedoTexture);
+                        images.insert(standardMaterial->albedoTexture->getImage()._getImage());
                     }
                     if (standardMaterial->specularTexture != nullptr) {
-                        textures.insert(standardMaterial->specularTexture);
+                        images.insert(standardMaterial->specularTexture->getImage()._getImage());
                     }
                 }
             }
+        }
+    }
+    void DefaultRenderer::createImagesIndex(std::shared_ptr<Node>& node) {
+        if (auto meshInstance = dynamic_cast<MeshInstance*>(node.get())) {
             for(const auto& material : meshInstance->getMesh()->_getMaterials()) {
                 if (auto standardMaterial = dynamic_cast<StandardMaterial*>(material.get())) {
                     if (standardMaterial->albedoTexture != nullptr) {
-                        auto it = textures.find(standardMaterial->albedoTexture);
-                        auto index = std::distance(std::begin(textures), it);
-                        texturesIndices[standardMaterial->albedoTexture->getId()] = static_cast<int32_t>(index);
+                        auto& image = standardMaterial->albedoTexture->getImage();
+                        auto index = std::distance(std::begin(images), images.find(image._getImage()));
+                        imagesIndices[image.getId()] = static_cast<int32_t>(index);
                     }
                     if (standardMaterial->specularTexture != nullptr) {
-                        auto it = textures.find(standardMaterial->specularTexture) ;
-                        auto index = std::distance(std::begin(textures), it);
-                        texturesIndices[standardMaterial->specularTexture->getId()] = static_cast<int32_t>(index);
+                        auto& image = standardMaterial->specularTexture->getImage();
+                        auto index = std::distance(std::begin(images), images.find(image._getImage()));
+                        imagesIndices[image.getId()] = static_cast<int32_t>(index);
                     }
                 }
             }
+        }
+        for(auto& child: node->getChildren()) {
+            createImagesIndex(child);
         }
     }
 
@@ -133,10 +141,10 @@ namespace z0 {
                     if (auto standardMaterial = dynamic_cast<StandardMaterial*>(surface->material.get())) {
                         surfaceUbo.albedoColor = standardMaterial->albedoColor.color;
                         if (standardMaterial->albedoTexture != nullptr) {
-                            surfaceUbo.diffuseIndex = texturesIndices[standardMaterial->albedoTexture->getId()];
+                            surfaceUbo.diffuseIndex = imagesIndices[standardMaterial->albedoTexture->getImage().getId()];
                         }
                         if (standardMaterial->specularTexture != nullptr) {
-                            surfaceUbo.specularIndex = texturesIndices[standardMaterial->specularTexture->getId()];
+                            surfaceUbo.specularIndex = imagesIndices[standardMaterial->specularTexture->getImage().getId()];
                         }
                     }
                     writeUniformBuffer(surfacesBuffers, &surfaceUbo, surfaceIndex);
@@ -221,7 +229,7 @@ namespace z0 {
             .addBinding(1, // textures
                        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                        VK_SHADER_STAGE_FRAGMENT_BIT,
-                       textures.size())
+                       images.size())
             .addBinding(2, // model UBO
                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
                         VK_SHADER_STAGE_VERTEX_BIT)
@@ -239,8 +247,8 @@ namespace z0 {
             auto surfaceBufferInfo = surfacesBuffers[i]->descriptorInfo(surfaceBufferSize);
             auto pointLightBufferInfo = pointLightBuffers[i]->descriptorInfo(pointLightBufferSize);
             std::vector<VkDescriptorImageInfo> imagesInfo{};
-            for(const auto& texture : textures) {
-                imagesInfo.push_back(texture->getImage()._getImage().imageInfo());
+            for(const auto& image : images) {
+                imagesInfo.push_back(image->imageInfo());
             }
             if (!VulkanDescriptorWriter(*globalSetLayout, *globalPool)
                 .writeBuffer(0, &globalBufferInfo)

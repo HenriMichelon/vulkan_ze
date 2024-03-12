@@ -64,8 +64,8 @@ namespace z0 {
         std::unique_ptr<VulkanShader> fragShader;
         std::shared_ptr<Node> rootNode;
         std::vector<MeshInstance*> meshes {};
-        std::unordered_set<std::shared_ptr<Texture>> textures {};
-        std::map<Resource::rid_t, int32_t> texturesIndices {};
+        std::unordered_set<std::shared_ptr<VulkanImage>> images {};
+        std::map<Resource::rid_t, int32_t> imagesIndices {};
 
         std::unique_ptr<VulkanDescriptorPool> globalPool {};
         std::vector<std::unique_ptr<VulkanBuffer>> globalBuffers{MAX_FRAMES_IN_FLIGHT};
@@ -79,7 +79,8 @@ namespace z0 {
         void loadShaders() override;
 
         void loadNode(std::shared_ptr<Node>& parent);
-        void createMeshIndex(std::shared_ptr<Node>& node);
+        void createImagesList(std::shared_ptr<Node>& node);
+        void createImagesIndex(std::shared_ptr<Node>& node);
 
     public:
         DefaultRenderer(const DefaultRenderer&) = delete;

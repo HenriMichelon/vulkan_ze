@@ -23,7 +23,7 @@ namespace z0 {
         std::shared_ptr<VulkanImage> vulkanImage {nullptr};
 
     public:
-        VulkanImage& _getImage() { return *vulkanImage; }
+        std::shared_ptr<VulkanImage>& _getImage() { return vulkanImage; }
     };
 
 }

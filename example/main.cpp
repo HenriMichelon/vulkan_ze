@@ -27,6 +27,7 @@ public:
         addChild(directionalLight);
 
         model1 = z0::Loader::loadModelFromFile("models/survival_guitar_backpack.glb", false);
+        //model1 = z0::Loader::loadModelFromFile("models/crate.glb", false);
         model1->setPosition({0.0, -2.8, -2.0});
         model1->setScale(glm::vec3{0.01});
         model1->setRotationDegrees({-180.0, -30.0, 0.0});
@@ -37,7 +38,7 @@ public:
         floor->setRotationDegrees({-180.0, 0.0, 0.0});
         addChild(floor);
 
-        printTree(std::cout);
+        //printTree(std::cout);
     }
 
     void onProcess(float delta) override {
