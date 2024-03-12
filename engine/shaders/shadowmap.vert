@@ -4,6 +4,7 @@ layout (location = 0) in vec3 position;
 
 layout (binding = 0) uniform UBO {
     mat4 depthMVP;
+    mat4 model;
 } ubo;
 
 out gl_PerVertex  {
@@ -11,5 +12,5 @@ out gl_PerVertex  {
 };
 
 void main() {
-    gl_Position =  ubo.depthMVP * vec4(position, 1.0);
+    gl_Position =  ubo.depthMVP * ubo.model * vec4(position, 1.0);
 }

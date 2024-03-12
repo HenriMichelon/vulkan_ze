@@ -32,14 +32,14 @@ public:
         addChild(camera);
 
         z0::DirectionalLight directionalLight{glm::vec3{0.0f, .5f, 0.5f}};
-        directionalLight.setColorAndIntensity({1.0f, 1.0f, 1.0f, 0.5f});
-        addChild(directionalLight);
+        directionalLight.setColorAndIntensity({1.0f, 1.0f, 1.0f, 0.2f});
+        //addChild(directionalLight);
 
-        z0::SpotLight spotLight1{{-1.0, .0f, 1.0f},
-                                 25.0, 35.0,
+        z0::SpotLight spotLight1{{.0, 2.0f, 2.0f},
+                                 45.0, 55.0,
                                  0.027, 0.0028};
-        spotLight1.setSpecularIntensity(2.0);
-        spotLight1.setPosition({8.0f, -5.0f, -5.f});
+        //spotLight1.setSpecularIntensity(2.0);
+        spotLight1.setPosition({-4.0f, -6.0f, -4.f});
         spotLight1.setColorAndIntensity({1.0f, 1.0f, 1.0f, 4.0f});
         addChild(spotLight1);
         light = z0::Loader::loadModelFromFile("models/light.glb", false);
@@ -53,7 +53,7 @@ public:
         addChild(model1);
 
         model2 = z0::Loader::loadModelFromFile("models/cube2.glb", false);
-        model2->setPosition({2.0, -1.2f, 5.0f});
+        model2->setPosition({2.0, -2.0f, 5.0f});
         model2->setRotationDegrees({0.0, -30.0, 0.0});
         addChild(model2);
 

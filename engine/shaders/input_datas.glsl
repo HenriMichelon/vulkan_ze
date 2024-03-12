@@ -25,6 +25,9 @@ layout(set = 0, binding = 0) uniform GlobalUniformBufferObject  {
     DirectionalLight directionalLight;
     bool haveDirectionalLight;
     int pointLightsCount;
+    bool haveShadowMap;
+    mat4 lightSpace;
+    vec4 lightPos;
 } global;
 
 layout(binding = 1) uniform sampler2D texSampler[100]; // put a limit into the default renderer

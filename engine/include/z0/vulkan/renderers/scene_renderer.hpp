@@ -38,6 +38,9 @@ namespace z0 {
             alignas(16) DirectionalLightUniform directionalLight;
             alignas(4) bool haveDirectionalLight{false};
             alignas(4) uint32_t pointLightsCount{0};
+            alignas(4) bool haveShadowMap{false};
+            alignas(16) glm::mat4 lightSpace;
+            alignas(16) glm::vec4 lightPos;
         };
         struct ModelUniformBufferObject {
             glm::mat4 matrix;
@@ -64,7 +67,7 @@ namespace z0 {
         std::vector<OmniLight*> omniLights;
 
         ShadowMapRenderer shadowMapRenderer;
-        std::vector<std::shared_ptr<ShadowMap>> shadowMaps;
+        std::shared_ptr<ShadowMap> shadowMap;
 
         std::unique_ptr<VulkanShader> vertShader;
         std::unique_ptr<VulkanShader> fragShader;

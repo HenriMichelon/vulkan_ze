@@ -9,8 +9,9 @@ namespace z0 {
 
     class ShadowMapRenderer: public VulkanRenderer {
     public:
-        struct GlobalUniformBufferObject {
+        struct ModelUniformBufferObject {
             glm::mat4 depthMVP;
+            glm::mat4 model;
         };
 
         ShadowMapRenderer(VulkanDevice& device, const std::string& shaderDirectory);
@@ -19,8 +20,15 @@ namespace z0 {
         void loadScene(std::shared_ptr<ShadowMap>& shadowMap, std::vector<MeshInstance*>& meshes);
 
     private:
-        const float zNear = 1.0f;
-        const float zFar = 96.0f;
+        // Keep depth range as small as possible
+        // for better shadow map precision const
+        const float zNear = .1f;
+        const float zFar = 100.0f;
+        // Depth bias (and slope) are used to avoid shadowing artifacts
+        // Constant depth bias factor (always applied)
+        const float depthBiasConstant = 1.25f;
+        // Slope depth bias factor, applied depending on polygon's slope
+        const float depthBiasSlope = 1.75f;
 
         std::vector<MeshInstance*> meshes {};
         std::shared_ptr<ShadowMap> shadowMap;

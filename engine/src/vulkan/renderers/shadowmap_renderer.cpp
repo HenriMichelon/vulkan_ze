@@ -3,6 +3,7 @@
 #include "z0/vulkan/renderers/shadowmap_renderer.hpp"
 #include "z0/log.hpp"
 #include "z0/nodes/spot_light.hpp"
+#include "z0/nodes/camera.hpp"
 
 namespace z0 {
 
@@ -10,7 +11,6 @@ namespace z0 {
                                          const std::string& sDir) :
          VulkanRenderer{dev, sDir, false}
      {
-         createResources();
      }
 
     ShadowMapRenderer::~ShadowMapRenderer() {
@@ -20,6 +20,7 @@ namespace z0 {
     void ShadowMapRenderer::loadScene(std::shared_ptr<ShadowMap>& _shadowMap, std::vector<MeshInstance*>& _meshes) {
         meshes = _meshes;
         shadowMap = _shadowMap;
+        createResources();
     }
 
     void ShadowMapRenderer::loadShaders() {
@@ -27,11 +28,20 @@ namespace z0 {
     }
 
     void ShadowMapRenderer::update() {
-        auto depthProjectionMatrix = glm::perspective(shadowMap->getLight()->getOuterCutOff(), 1.0f, zNear, zFar);
-        auto depthViewMatrix = glm::lookAt(shadowMap->getLight()->getPosition(), glm::vec3(0.0f), glm::vec3(0, -1, 0));
-        auto depthModelMatrix = glm::mat4(1.0f);
-        GlobalUniformBufferObject globalUbo { depthProjectionMatrix * depthViewMatrix * depthModelMatrix };
-        writeUniformBuffer(globalBuffers, &globalUbo);
+        Camera camera;
+        camera.setPerspectiveProjection(shadowMap->getLight()->getOuterCutOff(), zNear, zFar);
+        camera.setViewTarget(shadowMap->getLight()->getPosition());
+
+        uint32_t modelIndex = 0;
+        for (const auto&meshInstance: meshes) {
+            ModelUniformBufferObject modelUbo { camera.getProjection() * camera.getView() };
+            writeUniformBuffer(globalBuffers, &modelUbo, modelIndex);
+            modelIndex += 1;
+        }
+        //auto depthProjectionMatrix = glm::perspective(shadowMap->getLight()->getOuterCutOff(), 1.0f, zNear, zFar);
+        //auto depthViewMatrix = glm::lookAt(shadowMap->getLight()->getPosition(), glm::vec3(0.0f), glm::vec3(0, -1, 0));
+        //auto depthModelMatrix = glm::mat4(1.0f);
+        //GlobalUniformBufferObject globalUbo { depthProjectionMatrix * depthViewMatrix * depthModelMatrix };
     }
 
     void ShadowMapRenderer::recordCommands(VkCommandBuffer commandBuffer) {
@@ -40,6 +50,8 @@ namespace z0 {
         vkCmdBindShadersEXT(commandBuffer, 1, &stageFlagBits, VK_NULL_HANDLE);
         vkCmdSetRasterizationSamplesEXT(commandBuffer, VK_SAMPLE_COUNT_1_BIT);
         vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
+        vkCmdSetDepthBias(commandBuffer, depthBiasConstant, 0.0f, depthBiasSlope);
+        uint32_t modelIndex = 0;
         for (const auto&meshInstance: meshes) {
             auto mesh = meshInstance->getMesh();
             if (mesh->isValid()) {
@@ -52,30 +64,35 @@ namespace z0 {
                     } else {
                         vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_NONE);
                     }
-                    bindDescriptorSets(commandBuffer);
+                    std::array<uint32_t, 1> offsets = {
+                            0, // globalBuffers
+                    };
+                    bindDescriptorSets(commandBuffer, offsets.size(), offsets.data());
                     mesh->_getModel()->draw(commandBuffer, surface->firstVertexIndex, surface->indexCount);
                 }
             }
+            modelIndex += 1;
         }
     }
 
     void ShadowMapRenderer::createDescriptorSetLayout() {
         globalPool = VulkanDescriptorPool::Builder(vulkanDevice)
                 .setMaxSets(MAX_FRAMES_IN_FLIGHT)
-                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, MAX_FRAMES_IN_FLIGHT) // global UBO
+                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // global UBO
                 .build();
 
         // Global UBO
-        createUniformBuffers(globalBuffers, sizeof(GlobalUniformBufferObject));
+        VkDeviceSize modelBufferSize = sizeof(ModelUniformBufferObject);
+        createUniformBuffers(globalBuffers, modelBufferSize, meshes.size());
 
         globalSetLayout = VulkanDescriptorSetLayout::Builder(vulkanDevice)
             .addBinding(0, // global UBO
-                    VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                    VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
                     VK_SHADER_STAGE_VERTEX_BIT)
             .build();
 
         for (int i = 0; i < descriptorSets.size(); i++) {
-            auto globalBufferInfo = globalBuffers[i]->descriptorInfo(sizeof(GlobalUniformBufferObject));
+            auto globalBufferInfo = globalBuffers[i]->descriptorInfo(modelBufferSize);
             if (!VulkanDescriptorWriter(*globalSetLayout, *globalPool)
                 .writeBuffer(0, &globalBufferInfo)
                 .build(descriptorSets[i])) {
@@ -115,12 +132,6 @@ namespace z0 {
 
     void ShadowMapRenderer::endRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
         vkCmdEndRendering(commandBuffer);
-        /*vulkanDevice.transitionImageLayout(
-                commandBuffer,
-                shadowmapImage,
-                VK_FORMAT_UNDEFINED,
-                VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
-                VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);*/
     }
 
     void ShadowMapRenderer::createImagesResources() {
