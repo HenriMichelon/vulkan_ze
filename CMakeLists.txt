@@ -28,6 +28,8 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/include/z0/nodes/light.hpp
         ${Z0_ENGINE_DIR}/include/z0/nodes/directional_light.hpp
         ${Z0_ENGINE_DIR}/include/z0/nodes/environment.hpp
+        ${Z0_ENGINE_DIR}/include/z0/nodes/omni_light.hpp
+        ${Z0_ENGINE_DIR}/include/z0/nodes/spot_light.hpp
         ${Z0_ENGINE_DIR}/include/z0/application_config.hpp
         ${Z0_ENGINE_DIR}/include/z0/mainloop.hpp
         ${Z0_ENGINE_DIR}/include/z0/log.hpp
@@ -58,6 +60,8 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/nodes/node.cpp
         ${Z0_ENGINE_DIR}/src/nodes/camera.cpp
         ${Z0_ENGINE_DIR}/src/nodes/mesh_instance.cpp
+        ${Z0_ENGINE_DIR}/src/nodes/omni_light.cpp
+        ${Z0_ENGINE_DIR}/src/nodes/spot_light.cpp
         ${Z0_ENGINE_DIR}/src/mainloop.cpp
         ${Z0_ENGINE_DIR}/src/object.cpp
         ${Z0_ENGINE_DIR}/src/viewport.cpp
@@ -67,10 +71,6 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/texture.cpp
         ${Z0_ENGINE_DIR}/src/resource.cpp
         ${Z0_ENGINE_DIR}/src/loader.cpp
-        engine/include/z0/nodes/omni_light.hpp
-        engine/src/nodes/omni_light.cpp
-        engine/include/z0/nodes/spot_light.hpp
-        engine/src/nodes/spot_light.cpp
 
 )
 target_include_directories(${PROJECT_NAME} PUBLIC ${Z0_ENGINE_DIR}/include)

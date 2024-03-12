@@ -17,64 +17,36 @@ public:
         addChild(environment);
 
         z0::Camera camera{};
-        camera.setPosition({-0.0f, 0.0f, -5.0f });
-        camera.setViewTarget({ 0.0f, 0.0f, 0.0f});
+        camera.setPosition({-0.0f, -5.0f, -10.0f });
+        //camera.setViewDirection({.0, .0, 1.0}, {0.0, -1.0, 0.0 });
+        camera.setViewTarget({ 0.0f, -0.0f, 0.0f});
         addChild(camera);
 
-        z0::DirectionalLight directionalLight{glm::vec3{-1.0f, .5f, 1.0f}};
-        directionalLight.setColorAndIntensity({1.0f, 1.0f, 1.0f, 0.5f});
-        //addChild(directionalLight);
+        z0::DirectionalLight directionalLight{glm::vec3{0.0f, .5f, 1.0f}};
+        directionalLight.setColorAndIntensity({1.0f, 1.0f, 1.0f, 1.0f});
+        addChild(directionalLight);
 
-        z0::OmniLight omniLight1{0.14, 0.07};
-        omniLight1.setPosition({-1.0f, 0.0f, -4.0f});
-        omniLight1.setColorAndIntensity({0.0f, 1.0f, .0f, 1.0f});
-        //addChild(omniLight1);
-
-        z0::OmniLight omniLight2{0.09, 0.032};
-        omniLight2.setPosition({0.0f, -2.0f, -1.0f});
-        omniLight2.setColorAndIntensity({0.0f, 0.0f, 1.0f, 10.0f});
-        //addChild(omniLight2);
-
-        z0::SpotLight spotLight1{{0.0, 0.0f, 1.0f},
-                                 15.0, 25.0,
-                                 0.07, 0.017};
-        spotLight1.setPosition({0.0f, 0.0f, -4.0f});
-        spotLight1.setColorAndIntensity({1.0f, 1.0f, 1.0f, 2.0f});
-        addChild(spotLight1);
-
-        //std::shared_ptr<Node> model = z0::Loader::loadModelFromFile("models/free_1972_datsun_240k_gt.glb", false);
-        model1 = z0::Loader::loadModelFromFile("models/cube2.glb", true);
+        model1 = z0::Loader::loadModelFromFile("models/survival_guitar_backpack.glb", false);
+        model1->setPosition({0.0, -2.8, -2.0});
+        model1->setScale(glm::vec3{0.01});
+        model1->setRotationDegrees({-180.0, -30.0, 0.0});
         addChild(model1);
 
-        model1->setScale(glm::vec3{ .75 });
-        model2 = model1->duplicate();
-        addChild(model2);
-
-        model1->setRotationDegrees({ 180.0-16.0,  -25.0, 10.0 });
-        model3 = model1->duplicate();
-        addChild(model3);
-
-        model1->setPosition(glm::vec3{ -2.5, 0, .0 });
-        model2->setPosition(glm::vec3{ .0, -3.0, 4.0 });
-        model2->setRotationDegrees({ 180.0-16.0,  25.0, -10.0 });
-        model2->setRotationDegrees({ 180.0-16.0,  -25.0, 10.0 });
-        model3->setPosition(glm::vec3{ -0, 0, .0 });
+        floor = z0::Loader::loadModelFromFile("models/floor.glb", false);
+        floor->setScale(glm::vec3{1.0});
+        floor->setRotationDegrees({-180.0, 0.0, 0.0});
+        addChild(floor);
 
         printTree(std::cout);
     }
 
     void onProcess(float delta) override {
         float angle = delta * glm::radians(90.0f) / 2;
-        model1->setRotationX(angle);
-        model1->rotateY(angle);
-        model2->setRotationX(angle);
-        model2->setRotationZ(angle);
     }
 
 private:
     std::shared_ptr<z0::Node> model1;
-    std::shared_ptr<z0::Node> model2;
-    std::shared_ptr<z0::Node> model3;
+    std::shared_ptr<z0::Node> floor;
 };
 
 int main() {
