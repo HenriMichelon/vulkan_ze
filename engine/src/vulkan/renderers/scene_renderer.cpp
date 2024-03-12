@@ -1,6 +1,6 @@
 // Using one descriptor per scene with offsets
 // https://docs.vulkan.org/samples/latest/samples/performance/descriptor_management/README.html
-#include "z0/vulkan/scene_renderer.hpp"
+#include "z0/vulkan/renderers/scene_renderer.hpp"
 #include "z0/log.hpp"
 
 namespace z0 {
