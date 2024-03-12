@@ -18,23 +18,16 @@ namespace z0 {
             alignas(4) float specular = { 1.0f };
         };
         struct PointLightUniform {
-            alignas(16) glm::vec3 position = {0.0f, 0.0f, 0.0f};
-            alignas(16) glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f }; // RGB + Intensity;
-            alignas(4) float specular = { 1.0f };
-            alignas(4) float constant = { 1.0f };
-            alignas(4) float linear{0.0};
-            alignas(4) float quadratic{0.0};
-        };
-        struct SpotLightUniform {
             alignas(16) glm::vec3 position = { 0.0f, 0.0f, 0.0f };
             alignas(16) glm::vec3 direction = glm::normalize(glm::vec3{0.f, .0f, 1.0f});
             alignas(16) glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f }; // RGB + Intensity;
-            alignas(4) float cutOff = { glm::cos(glm::radians(10.f)) };
-            alignas(4) float outerCutOff = { glm::cos(glm::radians(15.f)) };
             alignas(4) float specular = { 1.0f };
             alignas(4) float constant = { 1.0f };
             alignas(4) float linear{0.0};
             alignas(4) float quadratic{0.00};
+            alignas(4) bool isSpot{false};
+            alignas(4) float cutOff = { glm::cos(glm::radians(10.f)) };
+            alignas(4) float outerCutOff = { glm::cos(glm::radians(15.f)) };
         };
         struct GobalUniformBufferObject {
             glm::mat4 projection{1.0f};
@@ -44,7 +37,6 @@ namespace z0 {
             alignas(16) DirectionalLightUniform directionalLight;
             alignas(4) bool haveDirectionalLight{false};
             alignas(4) uint32_t pointLightsCount{0};
-            alignas(4) uint32_t spotLightsCount{0};
         };
         struct ModelUniformBufferObject {
             glm::mat4 matrix;
@@ -64,10 +56,9 @@ namespace z0 {
 
     private:
         Camera* currentCamera{nullptr};
-        DirectionalLight* directionalLight;
-        Environment* environement;
+        DirectionalLight* directionalLight{nullptr};
+        Environment* environement{nullptr};
         std::vector<OmniLight*> omniLights;
-        std::vector<SpotLight*> spotLights;
 
         std::unique_ptr<VulkanShader> vertShader;
         std::unique_ptr<VulkanShader> fragShader;
@@ -81,7 +72,6 @@ namespace z0 {
         std::vector<std::unique_ptr<VulkanBuffer>> modelsBuffers{MAX_FRAMES_IN_FLIGHT};
         std::vector<std::unique_ptr<VulkanBuffer>> surfacesBuffers{MAX_FRAMES_IN_FLIGHT};
         std::vector<std::unique_ptr<VulkanBuffer>> pointLightBuffers{MAX_FRAMES_IN_FLIGHT};
-        std::vector<std::unique_ptr<VulkanBuffer>> spotLightBuffers{MAX_FRAMES_IN_FLIGHT};
 
         void update(float delta) override;
         void recordCommands(VkCommandBuffer commandBuffer) override;

@@ -25,25 +25,22 @@ public:
         directionalLight.setColorAndIntensity({1.0f, 1.0f, 1.0f, 0.5f});
         //addChild(directionalLight);
 
-        /*z0::OmniLight omniLight1{0.14, 0.07};
+        z0::OmniLight omniLight1{0.14, 0.07};
         omniLight1.setPosition({-1.0f, 0.0f, -4.0f});
         omniLight1.setColorAndIntensity({0.0f, 1.0f, .0f, 1.0f});
-        addChild(omniLight1);
+        //addChild(omniLight1);
 
         z0::OmniLight omniLight2{0.09, 0.032};
         omniLight2.setPosition({0.0f, -2.0f, -1.0f});
         omniLight2.setColorAndIntensity({0.0f, 0.0f, 1.0f, 10.0f});
-        addChild(omniLight2);*/
+        //addChild(omniLight2);
 
-        z0::SpotLight spotLight1{{0.0, 0.0f, 1.0f}, 20.0, 30.0, 0.14, 0.07};
-        spotLight1.setPosition({-1.0f, 0.0f, -4.0f});
-        spotLight1.setColorAndIntensity({0.0f, 1.0f, .0f, 1.0f});
+        z0::SpotLight spotLight1{{0.0, 0.0f, 1.0f},
+                                 15.0, 25.0,
+                                 0.07, 0.017};
+        spotLight1.setPosition({0.0f, 0.0f, -4.0f});
+        spotLight1.setColorAndIntensity({1.0f, 1.0f, 1.0f, 2.0f});
         addChild(spotLight1);
-
-        z0::SpotLight spotLight2{{0.0, 1.0f, 0.0f}, 40.0, 45.0, 0.09, 0.032};
-        spotLight2.setPosition({0.0f, -2.0f, -1.0f});
-        spotLight2.setColorAndIntensity({0.0f, 0.0f, 1.0f, 10.0f});
-        addChild(spotLight2);
 
         //std::shared_ptr<Node> model = z0::Loader::loadModelFromFile("models/free_1972_datsun_240k_gt.glb", false);
         model1 = z0::Loader::loadModelFromFile("models/cube2.glb", true);

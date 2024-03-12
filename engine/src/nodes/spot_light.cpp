@@ -12,7 +12,8 @@ namespace z0 {
             float specular,
             const std::string nodeName):
             OmniLight{linear, quadratic, attenuation, color, specular, nodeName},
-            cutOff{_cutOff}, outerCutOff{_outerCutOff}
+            cutOff{glm::cos(glm::radians(_cutOff))},
+            outerCutOff{glm::cos(glm::radians(_outerCutOff))}
     {
     }
 

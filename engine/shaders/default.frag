@@ -26,28 +26,18 @@ vec3 calcPointLight(PointLight light, vec3 color) {
     float dist = length(light.position - POSITION);
     float attenuation = 1.0 / (light.constant + light.linear * dist + light.quadratic * (dist * dist));
     vec3 lightDir = normalize(light.position - POSITION);
-    float diff = max(dot(NORMAL, lightDir), 0.0);
-    vec3 diffuse = attenuation * diff * light.color.rgb * light.color.w * color;
-    if (material.specularIndex != -1) {
-        vec3 viewDir = normalize(global.cameraPosition - POSITION);
-        vec3 reflectDir = reflect(-lightDir, NORMAL);
-        float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
-        vec3 specular = attenuation * light.specular * spec * color.rgb * texture(texSampler[material.specularIndex], UV).rgb;
-        return attenuation * diffuse + specular;
+    float intensity = 1.0f;
+    bool cutOff = light.isSpot;
+
+    if (light.isSpot)
+    {
+        float theta = dot(lightDir, normalize(-light.direction));
+        float epsilon = light.cutOff - light.outerCutOff;
+        intensity = clamp((theta - light.outerCutOff) / epsilon, 0.0, 1.0);
+        cutOff = theta <= light.outerCutOff;
     }
-    return diffuse;
-}
 
-vec3 calcSpotLight(SpotLight light, vec3 color) {
-    float dist = length(light.position - POSITION);
-    float attenuation = 1.0 / (light.constant + light.linear * dist + light.quadratic * (dist * dist));
-    vec3 lightDir = normalize(light.position - POSITION);
-
-    float theta = dot(lightDir, -light.direction);
-    float epsilon   = light.cutOff - light.outerCutOff;
-    float intensity = clamp((theta - light.outerCutOff) / epsilon, 0.0, 1.0);
-
-    if (theta > light.outerCutOff)
+    if (!cutOff)
     {
         float diff = max(dot(NORMAL, lightDir), 0.0);
         vec3 diffuse = intensity * attenuation * diff * light.color.rgb * light.color.w * color;
@@ -78,11 +68,6 @@ void main() {
     for(int i = 0; i < global.pointLightsCount; i++) {
         diffuse += calcPointLight(pointLights.lights[i], color);
     }
-    for(int i = 0; i < global.spotLightsCount; i++) {
-        diffuse += calcSpotLight(spotLights.lights[i], color);
-    }
-
-    //diffuse += calcSpotLight(global.light, color);
 
     vec3 result = (ambient + diffuse) * material.albedoColor.rgb;
     COLOR = vec4(result, 1.0);

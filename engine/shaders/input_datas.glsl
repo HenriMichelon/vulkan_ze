@@ -6,23 +6,15 @@ struct DirectionalLight {
 
 struct PointLight {
     vec3 position;
-    vec4 color;
-    float specular;
-    float constant;
-    float linear;
-    float quadratic;
-};
-
-struct SpotLight {
-    vec3 position;
     vec3 direction;
     vec4 color;
-    float cutOff;
-    float outerCutOff;
     float specular;
     float constant;
     float linear;
     float quadratic;
+    bool isSpot;
+    float cutOff;
+    float outerCutOff;
 };
 
 layout(set = 0, binding = 0) uniform GlobalUniformBufferObject  {
@@ -33,7 +25,6 @@ layout(set = 0, binding = 0) uniform GlobalUniformBufferObject  {
     DirectionalLight directionalLight;
     bool haveDirectionalLight;
     int pointLightsCount;
-    int spotLightsCount;
 } global;
 
 layout(binding = 1) uniform sampler2D texSampler[100]; // put a limit into the default renderer
@@ -53,7 +44,3 @@ layout(set = 0, binding = 3) uniform SurfaceUniformBufferObject  {
 layout(set = 0, binding = 4) uniform PointLightArray {
     PointLight lights[1];
 } pointLights;
-
-layout(set = 0, binding = 5) uniform SpotLightArray {
-    SpotLight lights[1];
-} spotLights;
