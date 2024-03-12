@@ -2,53 +2,39 @@
 // https://github.com/SaschaWillems/Vulkan/tree/master/examples/shadowmapping
 #include "z0/vulkan/renderers/shadowmap_renderer.hpp"
 #include "z0/log.hpp"
+#include "z0/nodes/spot_light.hpp"
 
 namespace z0 {
 
-    ShadowmapRenderer::ShadowmapRenderer(VulkanDevice &dev,
-                                 const std::string& sDir) :
+    ShadowMapRenderer::ShadowMapRenderer(VulkanDevice &dev,
+                                         const std::string& sDir) :
          VulkanRenderer{dev, sDir}
      {
-         createImagesResources();
          createResources();
      }
 
-    ShadowmapRenderer::~ShadowmapRenderer() {
+    ShadowMapRenderer::~ShadowMapRenderer() {
         vkDeviceWaitIdle(device);
-        cleanupImagesResources();
     }
 
-    std::shared_ptr<ShadowMap> ShadowmapRenderer::loadScene(const std::shared_ptr<Light>& _light, std::vector<MeshInstance*>& _meshes) {
-        light = _light;
-        _meshes = meshes;
-        shadowMap = std::make_shared<ShadowMap>(vulkanDevice);
-        createImagesResources();
-        return shadowMap;
+    void ShadowMapRenderer::loadScene(std::shared_ptr<ShadowMap>& _shadowMap, std::vector<MeshInstance*>& _meshes) {
+        meshes = _meshes;
+        shadowMap = _shadowMap;
     }
 
-    void ShadowmapRenderer::loadShaders() {
+    void ShadowMapRenderer::loadShaders() {
         vertShader = createShader("shadowmap.vert", VK_SHADER_STAGE_VERTEX_BIT, 0);
     }
 
-    void ShadowmapRenderer::update() {
-        GlobalUniformBufferObject globalUbo {};
-            /*pointLightsArray[i].position = omniLights[i]->getPosition();
-            pointLightsArray[i].color = omniLights[i]->getColorAndIntensity();
-            pointLightsArray[i].specular = omniLights[i]->getSpecularIntensity();
-            pointLightsArray[i].constant = omniLights[i]->getAttenuation();
-            pointLightsArray[i].linear = omniLights[i]->getLinear();
-            pointLightsArray[i].quadratic = omniLights[i]->getQuadratic();
-            if (auto spot = dynamic_cast<SpotLight*>(omniLights[i])) {
-                pointLightsArray[i].isSpot = true;
-                pointLightsArray[i].direction = spot->getDirection();
-                pointLightsArray[i].cutOff = spot->getCutOff();
-                pointLightsArray[i].outerCutOff =spot->getOuterCutOff();
-            }*/
-            //XX
+    void ShadowMapRenderer::update() {
+        auto depthProjectionMatrix = glm::perspective(shadowMap->getLight()->getOuterCutOff(), 1.0f, zNear, zFar);
+        auto depthViewMatrix = glm::lookAt(shadowMap->getLight()->getPosition(), glm::vec3(0.0f), glm::vec3(0, -1, 0));
+        auto depthModelMatrix = glm::mat4(1.0f);
+        GlobalUniformBufferObject globalUbo { depthProjectionMatrix * depthViewMatrix * depthModelMatrix };
         writeUniformBuffer(globalBuffers, &globalUbo);
     }
 
-    void ShadowmapRenderer::recordCommands(VkCommandBuffer commandBuffer) {
+    void ShadowMapRenderer::recordCommands(VkCommandBuffer commandBuffer) {
         bindShader(commandBuffer, *vertShader);
         for (const auto&meshInstance: meshes) {
             auto mesh = meshInstance->getMesh();
@@ -61,7 +47,7 @@ namespace z0 {
         }
     }
 
-    void ShadowmapRenderer::createDescriptorSetLayout() {
+    void ShadowMapRenderer::createDescriptorSetLayout() {
         globalPool = VulkanDescriptorPool::Builder(vulkanDevice)
                 .setMaxSets(MAX_FRAMES_IN_FLIGHT)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, MAX_FRAMES_IN_FLIGHT) // global UBO
@@ -72,7 +58,7 @@ namespace z0 {
 
         globalSetLayout = VulkanDescriptorSetLayout::Builder(vulkanDevice)
             .addBinding(0, // global UBO
-                    VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                    VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                     VK_SHADER_STAGE_ALL_GRAPHICS)
             .build();
 
@@ -86,7 +72,7 @@ namespace z0 {
         }
     }
 
-    void ShadowmapRenderer::beginRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
+    void ShadowMapRenderer::beginRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
         vulkanDevice.transitionImageLayout(commandBuffer,
                                            shadowMap->getImage(),
                                            shadowMap->format,
@@ -115,7 +101,7 @@ namespace z0 {
         vkCmdBeginRendering(commandBuffer, &renderingInfo);
     }
 
-    void ShadowmapRenderer::endRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
+    void ShadowMapRenderer::endRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
         vkCmdEndRendering(commandBuffer);
         /*vulkanDevice.transitionImageLayout(
                 commandBuffer,
@@ -125,11 +111,11 @@ namespace z0 {
                 VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);*/
     }
 
-    void ShadowmapRenderer::createImagesResources() {
+    void ShadowMapRenderer::createImagesResources() {
         shadowMap->createImagesResources();
     }
 
-    void ShadowmapRenderer::cleanupImagesResources() {
+    void ShadowMapRenderer::cleanupImagesResources() {
         shadowMap->cleanupImagesResources();
     }
 

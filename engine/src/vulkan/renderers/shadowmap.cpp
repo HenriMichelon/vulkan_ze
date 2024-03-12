@@ -3,7 +3,8 @@
 
 namespace z0 {
 
-    ShadowMap::ShadowMap(VulkanDevice &dev) : vulkanDevice{dev} {
+    ShadowMap::ShadowMap(VulkanDevice &dev, SpotLight* spotLight) :
+        vulkanDevice{dev}, light(spotLight) {
          createImagesResources();
      }
 

@@ -3,25 +3,25 @@
 #include "z0/vulkan/vulkan_renderer.hpp"
 #include "z0/vulkan/renderers/shadowmap.hpp"
 #include "z0/nodes/mesh_instance.hpp"
-#include "z0/nodes/light.hpp"
-#include "z0/nodes/directional_light.hpp"
-#include "z0/nodes/omni_light.hpp"
+#include "z0/nodes/spot_light.hpp"
 
 namespace z0 {
 
-    class ShadowmapRenderer: public VulkanRenderer {
+    class ShadowMapRenderer: public VulkanRenderer {
     public:
         struct GlobalUniformBufferObject {
             glm::mat4 depthMVP;
         };
 
-        ShadowmapRenderer(VulkanDevice& device, const std::string& shaderDirectory);
-        ~ShadowmapRenderer();
+        ShadowMapRenderer(VulkanDevice& device, const std::string& shaderDirectory);
+        ~ShadowMapRenderer();
 
-        std::shared_ptr<ShadowMap> loadScene(const std::shared_ptr<Light>& light, std::vector<MeshInstance*>& meshes);
+        void loadScene(std::shared_ptr<ShadowMap>& shadowMap, std::vector<MeshInstance*>& meshes);
 
     private:
-        std::shared_ptr<Light> light;
+        const float zNear = 1.0f;
+        const float zFar = 96.0f;
+
         std::vector<MeshInstance*> meshes {};
         std::shared_ptr<ShadowMap> shadowMap;
 
@@ -40,10 +40,10 @@ namespace z0 {
         void endRendering(VkCommandBuffer commandBuffer,uint32_t imageIndex) override;
 
     public:
-        ShadowmapRenderer(const ShadowmapRenderer&) = delete;
-        ShadowmapRenderer &operator=(const ShadowmapRenderer&) = delete;
-        ShadowmapRenderer(const ShadowmapRenderer&&) = delete;
-        ShadowmapRenderer &&operator=(const ShadowmapRenderer&&) = delete;
+        ShadowMapRenderer(const ShadowMapRenderer&) = delete;
+        ShadowMapRenderer &operator=(const ShadowMapRenderer&) = delete;
+        ShadowMapRenderer(const ShadowMapRenderer&&) = delete;
+        ShadowMapRenderer &&operator=(const ShadowMapRenderer&&) = delete;
     };
 
 }

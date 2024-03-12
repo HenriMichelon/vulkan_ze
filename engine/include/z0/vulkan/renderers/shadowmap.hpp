@@ -1,12 +1,13 @@
 #pragma once
 
 #include "z0/vulkan/vulkan_device.hpp"
+#include "z0/nodes/spot_light.hpp"
 
 namespace z0 {
 
     class ShadowMap {
     public:
-        explicit ShadowMap(VulkanDevice &dev);
+        explicit ShadowMap(VulkanDevice &dev, SpotLight* spotLight);
         ~ShadowMap();
 
         const VkFormat format{ VK_FORMAT_D16_UNORM };
@@ -20,16 +21,24 @@ namespace z0 {
         const VkImageView& getImageView() const { return imageView; }
         const VkDeviceMemory& getImageMemory() const { return imageMemory; }
         const VkSampler& getSampler() const { return sampler; }
+        SpotLight* getLight() { return light; }
 
         void createImagesResources();
         void cleanupImagesResources();
 
     private:
+        SpotLight* light;
         VulkanDevice& vulkanDevice;
         VkImage image;
         VkImageView imageView;
         VkDeviceMemory imageMemory;
         VkSampler sampler;
+
+    public:
+        ShadowMap(const ShadowMap&) = delete;
+        ShadowMap &operator=(const ShadowMap&) = delete;
+        ShadowMap(const ShadowMap&&) = delete;
+        ShadowMap &&operator=(const ShadowMap&&) = delete;
     };
 
 }

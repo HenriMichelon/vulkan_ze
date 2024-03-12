@@ -1,6 +1,7 @@
 #pragma once
 
 #include "z0/vulkan/vulkan_renderer.hpp"
+#include "z0/vulkan/renderers/shadowmap_renderer.hpp"
 #include "z0/nodes/mesh_instance.hpp"
 #include "z0/nodes/camera.hpp"
 #include "z0/nodes/directional_light.hpp"
@@ -52,6 +53,7 @@ namespace z0 {
         SceneRenderer(VulkanDevice& device, const std::string& shaderDirectory);
         ~SceneRenderer();
 
+        void drawFrame() override;
         void loadScene(std::shared_ptr<Node>& rootNode);
 
     private:
@@ -60,6 +62,9 @@ namespace z0 {
         DirectionalLight* directionalLight{nullptr};
         Environment* environement{nullptr};
         std::vector<OmniLight*> omniLights;
+
+        ShadowMapRenderer shadowMapRenderer;
+        std::vector<std::shared_ptr<ShadowMap>> shadowMaps;
 
         std::unique_ptr<VulkanShader> vertShader;
         std::unique_ptr<VulkanShader> fragShader;

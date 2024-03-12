@@ -7,13 +7,15 @@ namespace z0 {
 
     SceneRenderer::SceneRenderer(VulkanDevice &dev,
                                  const std::string& sDir) :
-         VulkanRenderer{dev, sDir}
+         VulkanRenderer{dev, sDir},
+         shadowMapRenderer{dev, sDir}
      {
          createImagesResources();
      }
 
     SceneRenderer::~SceneRenderer() {
         vkDeviceWaitIdle(device);
+        shadowMaps.clear();
         cleanupImagesResources();
     }
 
@@ -21,6 +23,9 @@ namespace z0 {
         loadNode(rootNode);
         createImagesIndex(rootNode);
         createResources();
+        if (!shadowMaps.empty()) {
+            shadowMapRenderer.loadScene(shadowMaps.front(), meshes);
+        }
     }
 
     void SceneRenderer::loadNode(std::shared_ptr<Node>& parent) {
@@ -44,6 +49,9 @@ namespace z0 {
         }
         if (auto omniLight = dynamic_cast<OmniLight *>(parent.get())) {
             omniLights.push_back(omniLight);
+            if (auto spotLight = dynamic_cast<SpotLight *>(parent.get())) {
+                shadowMaps.push_back(std::make_shared<ShadowMap>(vulkanDevice, spotLight));
+            }
         }
         createImagesList(parent);
         for(auto& child: parent->getChildren()) {
@@ -91,6 +99,13 @@ namespace z0 {
     void SceneRenderer::loadShaders() {
         vertShader = createShader("default.vert", VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
         fragShader = createShader("default.frag", VK_SHADER_STAGE_FRAGMENT_BIT, 0);
+    }
+
+    void SceneRenderer::drawFrame() {
+        if (!shadowMaps.empty()) {
+            //shadowMapRenderer.drawFrame();
+        }
+        VulkanRenderer::drawFrame();
     }
 
     void SceneRenderer::update() {
