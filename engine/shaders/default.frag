@@ -8,12 +8,13 @@ layout(location = 2) in vec3 POSITION;
 
 layout(location = 0) out vec4 COLOR;
 
+vec3 viewDir;
+
 vec3 calcDirectionalLight(DirectionalLight light, vec3 color) {
     vec3 lightDir = normalize(-light.direction);
     float diff = max(dot(NORMAL, lightDir), 0.0);
     vec3 diffuse = diff * light.color.rgb * light.color.w * color;
     if (material.specularIndex != -1) {
-        vec3 viewDir = normalize(global.cameraPosition - POSITION);
         vec3 reflectDir = reflect(- lightDir, NORMAL);
         float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
         vec3 specular = light.specular * spec * light.color.rgb * texture(texSampler[material.specularIndex], UV).rgb;
@@ -42,9 +43,13 @@ vec3 calcPointLight(PointLight light, vec3 color) {
         float diff = max(dot(NORMAL, lightDir), 0.0);
         vec3 diffuse = intensity * attenuation * diff * light.color.rgb * light.color.w * color;
         if (material.specularIndex != -1) {
-            vec3 viewDir = normalize(global.cameraPosition - POSITION);
-            vec3 reflectDir = reflect(-lightDir, NORMAL);
-            float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+            // Blinn-Phong
+            // https://learnopengl.com/Advanced-Lighting/Advanced-Lighting
+            vec3 halfwayDir = normalize(lightDir + viewDir);
+            float spec = pow(max(dot(NORMAL, halfwayDir), 0.0), material.shininess*3);
+            // Phong
+            //vec3 reflectDir = reflect(-lightDir, NORMAL);
+            //float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
             vec3 specular = intensity * attenuation * light.specular * spec * light.color.rgb * texture(texSampler[material.specularIndex], UV).rgb;
             return diffuse + specular;
         }
@@ -54,6 +59,7 @@ vec3 calcPointLight(PointLight light, vec3 color) {
 }
 
 void main() {
+    viewDir = normalize(global.cameraPosition - POSITION);
     vec3 color = material.albedoColor.rgb;
     if (material.diffuseIndex != -1) {
         color = texture(texSampler[material.diffuseIndex], UV).rgb;

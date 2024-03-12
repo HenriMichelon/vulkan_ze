@@ -17,7 +17,7 @@ public:
         addChild(environment);
 
         z0::Camera camera{};
-        camera.setPosition({-0.0f, -15.0f, -0.000001f });
+        camera.setPosition({-0.0f, -15.0f, -10.000001f });
         //camera.setViewDirection({.0, .0, 1.0}, {0.0, -1.0, 0.0 });
         camera.setViewTarget({ 0.0f, -0.0f, 0.0f});
         addChild(camera);
@@ -30,11 +30,11 @@ public:
         omniLight1.setPosition({0.0f, -6.0f, 0.f});
         addChild(omniLight1);*/
 
-        z0::SpotLight spotLight1{{0.0, 1.0f, 0.0f},
+        z0::SpotLight spotLight1{{0.0, 1.0f, -1.0f},
                                  45.0, 55.0,
                                  0.027, 0.0028};
-        spotLight1.setSpecularIntensity(10.0);
-        spotLight1.setPosition({0.0f, -5.0f, 0.f});
+        spotLight1.setSpecularIntensity(1.0);
+        spotLight1.setPosition({0.0f, -10.0f, 10.f});
         spotLight1.setColorAndIntensity({1.0f, 1.0f, 1.0f, 2.0f});
         addChild(spotLight1);
 
