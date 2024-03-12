@@ -44,6 +44,7 @@ namespace z0 {
         VkImage shadowmapImage;
         VkDeviceMemory shadowmapImageMemory;
         VkImageView shadowmapImageView;
+        VkSampler shadowmapSampler;
 
         void update() override;
         void recordCommands(VkCommandBuffer commandBuffer) override;

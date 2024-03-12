@@ -12,7 +12,7 @@ namespace z0 {
         explicit Scene(std::shared_ptr<Node> rootNode): root{std::move(rootNode)} {};
 
         void setRootNode(std::shared_ptr<Node>& rootNode) { root = rootNode; }
-        std::shared_ptr<Node> getRootNode() const { return root; }
+        std::shared_ptr<Node>& getRootNode() { return root; }
         bool isValid() { return root != nullptr; }
 
     private:

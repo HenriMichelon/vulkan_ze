@@ -18,7 +18,7 @@ namespace z0 {
     }
 
     void SceneRenderer::loadScene(std::shared_ptr<Node>& rootNode) {
-        loadScene(rootNode);
+        loadNode(rootNode);
         createImagesIndex(rootNode);
         createResources();
     }
@@ -47,7 +47,7 @@ namespace z0 {
         }
         createImagesList(parent);
         for(auto& child: parent->getChildren()) {
-            loadScene(child);
+            loadNode(child);
         }
     }
 

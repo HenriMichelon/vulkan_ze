@@ -65,7 +65,8 @@ namespace z0 {
         static QueueFamilyIndices findQueueFamilies(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR surface);
         uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
         static bool hasStencilComponent(VkFormat format);
-
+        // Returns if a given format support LINEAR filtering
+        VkBool32 formatIsFilterable(VkFormat format, VkImageTiling tiling);
         // Find a suitable IMAGE_TILING format (for the Depth buffering image)
         VkFormat findImageTilingSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 

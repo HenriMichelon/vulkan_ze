@@ -21,7 +21,7 @@ namespace z0 {
     void MainLoop::start(const std::shared_ptr<Scene>& scene) {
         if (!scene->isValid()) return;
         currentScene = scene;
-        std::shared_ptr<Node> rootNode = currentScene->getRootNode();
+        std::shared_ptr<Node>& rootNode = currentScene->getRootNode();
         ready(rootNode);
         viewport->loadScene(rootNode);
         while (!viewport->shouldClose()) {
@@ -31,6 +31,7 @@ namespace z0 {
             process(rootNode, deltaTime);
             viewport->drawFrame();
         }
+        viewport->wait();
 #ifdef VULKAN_STATS
         VulkanStats::get().display();
 #endif

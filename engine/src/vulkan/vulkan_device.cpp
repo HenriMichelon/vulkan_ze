@@ -498,6 +498,17 @@ namespace z0 {
         return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
     }
 
+    VkBool32 VulkanDevice::formatIsFilterable(VkFormat format, VkImageTiling tiling) {
+        VkFormatProperties formatProps;
+        vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &formatProps);
+        if (tiling == VK_IMAGE_TILING_OPTIMAL)
+            return formatProps.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
+        if (tiling == VK_IMAGE_TILING_LINEAR)
+            return formatProps.linearTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
+        return false;
+    }
+
+
     // https://vulkan-tutorial.com/Texture_mapping/Images#page_Layout-transitions
     void VulkanDevice::transitionImageLayout(VkImage image, VkFormat format,
                                              VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels) {

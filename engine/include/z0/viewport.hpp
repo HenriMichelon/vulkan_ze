@@ -20,9 +20,10 @@ namespace z0 {
         float getAspectRatio() const;
 
         void drawFrame();
+        void wait();
         bool shouldClose() { return window.shouldClose(); }
 
-        void loadScene(const std::shared_ptr<Node>& rootNode);
+        void loadScene(std::shared_ptr<Node>& rootNode);
 
         static Viewport& get();
 

@@ -61,7 +61,7 @@ namespace z0 {
                 pointLightsArray[i].cutOff = spot->getCutOff();
                 pointLightsArray[i].outerCutOff =spot->getOuterCutOff();
             }*/
-            XX
+            //XX
         }
         writeUniformBuffer(globalBuffers, &globalUbo);
     }
@@ -107,43 +107,46 @@ namespace z0 {
     }
 
     void ShadowmapRenderer::createImagesResources() {
+        // https://github.com/SaschaWillems/Vulkan/blob/master/examples/shadowmapping/shadowmapping.cpp#L192
+        // For shadow mapping we only need a depth attachment
         VkFormat colorFormat = vulkanDevice.getSwapChainImageFormat();
-        vulkanDevice.createImage(vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height,
-                                 1, vulkanDevice.getSamples(), colorFormat,
+        vulkanDevice.createImage(shadowMapize, shadowMapize,
+                                 1,
+                                 VK_SAMPLE_COUNT_1_BIT,
+                                 shadowmapDepthFormat,
                                  VK_IMAGE_TILING_OPTIMAL,
-                                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+                                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                 colorImage, colorImageMemory);
-        colorImageView = vulkanDevice.createImageView(colorImage, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+                                 shadowmapImage, shadowmapImageMemory);
+        shadowmapImageView = vulkanDevice.createImageView(shadowmapImage,
+                                                          shadowmapDepthFormat,
+                                                          VK_IMAGE_ASPECT_DEPTH_BIT,
+                                                          1);
 
-        colorImageBlit.srcOffsets[0] = {0, 0, 0 };
-        colorImageBlit.srcOffsets[1] = {
-                static_cast<int32_t>(vulkanDevice.getSwapChainExtent().width),
-                static_cast<int32_t>(vulkanDevice.getSwapChainExtent().height), 1 };
-        colorImageBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        colorImageBlit.srcSubresource.mipLevel = 0;
-        colorImageBlit.srcSubresource.baseArrayLayer = 0;
-        colorImageBlit.srcSubresource.layerCount = 1;
-        colorImageBlit.dstOffsets[0] = {0, 0, 0 };
-        colorImageBlit.dstOffsets[1] = {
-                static_cast<int32_t>(vulkanDevice.getSwapChainExtent().width),
-                static_cast<int32_t>(vulkanDevice.getSwapChainExtent().height), 1 };
-        colorImageBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        colorImageBlit.dstSubresource.mipLevel = 0;
-        colorImageBlit.dstSubresource.baseArrayLayer = 0;
-        colorImageBlit.dstSubresource.layerCount = 1;
-
-        colorImageResolve.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-        colorImageResolve.srcOffset = {0, 0, 0};
-        colorImageResolve.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-        colorImageResolve.dstOffset = {0, 0, 0};
-        colorImageResolve.extent = {
-                vulkanDevice.getSwapChainExtent().width,
-                vulkanDevice.getSwapChainExtent().height,
-                1};
+        // Create sampler to sample from to depth attachment
+        // Used to sample in the fragment shader for shadowed rendering
+        VkFilter shadowmap_filter = vulkanDevice.formatIsFilterable( shadowmapDepthFormat, VK_IMAGE_TILING_OPTIMAL) ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
+        VkSamplerCreateInfo samplerCreateInfo {};
+        samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        samplerCreateInfo.maxAnisotropy = 1.0f;
+        samplerCreateInfo.magFilter = shadowmap_filter;
+        samplerCreateInfo.minFilter = shadowmap_filter;
+        samplerCreateInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        samplerCreateInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        samplerCreateInfo.addressModeV = samplerCreateInfo.addressModeU;
+        samplerCreateInfo.addressModeW = samplerCreateInfo.addressModeU;
+        samplerCreateInfo.mipLodBias = 0.0f;
+        samplerCreateInfo.maxAnisotropy = 1.0f;
+        samplerCreateInfo.minLod = 0.0f;
+        samplerCreateInfo.maxLod = 1.0f;
+        samplerCreateInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+        if (vkCreateSampler(vulkanDevice.getDevice(), &samplerCreateInfo, nullptr, &shadowmapSampler) != VK_SUCCESS) {
+            die("failed to create shadowmap sampler!");
+        }
     }
 
     void ShadowmapRenderer::cleanupImagesResources() {
+        vkDestroySampler(device, shadowmapSampler, nullptr);
         vkDestroyImageView(device, shadowmapImageView, nullptr);
         vkDestroyImage(device, shadowmapImage, nullptr);
         vkFreeMemory(device, shadowmapImageMemory, nullptr);
@@ -151,37 +154,27 @@ namespace z0 {
 
     void ShadowmapRenderer::beginRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
         vulkanDevice.transitionImageLayout(commandBuffer,
-                                           colorImage,
-                                           vulkanDevice.getSwapChainImageFormat(),
+                                           shadowmapImage,
+                                           shadowmapDepthFormat,
                                            VK_IMAGE_LAYOUT_UNDEFINED,
-                                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-        // Color attachement : where the rendering is done (multisampled memory image)
-        const VkRenderingAttachmentInfo colorAttachmentInfo{
+                                           VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
+        const VkRenderingAttachmentInfo depthAttachmentInfo{
                 .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
-                .imageView = colorImageView,
-                .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                .imageView = shadowmapImageView,
+                .imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
                 .resolveMode = VK_RESOLVE_MODE_NONE,
                 .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
                 .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-                .clearValue = clearColor,
-        };
-        const VkRenderingAttachmentInfo depthAttachmentInfo{
-                .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
-                .imageView = depthImageView,
-                .imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                .resolveMode = VK_RESOLVE_MODE_NONE,
-                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-                .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
                 .clearValue = depthClearValue,
         };
         const VkRenderingInfo renderingInfo{
                 .sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR,
                 .pNext = nullptr,
-                .renderArea = {{0, 0}, vulkanDevice.getSwapChainExtent()},
+                .renderArea = {{0, 0},
+                               {shadowMapize, shadowMapize}},
                 .layerCount = 1,
                 .colorAttachmentCount = 1,
-                .pColorAttachments = &colorAttachmentInfo,
-                .pDepthAttachment = &depthAttachmentInfo,
+                .pColorAttachments = &depthAttachmentInfo,
                 .pStencilAttachment = nullptr
         };
         vkCmdBeginRendering(commandBuffer, &renderingInfo);
@@ -189,21 +182,12 @@ namespace z0 {
 
     void ShadowmapRenderer::endRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
         vkCmdEndRendering(commandBuffer);
-
-        vkCmdResolveImage(commandBuffer,
-                          colorImage,
-                          VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                          vulkanDevice.getSwapChainImages()[imageIndex],
-                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                          1,
-                          &imageResolve);
-
-        vulkanDevice.transitionImageLayout(
+        /*vulkanDevice.transitionImageLayout(
                 commandBuffer,
-                vulkanDevice.getSwapChainImages()[imageIndex],
+                shadowmapImage,
                 VK_FORMAT_UNDEFINED,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+                VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+                VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);*/
     }
 
 

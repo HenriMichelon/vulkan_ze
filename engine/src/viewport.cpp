@@ -31,6 +31,10 @@ namespace z0 {
     Viewport::~Viewport() {
     }
 
+    void Viewport::wait() {
+        vulkanRenderer->wait();
+    }
+
     void Viewport::drawFrame() {
         window.process();
         vulkanRenderer->drawFrame();
@@ -48,7 +52,7 @@ namespace z0 {
         return vulkanRenderer->getAspectRatio();
     }
 
-    void Viewport::loadScene(const std::shared_ptr<Node>& rootNode) {
+    void Viewport::loadScene(std::shared_ptr<Node>& rootNode) {
         vulkanRenderer->loadScene(rootNode);
     }
 }
