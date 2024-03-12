@@ -13,6 +13,7 @@ namespace z0 {
     // Requested device extensions
     const std::vector<const char*> deviceExtensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+        //VK_KHR_MAINTENANCE1_EXTENSION_NAME, // https://www.saschawillems.de/blog/2019/03/29/flipping-the-vulkan-viewport/
         // https://docs.vulkan.org/samples/latest/samples/extensions/dynamic_rendering/README.html
         VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
         // https://docs.vulkan.org/samples/latest/samples/extensions/shader_object/README.html
@@ -242,12 +243,11 @@ namespace z0 {
     // https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain#page_Choosing-the-right-settings-for-the-swap-chain
     VkSurfaceFormatKHR VulkanDevice::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats) {
         for (const auto& availableFormat : availableFormats) {
+            // Using sRGB no-linear color space
+            // https://learnopengl.com/Advanced-Lighting/Gamma-Correction
             if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
                 return availableFormat;
             }
-            /*if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-                return availableFormat;
-            }*/
         }
         return availableFormats[0];
     }

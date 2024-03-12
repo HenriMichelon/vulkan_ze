@@ -27,6 +27,7 @@ namespace z0 {
 
     void Node::setRotation(glm::vec3 orient) {
         _orientation = orient;
+        _orientation.x += glm::pi<float>();
         localTransform = mat4();
         updateTransform(glm::mat4{1.0f});
     }

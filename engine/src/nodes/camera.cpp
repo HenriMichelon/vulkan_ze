@@ -71,6 +71,7 @@ namespace z0 {
         inverseViewMatrix[3][0] = _position.x;
         inverseViewMatrix[3][1] = _position.y;
         inverseViewMatrix[3][2] = _position.z;
+
     }
 
     void Camera::setViewTarget(glm::vec3 target, glm::vec3 up) {
