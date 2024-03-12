@@ -34,19 +34,19 @@ namespace z0 {
     void Node::setRotationX(float angle) {
         _orientation.x = angle;
         localTransform = mat4();
-        setRotation(_orientation);
+        updateTransform(glm::mat4{1.0f});
     }
 
     void Node::setRotationY(float angle) {
         _orientation.y = angle;
         localTransform = mat4();
-        setRotation(_orientation);
+        updateTransform(glm::mat4{1.0f});
     }
 
     void Node::setRotationZ(float angle) {
         _orientation.z = angle;
         localTransform = mat4();
-        setRotation(_orientation);
+        updateTransform(glm::mat4{1.0f});
     }
 
     void Node::setScale(glm::vec3 s) {

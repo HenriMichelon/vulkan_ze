@@ -26,7 +26,7 @@ public:
         addChild(model1);*/
 
         z0::Camera camera{};
-        camera.setPosition({-0.0f, -8.0f, -12.000001f });
+        camera.setPosition({-0.0f, -8.0f, -10.000001f });
         //camera.setViewDirection({.0, .0, 1.0}, {0.0, -1.0, 0.0 });
         camera.setViewTarget({ 0.0f, -4.0f, 0.0f});
         addChild(camera);
@@ -46,9 +46,9 @@ public:
         light->setPosition(spotLight1.getPosition());
         addChild(light);
 
-        model1 = z0::Loader::loadModelFromFile("models/tc.glb", false);
-        model1->setPosition({-2.0, -4.f, -2.0f});
-        model1->setScale(glm::vec3{15.01});
+        model1 = z0::Loader::loadModelFromFile("models/survival_guitar_backpack.glb", false);
+        model1->setPosition({-4.0, -2.8f, -2.0f});
+        model1->setScale(glm::vec3{0.01});
         model1->setRotationDegrees({0.0, -30.0, 0.0});
         addChild(model1);
 
@@ -72,7 +72,7 @@ public:
 
     void onProcess(float delta) override {
         float angle = delta * glm::radians(90.0f) / 2;
-        model1->rotateY(angle);
+        model1->setRotationY(angle);
     }
 
 private:
