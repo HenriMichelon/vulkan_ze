@@ -52,9 +52,10 @@ namespace z0 {
         SceneRenderer(VulkanDevice& device, const std::string& shaderDirectory);
         ~SceneRenderer();
 
-        void loadScene(const std::shared_ptr<Node>& rootNode);
+        void loadScene(std::shared_ptr<Node>& rootNode);
 
     private:
+        std::vector<MeshInstance*> meshes {};
         Camera* currentCamera{nullptr};
         DirectionalLight* directionalLight{nullptr};
         Environment* environement{nullptr};
@@ -62,8 +63,6 @@ namespace z0 {
 
         std::unique_ptr<VulkanShader> vertShader;
         std::unique_ptr<VulkanShader> fragShader;
-        std::shared_ptr<Node> rootNode;
-        std::vector<MeshInstance*> meshes {};
         std::unordered_set<std::shared_ptr<VulkanImage>> images {};
         std::map<Resource::rid_t, int32_t> imagesIndices {};
 

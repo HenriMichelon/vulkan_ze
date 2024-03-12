@@ -71,6 +71,8 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/texture.cpp
         ${Z0_ENGINE_DIR}/src/resource.cpp
         ${Z0_ENGINE_DIR}/src/loader.cpp
+        engine/include/z0/vulkan/shadowmap_renderer.hpp
+        engine/src/vulkan/shadowmap_renderer.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC ${Z0_ENGINE_DIR}/include)
 

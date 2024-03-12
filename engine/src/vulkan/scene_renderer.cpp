@@ -17,38 +17,37 @@ namespace z0 {
         cleanupImagesResources();
     }
 
-    void SceneRenderer::loadScene(const std::shared_ptr<Node>& root) {
-        rootNode = root;
-        loadNode(rootNode);
+    void SceneRenderer::loadScene(std::shared_ptr<Node>& rootNode) {
+        loadScene(rootNode);
         createImagesIndex(rootNode);
         createResources();
     }
 
-    void SceneRenderer::loadNode(std::shared_ptr<Node>& node) {
+    void SceneRenderer::loadNode(std::shared_ptr<Node>& parent) {
         if (currentCamera == nullptr) {
-            if (auto camera = dynamic_cast<Camera*>(node.get())) {
+            if (auto camera = dynamic_cast<Camera*>(parent.get())) {
                 currentCamera = camera;
                 log("Using camera", currentCamera->toString());
             }
         }
         if (directionalLight == nullptr) {
-            if (auto light = dynamic_cast<DirectionalLight*>(node.get())) {
+            if (auto light = dynamic_cast<DirectionalLight*>(parent.get())) {
                 directionalLight = light;
                 log("Using directional light", directionalLight->toString());
             }
         }
         if (environement == nullptr) {
-            if (auto env = dynamic_cast<Environment*>(node.get())) {
+            if (auto env = dynamic_cast<Environment*>(parent.get())) {
                 environement = env;
                 log("Using environment", environement->toString());
             }
         }
-        if (auto omniLight = dynamic_cast<OmniLight *>(node.get())) {
+        if (auto omniLight = dynamic_cast<OmniLight *>(parent.get())) {
             omniLights.push_back(omniLight);
         }
-        createImagesList(node);
-        for(auto& child: node->getChildren()) {
-            loadNode(child);
+        createImagesList(parent);
+        for(auto& child: parent->getChildren()) {
+            loadScene(child);
         }
     }
 
@@ -247,7 +246,7 @@ namespace z0 {
                         VK_SHADER_STAGE_FRAGMENT_BIT)
             .build();
 
-        for (int i = 0; i < surfacesDescriptorSets.size(); i++) {
+        for (int i = 0; i < descriptorSets.size(); i++) {
             auto globalBufferInfo = globalBuffers[i]->descriptorInfo(sizeof(GobalUniformBufferObject));
             auto modelBufferInfo = modelsBuffers[i]->descriptorInfo(modelBufferSize);
             auto surfaceBufferInfo = surfacesBuffers[i]->descriptorInfo(surfaceBufferSize);
@@ -262,7 +261,7 @@ namespace z0 {
                 .writeBuffer(2, &modelBufferInfo)
                 .writeBuffer(3, &surfaceBufferInfo)
                 .writeBuffer(4, &pointLightBufferInfo)
-                .build(surfacesDescriptorSets[i])) {
+                .build(descriptorSets[i])) {
                 die("Cannot allocate descriptor set");
             }
         }
@@ -364,11 +363,10 @@ namespace z0 {
                 .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
                 .clearValue = depthClearValue,
         };
-        const VkRect2D renderArea{{0, 0}, vulkanDevice.getSwapChainExtent()};
         const VkRenderingInfo renderingInfo{
                 .sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR,
                 .pNext = nullptr,
-                .renderArea = renderArea,
+                .renderArea = {{0, 0}, vulkanDevice.getSwapChainExtent()},
                 .layerCount = 1,
                 .colorAttachmentCount = 1,
                 .pColorAttachments = &colorAttachmentInfo,

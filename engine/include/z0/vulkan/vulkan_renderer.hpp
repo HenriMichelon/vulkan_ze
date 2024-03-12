@@ -25,7 +25,7 @@ namespace z0 {
         VulkanDevice& vulkanDevice;
         VkPipelineLayout pipelineLayout { VK_NULL_HANDLE };
         std::unique_ptr<VulkanDescriptorSetLayout> globalSetLayout {};
-        std::vector<VkDescriptorSet> surfacesDescriptorSets{MAX_FRAMES_IN_FLIGHT};
+        std::vector<VkDescriptorSet> descriptorSets{MAX_FRAMES_IN_FLIGHT};
 
         const VkClearValue clearColor {{{
                     static_cast<float>(WINDOW_CLEAR_COLOR[0]) / 256.0f,
@@ -40,7 +40,7 @@ namespace z0 {
         void createResources();
         void createUniformBuffers(std::vector<std::unique_ptr<VulkanBuffer>>& buffers, VkDeviceSize size, uint32_t count = 1);
         void writeUniformBuffer(const std::vector<std::unique_ptr<VulkanBuffer>>& buffers, void *data, uint32_t index = 0);
-        void bindDescriptorSets(VkCommandBuffer commandBuffer, uint32_t count, uint32_t *offsets);
+        void bindDescriptorSets(VkCommandBuffer commandBuffer, uint32_t count = 0, uint32_t *offsets = nullptr);
         void bindShader(VkCommandBuffer commandBuffer, VulkanShader& shader);
         std::unique_ptr<VulkanShader> createShader(const std::string& filename,
                                                    VkShaderStageFlagBits stage,

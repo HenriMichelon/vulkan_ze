@@ -72,7 +72,7 @@ namespace z0 {
                                 VK_PIPELINE_BIND_POINT_GRAPHICS,
                                 pipelineLayout,
                                 0, 1,
-                                &surfacesDescriptorSets[currentFrame],
+                                &descriptorSets[currentFrame],
                                 count, offsets);
     }
 
