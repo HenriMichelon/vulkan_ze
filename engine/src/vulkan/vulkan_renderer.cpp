@@ -1,5 +1,3 @@
-// Using one descriptor per scene with offsets
-// https://docs.vulkan.org/samples/latest/samples/performance/descriptor_management/README.html
 #include "z0/vulkan/vulkan_renderer.hpp"
 #include "z0/vulkan/vulkan_model.hpp"
 #include "z0/vulkan/vulkan_descriptors.hpp"
@@ -114,7 +112,7 @@ namespace z0 {
     }
 
     // https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Rendering_and_presentation
-    void VulkanRenderer::drawFrame(float delta) {
+    void VulkanRenderer::drawFrame() {
         vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
         uint32_t imageIndex;
         VkResult result = vkAcquireNextImageKHR(device,
@@ -125,6 +123,8 @@ namespace z0 {
                               &imageIndex);
         if (result == VK_ERROR_OUT_OF_DATE_KHR) {
             vulkanDevice.recreateSwapChain();
+            cleanupImagesResources();
+            createImagesResources();
             return;
         } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
             die("failed to acquire swap chain image!");
@@ -155,7 +155,7 @@ namespace z0 {
         {
             const VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
             const VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-            update(delta);
+            update();
             const VkSubmitInfo submitInfo{
                     .sType                  = VK_STRUCTURE_TYPE_SUBMIT_INFO,
                     .waitSemaphoreCount     = 1,
@@ -184,6 +184,8 @@ namespace z0 {
             result = vkQueuePresentKHR(vulkanDevice.getPresentQueue(), &presentInfo);
             if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || vulkanDevice.getWindowHelper().windowResized) {
                 vulkanDevice.recreateSwapChain();
+                cleanupImagesResources();
+                createImagesResources();
             } else if (result != VK_SUCCESS) {
                 die("failed to present swap chain image!");
             }
@@ -297,68 +299,6 @@ namespace z0 {
 
     void VulkanRenderer::bindShader(VkCommandBuffer commandBuffer, VulkanShader& shader) {
         vkCmdBindShadersEXT(commandBuffer, 1, shader.getStage(), shader.getShader());
-    }
-
-    // https://lesleylai.info/en/vk-khr-dynamic-rendering/
-    void VulkanRenderer::beginRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
-        vulkanDevice.transitionImageLayout(commandBuffer,
-                                           vulkanDevice.getDepthImage(),
-                                           vulkanDevice.getDepthFormat(),
-                                           VK_IMAGE_LAYOUT_UNDEFINED,
-                                           VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-        vulkanDevice.transitionImageLayout(commandBuffer,
-                                           vulkanDevice.getColorImage(),
-                                           vulkanDevice.getSwapChainImageFormat(),
-                                           VK_IMAGE_LAYOUT_UNDEFINED,
-                                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-        // Color attachement : where the rendering is done (multisampled memory image)
-        const VkRenderingAttachmentInfo colorAttachmentInfo{
-                .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
-                .imageView = vulkanDevice.getColorImageView(),
-                .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                .resolveMode = VK_RESOLVE_MODE_NONE,
-                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-                .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-                .clearValue = clearColor,
-        };
-        const VkRenderingAttachmentInfo depthAttachmentInfo{
-            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
-            .imageView = vulkanDevice.getDepthImageView(),
-            .imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-            .resolveMode = VK_RESOLVE_MODE_NONE,
-            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-            .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-            .clearValue = depthClearValue,
-        };
-        const VkRect2D renderArea{{0, 0}, vulkanDevice.getSwapChainExtent()};
-        const VkRenderingInfo renderingInfo{
-            .sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR,
-            .pNext = nullptr,
-            .renderArea = renderArea,
-            .layerCount = 1,
-            .colorAttachmentCount = 1,
-            .pColorAttachments = &colorAttachmentInfo,
-            .pDepthAttachment = &depthAttachmentInfo,
-            .pStencilAttachment = nullptr
-        };
-        vkCmdBeginRendering(commandBuffer, &renderingInfo);
-    }
-
-    void VulkanRenderer::endRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
-        vkCmdEndRendering(commandBuffer);
-        vulkanDevice.transitionImageLayout(
-                commandBuffer,
-                vulkanDevice.getSwapChainImages()[imageIndex],
-                VK_FORMAT_UNDEFINED,
-                VK_IMAGE_LAYOUT_UNDEFINED,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-        vulkanDevice.presentToSwapChain(commandBuffer, imageIndex);
-        vulkanDevice.transitionImageLayout(
-                commandBuffer,
-                vulkanDevice.getSwapChainImages()[imageIndex],
-                VK_FORMAT_UNDEFINED,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
     }
 
     std::vector<char> VulkanRenderer::readFile(const std::string &fileName) {

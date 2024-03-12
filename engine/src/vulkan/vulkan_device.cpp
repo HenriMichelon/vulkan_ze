@@ -13,7 +13,6 @@ namespace z0 {
     // Requested device extensions
     const std::vector<const char*> deviceExtensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-        //VK_KHR_MAINTENANCE1_EXTENSION_NAME, // https://www.saschawillems.de/blog/2019/03/29/flipping-the-vulkan-viewport/
         // https://docs.vulkan.org/samples/latest/samples/extensions/dynamic_rendering/README.html
         VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
         // https://docs.vulkan.org/samples/latest/samples/extensions/shader_object/README.html
@@ -63,11 +62,8 @@ namespace z0 {
         } else {
             die("Failed to find a suitable GPU!");
         }
-
         createDevice();
         createSwapChain();
-        createColorResources();
-        createDepthResources();
     }
 
     VulkanDevice::~VulkanDevice() {
@@ -222,18 +218,10 @@ namespace z0 {
         vkDeviceWaitIdle(device);
         cleanupSwapChain();
         createSwapChain();
-        createColorResources();
-        createDepthResources();
     }
 
     // https://vulkan-tutorial.com/Drawing_a_triangle/Swap_chain_recreation#page_Recreating-the-swap-chain
     void VulkanDevice::cleanupSwapChain() {
-        vkDestroyImageView(device, depthImageView, nullptr);
-        vkDestroyImage(device, depthImage, nullptr);
-        vkFreeMemory(device, depthImageMemory, nullptr);
-        vkDestroyImageView(device, colorImageView, nullptr);
-        vkDestroyImage(device, colorImage, nullptr);
-        vkFreeMemory(device, colorImageMemory, nullptr);
         for (auto & swapChainImageView : swapChainImageViews) {
             vkDestroyImageView(device, swapChainImageView, nullptr);
         }
@@ -503,84 +491,6 @@ namespace z0 {
         }
 
         vkBindImageMemory(device, image, imageMemory, 0);
-    }
-
-    // https://vulkan-tutorial.com/Multisampling#page_Setting-up-a-render-target
-    void VulkanDevice::createColorResources() {
-        VkFormat colorFormat = swapChainImageFormat;
-        createImage(swapChainExtent.width, swapChainExtent.height,
-                    1, samples, colorFormat,
-                    VK_IMAGE_TILING_OPTIMAL,
-                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                    colorImage, colorImageMemory);
-        colorImageView = createImageView(colorImage, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
-
-        colorImageBlit.srcOffsets[0] = {0, 0, 0 };
-        colorImageBlit.srcOffsets[1] = {static_cast<int32_t>(swapChainExtent.width), static_cast<int32_t>(swapChainExtent.height), 1 };
-        colorImageBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        colorImageBlit.srcSubresource.mipLevel = 0;
-        colorImageBlit.srcSubresource.baseArrayLayer = 0;
-        colorImageBlit.srcSubresource.layerCount = 1;
-        colorImageBlit.dstOffsets[0] = {0, 0, 0 };
-        colorImageBlit.dstOffsets[1] = {static_cast<int32_t>(swapChainExtent.width), static_cast<int32_t>(swapChainExtent.height), 1 };
-        colorImageBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        colorImageBlit.dstSubresource.mipLevel = 0;
-        colorImageBlit.dstSubresource.baseArrayLayer = 0;
-        colorImageBlit.dstSubresource.layerCount = 1;
-
-        colorImageResolve.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-        colorImageResolve.srcOffset = {0, 0, 0};
-        colorImageResolve.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-        colorImageResolve.dstOffset = {0, 0, 0};
-        colorImageResolve.extent = {swapChainExtent.width, swapChainExtent.height, 1};
-    }
-
-    void VulkanDevice::presentToSwapChain(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
-        if (samples == VK_SAMPLE_COUNT_1_BIT) {
-            // Blit image to swap chain if MSAA is disabled
-            vkCmdBlitImage(commandBuffer,
-                           colorImage,
-                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                           swapChainImages[imageIndex],
-                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                           1,
-                           &colorImageBlit,
-                           VK_FILTER_LINEAR );
-        } else {
-            // Resolve multisample image to a non-multisample swap chain image if MSAA is enabled
-            const VkImageResolve imageResolve{
-                    .srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-                    .srcOffset = {0, 0, 0},
-                    .dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-                    .dstOffset = {0, 0, 0},
-                    .extent = {swapChainExtent.width, swapChainExtent.height, 1}
-            };
-            vkCmdResolveImage(commandBuffer,
-                              colorImage,
-                              VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                              swapChainImages[imageIndex],
-                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                              1,
-                              &imageResolve);
-        }
-    }
-
-    // https://vulkan-tutorial.com/Depth_buffering#page_Depth-image-and-view
-    void VulkanDevice::createDepthResources() {
-        depthFormat = findImageTilingSupportedFormat(
-                {VK_FORMAT_D16_UNORM, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
-                VK_IMAGE_TILING_OPTIMAL,
-                VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
-        );
-        createImage(swapChainExtent.width, swapChainExtent.height,
-                    1, samples,
-                    depthFormat,
-                    VK_IMAGE_TILING_OPTIMAL,
-                    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                    depthImage, depthImageMemory);
-        depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
     }
 
     // https://vulkan-tutorial.com/Depth_buffering#page_Depth-image-and-view

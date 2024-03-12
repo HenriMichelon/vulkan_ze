@@ -8,7 +8,7 @@
 
 namespace z0 {
 
-    class DefaultRenderer;
+    class SceneRenderer;
 
     class Viewport: public Object {
     public:
@@ -19,7 +19,7 @@ namespace z0 {
         void setMSAA(MSAA samples);
         float getAspectRatio() const;
 
-        void process(float delta);
+        void drawFrame();
         bool shouldClose() { return window.shouldClose(); }
 
         void loadScene(const std::shared_ptr<Node>& rootNode);
@@ -29,7 +29,7 @@ namespace z0 {
     private:
         WindowHelper window;
         std::unique_ptr<VulkanDevice> vulkanDevice;
-        std::unique_ptr<DefaultRenderer> vulkanRenderer;
+        std::unique_ptr<SceneRenderer> vulkanRenderer;
 
 
     public:

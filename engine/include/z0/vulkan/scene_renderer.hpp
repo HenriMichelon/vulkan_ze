@@ -10,7 +10,7 @@
 
 namespace z0 {
 
-    class DefaultRenderer: public VulkanRenderer {
+    class SceneRenderer: public VulkanRenderer {
     public:
         struct DirectionalLightUniform {
             alignas(16) glm::vec3 direction = { 0.0f, 0.0f, 0.0f };
@@ -49,8 +49,8 @@ namespace z0 {
             alignas(4) float shininess{32.0f};
         };
 
-        DefaultRenderer(VulkanDevice& device, const std::string& shaderDirectory);
-        ~DefaultRenderer();
+        SceneRenderer(VulkanDevice& device, const std::string& shaderDirectory);
+        ~SceneRenderer();
 
         void loadScene(const std::shared_ptr<Node>& rootNode);
 
@@ -73,20 +73,37 @@ namespace z0 {
         std::vector<std::unique_ptr<VulkanBuffer>> surfacesBuffers{MAX_FRAMES_IN_FLIGHT};
         std::vector<std::unique_ptr<VulkanBuffer>> pointLightBuffers{MAX_FRAMES_IN_FLIGHT};
 
-        void update(float delta) override;
+        // Depth buffering
+        VkImage depthImage;
+        VkFormat depthFormat;
+        VkDeviceMemory depthImageMemory;
+        VkImageView depthImageView;
+
+        // Offscreen frame buffer for MSAA
+        VkImage colorImage;
+        VkDeviceMemory colorImageMemory;
+        VkImageView colorImageView;
+        VkImageBlit colorImageBlit{};
+        VkImageResolve colorImageResolve{};
+
+        void update() override;
         void recordCommands(VkCommandBuffer commandBuffer) override;
         void createDescriptorSetLayout() override;
         void loadShaders() override;
+        void createImagesResources() override;
+        void cleanupImagesResources() override;
+        void beginRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) override;
+        void endRendering(VkCommandBuffer commandBuffer,uint32_t imageIndex) override;
 
         void loadNode(std::shared_ptr<Node>& parent);
         void createImagesList(std::shared_ptr<Node>& node);
         void createImagesIndex(std::shared_ptr<Node>& node);
 
     public:
-        DefaultRenderer(const DefaultRenderer&) = delete;
-        DefaultRenderer &operator=(const DefaultRenderer&) = delete;
-        DefaultRenderer(const DefaultRenderer&&) = delete;
-        DefaultRenderer &&operator=(const DefaultRenderer&&) = delete;
+        SceneRenderer(const SceneRenderer&) = delete;
+        SceneRenderer &operator=(const SceneRenderer&) = delete;
+        SceneRenderer(const SceneRenderer&&) = delete;
+        SceneRenderer &&operator=(const SceneRenderer&&) = delete;
     };
 
 }

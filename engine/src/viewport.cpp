@@ -1,4 +1,4 @@
-#include "z0/vulkan/default_renderer.hpp"
+#include "z0/vulkan/scene_renderer.hpp"
 #include "z0/mainloop.hpp"
 
 namespace z0 {
@@ -25,15 +25,15 @@ namespace z0 {
                 window,
                 cfg.msaa != MSAA_DISABLED,
                 MSAA_VULKAN.at(cfg.msaa));
-        vulkanRenderer = std::make_unique<DefaultRenderer>(*vulkanDevice, (cfg.appDir / "shaders").string());
+        vulkanRenderer = std::make_unique<SceneRenderer>(*vulkanDevice, (cfg.appDir / "shaders").string());
     }
 
     Viewport::~Viewport() {
     }
 
-    void Viewport::process(float delta) {
+    void Viewport::drawFrame() {
         window.process();
-        vulkanRenderer->drawFrame(delta);
+        vulkanRenderer->drawFrame();
     }
 
     MSAA Viewport::getMSAA() const {

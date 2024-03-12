@@ -1,25 +1,30 @@
-#include "z0/vulkan/default_renderer.hpp"
+// Using one descriptor per scene with offsets
+// https://docs.vulkan.org/samples/latest/samples/performance/descriptor_management/README.html
+#include "z0/vulkan/scene_renderer.hpp"
 #include "z0/log.hpp"
 
 namespace z0 {
 
-    DefaultRenderer::DefaultRenderer(VulkanDevice &dev,
-                                     const std::string& sDir) :
+    SceneRenderer::SceneRenderer(VulkanDevice &dev,
+                                 const std::string& sDir) :
          VulkanRenderer{dev, sDir}
-     {}
+     {
+         createImagesResources();
+     }
 
-    DefaultRenderer::~DefaultRenderer() {
+    SceneRenderer::~SceneRenderer() {
         vkDeviceWaitIdle(device);
+        cleanupImagesResources();
     }
 
-    void DefaultRenderer::loadScene(const std::shared_ptr<Node>& root) {
+    void SceneRenderer::loadScene(const std::shared_ptr<Node>& root) {
         rootNode = root;
         loadNode(rootNode);
         createImagesIndex(rootNode);
         createResources();
     }
 
-    void DefaultRenderer::loadNode(std::shared_ptr<Node>& node) {
+    void SceneRenderer::loadNode(std::shared_ptr<Node>& node) {
         if (currentCamera == nullptr) {
             if (auto camera = dynamic_cast<Camera*>(node.get())) {
                 currentCamera = camera;
@@ -47,7 +52,7 @@ namespace z0 {
         }
     }
 
-    void DefaultRenderer::createImagesList(std::shared_ptr<Node>& node) {
+    void SceneRenderer::createImagesList(std::shared_ptr<Node>& node) {
         if (auto meshInstance = dynamic_cast<MeshInstance*>(node.get())) {
             meshes.push_back(meshInstance);
             for(const auto& material : meshInstance->getMesh()->_getMaterials()) {
@@ -62,7 +67,7 @@ namespace z0 {
             }
         }
     }
-    void DefaultRenderer::createImagesIndex(std::shared_ptr<Node>& node) {
+    void SceneRenderer::createImagesIndex(std::shared_ptr<Node>& node) {
         if (auto meshInstance = dynamic_cast<MeshInstance*>(node.get())) {
             for(const auto& material : meshInstance->getMesh()->_getMaterials()) {
                 if (auto standardMaterial = dynamic_cast<StandardMaterial*>(material.get())) {
@@ -84,12 +89,12 @@ namespace z0 {
         }
     }
 
-    void DefaultRenderer::loadShaders() {
+    void SceneRenderer::loadShaders() {
         vertShader = createShader("default.vert", VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
         fragShader = createShader("default.frag", VK_SHADER_STAGE_FRAGMENT_BIT, 0);
     }
 
-    void DefaultRenderer::update(float delta) {
+    void SceneRenderer::update() {
         if (meshes.empty() || currentCamera == nullptr) return;
 
         GobalUniformBufferObject globalUbo{
@@ -156,7 +161,7 @@ namespace z0 {
         }
     }
 
-    void DefaultRenderer::recordCommands(VkCommandBuffer commandBuffer) {
+    void SceneRenderer::recordCommands(VkCommandBuffer commandBuffer) {
         if (meshes.empty() || currentCamera == nullptr) return;
         vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
         bindShader(commandBuffer, *vertShader);
@@ -191,7 +196,7 @@ namespace z0 {
         }
     }
 
-    void DefaultRenderer::createDescriptorSetLayout() {
+    void SceneRenderer::createDescriptorSetLayout() {
         if (meshes.empty() || currentCamera == nullptr) return;
         globalPool = VulkanDescriptorPool::Builder(vulkanDevice)
                 .setMaxSets(MAX_FRAMES_IN_FLIGHT)
@@ -262,5 +267,163 @@ namespace z0 {
             }
         }
     }
+
+    void SceneRenderer::createImagesResources() {
+        // Create Color Resources (where we draw)
+        // https://vulkan-tutorial.com/Multisampling#page_Setting-up-a-render-target
+        VkFormat colorFormat = vulkanDevice.getSwapChainImageFormat();
+        vulkanDevice.createImage(vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height,
+                                 1, vulkanDevice.getSamples(), colorFormat,
+                                 VK_IMAGE_TILING_OPTIMAL,
+                                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                 colorImage, colorImageMemory);
+        colorImageView = vulkanDevice.createImageView(colorImage, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+
+        colorImageBlit.srcOffsets[0] = {0, 0, 0 };
+        colorImageBlit.srcOffsets[1] = {
+                static_cast<int32_t>(vulkanDevice.getSwapChainExtent().width),
+                static_cast<int32_t>(vulkanDevice.getSwapChainExtent().height), 1 };
+        colorImageBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        colorImageBlit.srcSubresource.mipLevel = 0;
+        colorImageBlit.srcSubresource.baseArrayLayer = 0;
+        colorImageBlit.srcSubresource.layerCount = 1;
+        colorImageBlit.dstOffsets[0] = {0, 0, 0 };
+        colorImageBlit.dstOffsets[1] = {
+                static_cast<int32_t>(vulkanDevice.getSwapChainExtent().width),
+                static_cast<int32_t>(vulkanDevice.getSwapChainExtent().height), 1 };
+        colorImageBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        colorImageBlit.dstSubresource.mipLevel = 0;
+        colorImageBlit.dstSubresource.baseArrayLayer = 0;
+        colorImageBlit.dstSubresource.layerCount = 1;
+
+        colorImageResolve.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+        colorImageResolve.srcOffset = {0, 0, 0};
+        colorImageResolve.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+        colorImageResolve.dstOffset = {0, 0, 0};
+        colorImageResolve.extent = {
+                vulkanDevice.getSwapChainExtent().width,
+                vulkanDevice.getSwapChainExtent().height,
+                1};
+
+        // Create depth resources
+        // https://vulkan-tutorial.com/Depth_buffering#page_Depth-image-and-view
+        depthFormat = vulkanDevice.findImageTilingSupportedFormat(
+                {VK_FORMAT_D16_UNORM, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
+                VK_IMAGE_TILING_OPTIMAL,
+                VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
+        );
+        vulkanDevice.createImage(vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height,
+                                 1,
+                                 vulkanDevice.getSamples(),
+                                 depthFormat,
+                                 VK_IMAGE_TILING_OPTIMAL,
+                                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                 depthImage, depthImageMemory);
+        depthImageView = vulkanDevice.createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
+    }
+
+    void SceneRenderer::cleanupImagesResources() {
+        vkDestroyImageView(device, depthImageView, nullptr);
+        vkDestroyImage(device, depthImage, nullptr);
+        vkFreeMemory(device, depthImageMemory, nullptr);
+        vkDestroyImageView(device, colorImageView, nullptr);
+        vkDestroyImage(device, colorImage, nullptr);
+        vkFreeMemory(device, colorImageMemory, nullptr);
+    }
+
+    // https://lesleylai.info/en/vk-khr-dynamic-rendering/
+    void SceneRenderer::beginRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
+        vulkanDevice.transitionImageLayout(commandBuffer,
+                                           depthImage,
+                                           depthFormat,
+                                           VK_IMAGE_LAYOUT_UNDEFINED,
+                                           VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+        vulkanDevice.transitionImageLayout(commandBuffer,
+                                           colorImage,
+                                           vulkanDevice.getSwapChainImageFormat(),
+                                           VK_IMAGE_LAYOUT_UNDEFINED,
+                                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+        // Color attachement : where the rendering is done (multisampled memory image)
+        const VkRenderingAttachmentInfo colorAttachmentInfo{
+                .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
+                .imageView = colorImageView,
+                .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                .resolveMode = VK_RESOLVE_MODE_NONE,
+                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+                .clearValue = clearColor,
+        };
+        const VkRenderingAttachmentInfo depthAttachmentInfo{
+                .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
+                .imageView = depthImageView,
+                .imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                .resolveMode = VK_RESOLVE_MODE_NONE,
+                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                .clearValue = depthClearValue,
+        };
+        const VkRect2D renderArea{{0, 0}, vulkanDevice.getSwapChainExtent()};
+        const VkRenderingInfo renderingInfo{
+                .sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR,
+                .pNext = nullptr,
+                .renderArea = renderArea,
+                .layerCount = 1,
+                .colorAttachmentCount = 1,
+                .pColorAttachments = &colorAttachmentInfo,
+                .pDepthAttachment = &depthAttachmentInfo,
+                .pStencilAttachment = nullptr
+        };
+        vkCmdBeginRendering(commandBuffer, &renderingInfo);
+    }
+
+    void SceneRenderer::endRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
+        vkCmdEndRendering(commandBuffer);
+        vulkanDevice.transitionImageLayout(
+                commandBuffer,
+                vulkanDevice.getSwapChainImages()[imageIndex],
+                VK_FORMAT_UNDEFINED,
+                VK_IMAGE_LAYOUT_UNDEFINED,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+        // Since we render in a memory image we need to manually present the image in the swap chain
+        if (vulkanDevice.getSamples() == VK_SAMPLE_COUNT_1_BIT) {
+            // Blit image to swap chain if MSAA is disabled
+            vkCmdBlitImage(commandBuffer,
+                           colorImage,
+                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                           vulkanDevice.getSwapChainImages()[imageIndex],
+                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                           1,
+                           &colorImageBlit,
+                           VK_FILTER_LINEAR );
+        } else {
+            // Resolve multisample image to a non-multisample swap chain image if MSAA is enabled
+            const VkImageResolve imageResolve{
+                    .srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+                    .srcOffset = {0, 0, 0},
+                    .dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+                    .dstOffset = {0, 0, 0},
+                    .extent = {vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height, 1}
+            };
+            vkCmdResolveImage(commandBuffer,
+                              colorImage,
+                              VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                              vulkanDevice.getSwapChainImages()[imageIndex],
+                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                              1,
+                              &imageResolve);
+        }
+
+        vulkanDevice.transitionImageLayout(
+                commandBuffer,
+                vulkanDevice.getSwapChainImages()[imageIndex],
+                VK_FORMAT_UNDEFINED,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    }
+
+
 
 }

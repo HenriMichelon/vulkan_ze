@@ -14,10 +14,11 @@ namespace z0 {
     public:
         ~VulkanRenderer();
 
-        void drawFrame(float delta);
+        void drawFrame();
         float getAspectRatio() const {
             return static_cast<float>(vulkanDevice.getSwapChainExtent().width) / static_cast<float>(vulkanDevice.getSwapChainExtent().height);
         }
+
     protected:
         uint32_t currentFrame = 0;
         VkDevice device;
@@ -25,6 +26,13 @@ namespace z0 {
         VkPipelineLayout pipelineLayout { VK_NULL_HANDLE };
         std::unique_ptr<VulkanDescriptorSetLayout> globalSetLayout {};
         std::vector<VkDescriptorSet> surfacesDescriptorSets{MAX_FRAMES_IN_FLIGHT};
+
+        const VkClearValue clearColor {{{
+                    static_cast<float>(WINDOW_CLEAR_COLOR[0]) / 256.0f,
+                    static_cast<float>(WINDOW_CLEAR_COLOR[1]) / 256.0f,
+                    static_cast<float>(WINDOW_CLEAR_COLOR[2]) / 256.0f,
+                    1.0f}}};
+        const VkClearValue depthClearValue { .depthStencil = {1.0f, 0} };
 
         VulkanRenderer(VulkanDevice& device, std::string shaderDirectory);
 
@@ -45,24 +53,19 @@ namespace z0 {
         std::vector<VkSemaphore> renderFinishedSemaphores;
         std::vector<VkFence> inFlightFences;
 
-        const VkClearValue clearColor {{{
-          static_cast<float>(WINDOW_CLEAR_COLOR[0]) / 256.0f,
-          static_cast<float>(WINDOW_CLEAR_COLOR[1]) / 256.0f,
-          static_cast<float>(WINDOW_CLEAR_COLOR[2]) / 256.0f,
-          1.0f}}};
-        const VkClearValue depthClearValue { .depthStencil = {1.0f, 0} };
-
-        void setInitialState(VkCommandBuffer commandBuffer);
-        void beginRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex);
-        void endRendering(VkCommandBuffer commandBuffer,uint32_t imageIndex);
         void buildShader(VulkanShader& shader);
         void createPipelineLayout();
+        void setInitialState(VkCommandBuffer commandBuffer);
         std::vector<char> readFile(const std::string& fileName);
 
-        virtual void update(float delta) = 0;
+        virtual void update() = 0;
+        virtual void loadShaders() = 0;
         virtual void recordCommands(VkCommandBuffer commandBuffer) = 0;
         virtual void createDescriptorSetLayout() = 0;
-        virtual void loadShaders() = 0;
+        virtual void createImagesResources() = 0;
+        virtual void cleanupImagesResources() = 0;
+        virtual void beginRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) = 0;
+        virtual void endRendering(VkCommandBuffer commandBuffer,uint32_t imageIndex)  = 0;
 
     public:
         VulkanRenderer(const VulkanRenderer&) = delete;

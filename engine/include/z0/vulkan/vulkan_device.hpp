@@ -37,14 +37,9 @@ namespace z0 {
         VkQueue getGraphicsQueue() { return graphicsQueue; }
         VkQueue getPresentQueue() { return presentQueue; }
         VkCommandPool getCommandPool() { return commandPool; }
-        VkFormat getDepthFormat() { return depthFormat; }
-        VkImage getDepthImage() { return depthImage; }
-        VkImageView getDepthImageView() { return depthImageView; }
-        VkImage getColorImage() { return colorImage; }
-        VkImageView getColorImageView() { return colorImageView; }
         VkSampleCountFlagBits getSamples() { return samples; }
         const VkExtent2D& getSwapChainExtent() const { return swapChainExtent;}
-        float getSwapChainAspectRatio() const;
+        //float getSwapChainAspectRatio() const;
         VkFormat getSwapChainImageFormat() const { return swapChainImageFormat; }
         std::vector<VkImage>& getSwapChainImages() { return swapChainImages; }
         VkPhysicalDeviceProperties getDeviceProperties() const { return deviceProperties; }
@@ -52,8 +47,6 @@ namespace z0 {
 
         // Recreation of the swap chain in case of window resizing/minimizing
         void recreateSwapChain();
-        // Since we render in a memory image we need to manually present the image in the swap chain
-        void presentToSwapChain(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 
         VkCommandBuffer beginSingleTimeCommands();
         void endSingleTimeCommands(VkCommandBuffer commandBuffer);
@@ -72,6 +65,9 @@ namespace z0 {
         static QueueFamilyIndices findQueueFamilies(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR surface);
         uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
         static bool hasStencilComponent(VkFormat format);
+
+        // Find a suitable IMAGE_TILING format (for the Depth buffering image)
+        VkFormat findImageTilingSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
     private:
         VulkanInstance& vulkanInstance;
@@ -97,21 +93,8 @@ namespace z0 {
         void createSwapChain();
         void cleanupSwapChain();
 
-        // Depth buffering
-        VkImage depthImage;
-        VkFormat depthFormat;
-        VkDeviceMemory depthImageMemory;
-        VkImageView depthImageView;
-        void createDepthResources();
-
         // MSAA
         VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT;
-        VkImage colorImage;
-        VkDeviceMemory colorImageMemory;
-        VkImageView colorImageView;
-        VkImageBlit colorImageBlit{};
-        VkImageResolve colorImageResolve{};
-        void createColorResources();
         VkSampleCountFlagBits getMaxUsableMSAASampleCount();
 
         // Check if all the requested Vulkan extensions are supported by a device
@@ -126,8 +109,6 @@ namespace z0 {
         static VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
         // Get the swap chain images sizes
         static VkExtent2D chooseSwapExtent(WindowHelper& window, const VkSurfaceCapabilitiesKHR& capabilities);
-        // Find a suitable IMAGE_TILING format (for the Depth buffering image)
-        VkFormat findImageTilingSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
     public:
         VulkanDevice(const VulkanDevice&) = delete;

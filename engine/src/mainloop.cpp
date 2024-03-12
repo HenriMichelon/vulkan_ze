@@ -29,7 +29,7 @@ namespace z0 {
             auto currentTime = std::chrono::high_resolution_clock::now();
             float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
             process(rootNode, deltaTime);
-            viewport->process(deltaTime);
+            viewport->drawFrame();
         }
 #ifdef VULKAN_STATS
         VulkanStats::get().display();
