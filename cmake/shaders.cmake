@@ -1,6 +1,6 @@
 function(add_shaders TARGET_NAME)
     set(SHADER_SOURCE_FILES ${ARGN}) # the rest of arguments to this function will be assigned as shader source files
-    set(SHADER_BINARIES "../shaders")
+    set(SHADER_BINARIES ${Z0_SHADERS_BUILD_DIR})
 
     # Validate that source files have been passed
     list(LENGTH SHADER_SOURCE_FILES FILE_COUNT)

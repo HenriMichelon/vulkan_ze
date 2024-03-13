@@ -2,12 +2,14 @@
 
 #include <volk.h>
 #ifdef _WIN64
-#define GLFW_INCLUDE_VULKAN
-#include "GLFW/glfw3.h"
-#define GLFW_EXPOSE_NATIVE_WIN32
-#include "GLFW/glfw3native.h"
+  #define GLFW_INCLUDE_VULKAN
+  #include "GLFW/glfw3.h"
+  #define GLFW_EXPOSE_NATIVE_WIN32
+  #include "GLFW/glfw3native.h"
+#elif __linux__
+  #include "GLFW/glfw3.h"
 #else
-#error OS Not supported
+  #error OS Not supported
 #endif
 
 #include "z0/window.hpp"

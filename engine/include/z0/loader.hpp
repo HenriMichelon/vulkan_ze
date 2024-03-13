@@ -1,6 +1,6 @@
 #pragma once
 
-#include "z0/nodes/Node.hpp"
+#include "z0/nodes/node.hpp"
 
 namespace z0 {
 
