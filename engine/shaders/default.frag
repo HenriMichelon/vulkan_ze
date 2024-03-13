@@ -126,7 +126,7 @@ void main() {
         float shadow = (enablePCF == 1) ? filterPCF(SHADOW_COORD / SHADOW_COORD.w) : textureProj(SHADOW_COORD / SHADOW_COORD.w, vec2(0.0));
         vec3 N = normalize(NORMAL);
         vec3 L = normalize(LIGHT);
-        result = max(dot(N, L),  global.ambient.w) * result;
+        result = max(dot(N, L),  global.ambient.w) * result * shadow;
         //COLOR = vec4(vec3(shadow), 1.0);
     }
     COLOR = vec4(result, 1.0);

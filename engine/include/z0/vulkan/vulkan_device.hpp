@@ -42,6 +42,7 @@ namespace z0 {
         //float getSwapChainAspectRatio() const;
         VkFormat getSwapChainImageFormat() const { return swapChainImageFormat; }
         std::vector<VkImage>& getSwapChainImages() { return swapChainImages; }
+        std::vector<VkImageView>& getSwapChainImageViews() { return swapChainImageViews; }
         VkPhysicalDeviceProperties getDeviceProperties() const { return deviceProperties; }
         WindowHelper& getWindowHelper() { return window; }
 

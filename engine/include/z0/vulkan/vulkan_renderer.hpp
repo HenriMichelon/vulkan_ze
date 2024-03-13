@@ -27,6 +27,10 @@ namespace z0 {
         VkPipelineLayout pipelineLayout { VK_NULL_HANDLE };
         std::unique_ptr<VulkanDescriptorSetLayout> globalSetLayout {};
         std::vector<VkDescriptorSet> descriptorSets{MAX_FRAMES_IN_FLIGHT};
+        std::unique_ptr<VulkanShader> vertShader;
+        std::unique_ptr<VulkanShader> fragShader;
+        std::unique_ptr<VulkanDescriptorPool> globalPool {};
+        std::vector<std::unique_ptr<VulkanBuffer>> globalBuffers{MAX_FRAMES_IN_FLIGHT};
 
         const VkClearValue clearColor {{{
                     static_cast<float>(WINDOW_CLEAR_COLOR[0]) / 256.0f,

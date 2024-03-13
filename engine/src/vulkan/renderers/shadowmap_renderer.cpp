@@ -28,29 +28,32 @@ namespace z0 {
     }
 
     void ShadowMapRenderer::update() {
-        Camera camera;
-        camera.setPerspectiveProjection(shadowMap->getLight()->getOuterCutOff(), zNear, zFar);
-        camera.setViewTarget(shadowMap->getLight()->getPosition());
+        glm::mat4 lightProjection = glm::perspective(glm::radians(shadowMap->getLight()->getOuterCutOff()), 1.0f, zNear, zFar);
+        glm::mat4 lightView = glm::lookAt(shadowMap->getLight()->getPosition(), glm::vec3(0.0f), glm::vec3(0, -1, 0));
+        GlobalUniformBufferObject globalUbo {
+            .lightSpace = lightProjection * lightView
+        };
+        writeUniformBuffer(globalBuffers, &globalUbo);
 
         uint32_t modelIndex = 0;
         for (const auto&meshInstance: meshes) {
-            ModelUniformBufferObject modelUbo { camera.getProjection() * camera.getView() };
-            writeUniformBuffer(globalBuffers, &modelUbo, modelIndex);
+            ModelUniformBufferObject modelUbo{
+                .matrix = meshInstance->getGlobalTransform(),
+            };
+            writeUniformBuffer(modelsBuffers, &modelUbo, modelIndex);
             modelIndex += 1;
         }
-        //auto depthProjectionMatrix = glm::perspective(shadowMap->getLight()->getOuterCutOff(), 1.0f, zNear, zFar);
-        //auto depthViewMatrix = glm::lookAt(shadowMap->getLight()->getPosition(), glm::vec3(0.0f), glm::vec3(0, -1, 0));
-        //auto depthModelMatrix = glm::mat4(1.0f);
-        //GlobalUniformBufferObject globalUbo { depthProjectionMatrix * depthViewMatrix * depthModelMatrix };
     }
 
     void ShadowMapRenderer::recordCommands(VkCommandBuffer commandBuffer) {
         bindShader(commandBuffer, *vertShader);
         VkShaderStageFlagBits stageFlagBits{VK_SHADER_STAGE_FRAGMENT_BIT};
         vkCmdBindShadersEXT(commandBuffer, 1, &stageFlagBits, VK_NULL_HANDLE);
+
         vkCmdSetRasterizationSamplesEXT(commandBuffer, VK_SAMPLE_COUNT_1_BIT);
         vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
         vkCmdSetDepthBias(commandBuffer, depthBiasConstant, 0.0f, depthBiasSlope);
+
         uint32_t modelIndex = 0;
         for (const auto&meshInstance: meshes) {
             auto mesh = meshInstance->getMesh();
@@ -64,8 +67,9 @@ namespace z0 {
                     } else {
                         vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_NONE);
                     }
-                    std::array<uint32_t, 1> offsets = {
-                            0, // globalBuffers
+                    std::array<uint32_t, 2> offsets = {
+                        0, // globalBuffers
+                        static_cast<uint32_t>(modelsBuffers[currentFrame]->getAlignmentSize() * modelIndex),
                     };
                     bindDescriptorSets(commandBuffer, offsets.size(), offsets.data());
                     mesh->_getModel()->draw(commandBuffer, surface->firstVertexIndex, surface->indexCount);
@@ -79,22 +83,31 @@ namespace z0 {
         globalPool = VulkanDescriptorPool::Builder(vulkanDevice)
                 .setMaxSets(MAX_FRAMES_IN_FLIGHT)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // global UBO
+                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // model UBO
                 .build();
 
         // Global UBO
+        createUniformBuffers(globalBuffers, sizeof(GlobalUniformBufferObject));
+
+        // Models UBO
         VkDeviceSize modelBufferSize = sizeof(ModelUniformBufferObject);
-        createUniformBuffers(globalBuffers, modelBufferSize, meshes.size());
+        createUniformBuffers(modelsBuffers, modelBufferSize, meshes.size());;
 
         globalSetLayout = VulkanDescriptorSetLayout::Builder(vulkanDevice)
-            .addBinding(0, // global UBO
-                    VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-                    VK_SHADER_STAGE_VERTEX_BIT)
+                .addBinding(0, // global UBO
+                            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                            VK_SHADER_STAGE_VERTEX_BIT)
+                .addBinding(1, // model UBO
+                            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                            VK_SHADER_STAGE_VERTEX_BIT)
             .build();
 
         for (int i = 0; i < descriptorSets.size(); i++) {
             auto globalBufferInfo = globalBuffers[i]->descriptorInfo(modelBufferSize);
+            auto modelBufferInfo = modelsBuffers[i]->descriptorInfo(modelBufferSize);
             if (!VulkanDescriptorWriter(*globalSetLayout, *globalPool)
                 .writeBuffer(0, &globalBufferInfo)
+                .writeBuffer(1, &modelBufferInfo)
                 .build(descriptorSets[i])) {
                 die("Cannot allocate descriptor set");
             }

@@ -65,7 +65,7 @@ public:
         floor = z0::Loader::loadModelFromFile("models/floor.glb", false);
         //floor->setScale(glm::vec3{1.0});
         floor->setRotationDegrees({0.0, 0.0, 0.0});
-        addChild(floor);
+        //addChild(floor);
 
         //printTree(std::cout);
     }
@@ -90,7 +90,7 @@ int main() {
         .windowMode = z0::WINDOW_MODE_WINDOWED,
         .windowWidth = 1024,
         .windowHeight = 768,
-        .msaa = z0::MSAA_AUTO
+        .msaa = z0::MSAA_DISABLED
     };
     z0::MainLoop app{applicationConfig};
     app.start(std::make_shared<z0::Scene>(std::make_shared<RootNode>()));

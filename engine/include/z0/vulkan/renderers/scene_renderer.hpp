@@ -40,7 +40,7 @@ namespace z0 {
             alignas(4) uint32_t pointLightsCount{0};
             alignas(4) bool haveShadowMap{false};
             alignas(16) glm::mat4 lightSpace;
-            alignas(16) glm::vec4 lightPos;
+            alignas(16) glm::vec3 lightPos;
         };
         struct ModelUniformBufferObject {
             glm::mat4 matrix;
@@ -59,23 +59,21 @@ namespace z0 {
         void drawFrame() override;
         void loadScene(std::shared_ptr<Node>& rootNode);
 
-    private:
+        std::shared_ptr<ShadowMap> shadowMap;
         std::vector<MeshInstance*> meshes {};
+
+    private:
         Camera* currentCamera{nullptr};
         DirectionalLight* directionalLight{nullptr};
         Environment* environement{nullptr};
         std::vector<OmniLight*> omniLights;
 
         ShadowMapRenderer shadowMapRenderer;
-        std::shared_ptr<ShadowMap> shadowMap;
 
-        std::unique_ptr<VulkanShader> vertShader;
-        std::unique_ptr<VulkanShader> fragShader;
-        std::unordered_set<std::shared_ptr<VulkanImage>> images {};
+
         std::map<Resource::rid_t, int32_t> imagesIndices {};
+        std::unordered_set<std::shared_ptr<VulkanImage>> images {};
 
-        std::unique_ptr<VulkanDescriptorPool> globalPool {};
-        std::vector<std::unique_ptr<VulkanBuffer>> globalBuffers{MAX_FRAMES_IN_FLIGHT};
         std::vector<std::unique_ptr<VulkanBuffer>> modelsBuffers{MAX_FRAMES_IN_FLIGHT};
         std::vector<std::unique_ptr<VulkanBuffer>> surfacesBuffers{MAX_FRAMES_IN_FLIGHT};
         std::vector<std::unique_ptr<VulkanBuffer>> pointLightBuffers{MAX_FRAMES_IN_FLIGHT};

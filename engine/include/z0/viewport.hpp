@@ -9,6 +9,7 @@
 namespace z0 {
 
     class SceneRenderer;
+    class DebugRenderer;
 
     class Viewport: public Object {
     public:
@@ -31,7 +32,6 @@ namespace z0 {
         WindowHelper window;
         std::unique_ptr<VulkanDevice> vulkanDevice;
         std::unique_ptr<SceneRenderer> vulkanRenderer;
-
 
     public:
         VulkanDevice& _getDevice() { return *vulkanDevice; }

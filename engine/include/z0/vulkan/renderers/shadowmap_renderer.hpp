@@ -3,15 +3,16 @@
 #include "z0/vulkan/vulkan_renderer.hpp"
 #include "z0/vulkan/renderers/shadowmap.hpp"
 #include "z0/nodes/mesh_instance.hpp"
-#include "z0/nodes/spot_light.hpp"
 
 namespace z0 {
 
     class ShadowMapRenderer: public VulkanRenderer {
     public:
+        struct GlobalUniformBufferObject {
+            glm::mat4 lightSpace;
+        };
         struct ModelUniformBufferObject {
-            glm::mat4 depthMVP;
-            glm::mat4 model;
+            glm::mat4 matrix;
         };
 
         ShadowMapRenderer(VulkanDevice& device, const std::string& shaderDirectory);
@@ -32,11 +33,7 @@ namespace z0 {
 
         std::vector<MeshInstance*> meshes {};
         std::shared_ptr<ShadowMap> shadowMap;
-
-        std::unique_ptr<VulkanShader> vertShader;
-        std::unique_ptr<VulkanShader> fragShader;
-        std::unique_ptr<VulkanDescriptorPool> globalPool {};
-        std::vector<std::unique_ptr<VulkanBuffer>> globalBuffers{MAX_FRAMES_IN_FLIGHT};
+        std::vector<std::unique_ptr<VulkanBuffer>> modelsBuffers{MAX_FRAMES_IN_FLIGHT};
 
         void update() override;
         void recordCommands(VkCommandBuffer commandBuffer) override;

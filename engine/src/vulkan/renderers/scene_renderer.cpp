@@ -97,7 +97,7 @@ namespace z0 {
 
     void SceneRenderer::loadShaders() {
         vertShader = createShader("default.vert", VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
-        fragShader = createShader("default.frag", VK_SHADER_STAGE_FRAGMENT_BIT, 0);
+        fragShader = createShader("quad.frag", VK_SHADER_STAGE_FRAGMENT_BIT, 0);
     }
 
     void SceneRenderer::drawFrame() {
@@ -115,6 +115,12 @@ namespace z0 {
             .view = currentCamera->getView(),
             .cameraPosition = currentCamera->getPosition(),
             .haveShadowMap = shadowMap != nullptr,
+        };
+        if (shadowMap != nullptr) {
+            glm::mat4 lightProjection = glm::perspective(glm::radians(shadowMap->getLight()->getOuterCutOff()), 1.0f, 0.1f, 100.0f);
+            glm::mat4 lightView = glm::lookAt(shadowMap->getLight()->getPosition(), glm::vec3(0.0f), glm::vec3(0, -1, 0));
+            globalUbo.lightSpace = lightProjection * lightView;
+            globalUbo.lightPos = shadowMap->getLight()->getPosition();
         };
         if (directionalLight != nullptr) {
             globalUbo.directionalLight = {
