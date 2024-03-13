@@ -8,6 +8,8 @@ project(ZeroZero)
 set(CMAKE_CXX_STANDARD 23)
 #set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
 set(Z0_ENGINE_DIR engine)
+set(Z0_SHADERS_BUILD_DIR ${Z0_ENGINE_DIR}/shaders)
+file(MAKE_DIRECTORY ${Z0_SHADERS_BUILD_DIR})
 add_compile_definitions(VULKAN_STATS)
 
 add_executable(${PROJECT_NAME}
@@ -79,8 +81,8 @@ add_executable(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME} PUBLIC ${Z0_ENGINE_DIR}/include)
 
 file(GLOB_RECURSE Z0_GLSL_SOURCE_FILES
-        "${Z0_ENGINE_DIR}/shaders/*.frag"
-        "${Z0_ENGINE_DIR}/shaders/*.vert"
+        "${Z0_SHADERS_BUILD_DIR}/*.frag"
+        "${Z0_SHADERS_BUILD_DIR}/*.vert"
 )
 add_shaders(${PROJECT_NAME} ${Z0_GLSL_SOURCE_FILES})
 
