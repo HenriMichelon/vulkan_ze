@@ -7,8 +7,8 @@ namespace z0 {
 
     SceneRenderer::SceneRenderer(VulkanDevice &dev,
                                  const std::string& sDir) :
-         VulkanRenderer{dev, sDir},
-         shadowMapRenderer{dev, sDir}
+         VulkanRenderer{dev, sDir}
+         //shadowMapRenderer{dev, sDir}
      {
          createImagesResources();
      }
@@ -22,9 +22,9 @@ namespace z0 {
         loadNode(rootNode);
         createImagesIndex(rootNode);
         createResources();
-        if (shadowMap != nullptr) {
-            shadowMapRenderer.loadScene(shadowMap, meshes);
-        }
+        /*if (shadowMap != nullptr) {
+            shadowMapRenderer.loadScene(rootNode);
+        }*/
     }
 
     void SceneRenderer::loadNode(std::shared_ptr<Node>& parent) {
@@ -48,9 +48,9 @@ namespace z0 {
         }
         if (auto omniLight = dynamic_cast<OmniLight *>(parent.get())) {
             omniLights.push_back(omniLight);
-            if (auto spotLight = dynamic_cast<SpotLight *>(parent.get())) {
+           /* if (auto spotLight = dynamic_cast<SpotLight *>(parent.get())) {
                 if (shadowMap == nullptr) shadowMap = std::make_shared<ShadowMap>(vulkanDevice, spotLight);
-            }
+            }*/
         }
         createImagesList(parent);
         for(auto& child: parent->getChildren()) {
@@ -101,9 +101,10 @@ namespace z0 {
     }
 
     void SceneRenderer::drawFrame() {
-        if (shadowMap != nullptr) {
+        /*if (shadowMap != nullptr) {
             shadowMapRenderer.drawFrame();
-        }
+            shadowMapRenderer.waitForFences();
+        }*/
         VulkanRenderer::drawFrame();
     }
 
@@ -114,14 +115,14 @@ namespace z0 {
             .projection = currentCamera->getProjection(),
             .view = currentCamera->getView(),
             .cameraPosition = currentCamera->getPosition(),
-            .haveShadowMap = shadowMap != nullptr,
+            .haveShadowMap = false, // shadowMap != nullptr,
         };
-        if (shadowMap != nullptr) {
+        /*if (shadowMap != nullptr) {
             glm::mat4 lightProjection = glm::perspective(glm::radians(shadowMap->getLight()->getOuterCutOff()), 1.0f, 0.1f, 100.0f);
             glm::mat4 lightView = glm::lookAt(shadowMap->getLight()->getPosition(), glm::vec3(0.0f), glm::vec3(0, -1, 0));
             globalUbo.lightSpace = lightProjection * lightView;
             globalUbo.lightPos = shadowMap->getLight()->getPosition();
-        };
+        };*/
         if (directionalLight != nullptr) {
             globalUbo.directionalLight = {
                 .direction = directionalLight->getDirection(),
@@ -205,6 +206,17 @@ namespace z0 {
             vkCmdSetScissorWithCount(commandBuffer, 1, &scissor);
         }
 
+    /*    vkCmdSetVertexInputEXT(commandBuffer, 0, nullptr, 0, nullptr);
+        vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_NONE);
+        std::array<uint32_t, 4> offsets = {
+                0, // globalBuffers
+                0,
+                0,
+                0, // pointLightBuffers
+        };
+        bindDescriptorSets(commandBuffer, offsets.size(), offsets.data());
+        vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+        return;*/
 
         std::vector<VkVertexInputBindingDescription2EXT> vertexBinding = VulkanModel::getBindingDescription();
         std::vector<VkVertexInputAttributeDescription2EXT> vertexAttribute = VulkanModel::getAttributeDescription();
@@ -241,6 +253,7 @@ namespace z0 {
             }
             modelIndex += 1;
         }
+
     }
 
     void SceneRenderer::createDescriptorSetLayout() {
@@ -294,9 +307,9 @@ namespace z0 {
                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
                         VK_SHADER_STAGE_FRAGMENT_BIT);
          //if (shadowMap != nullptr) {
-             builder.addBinding(5,
+             /*builder.addBinding(5,
                                 VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                VK_SHADER_STAGE_FRAGMENT_BIT);
+                                VK_SHADER_STAGE_FRAGMENT_BIT);*/
          //}
         globalSetLayout = builder.build();
 
@@ -315,14 +328,15 @@ namespace z0 {
                 .writeBuffer(2, &modelBufferInfo)
                 .writeBuffer(3, &surfaceBufferInfo)
                 .writeBuffer(4, &pointLightBufferInfo);
-            if (shadowMap != nullptr) {
+            /*if (shadowMap != nullptr) {
                 VkDescriptorImageInfo imageInfo {
                         .sampler = shadowMap->getSampler(),
                         .imageView = shadowMap->getImageView(),
                         .imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
                 };
+                //VkDescriptorImageInfo imageInfo = imagesInfo[1];
                 writer.writeImage(5, &imageInfo);
-            }
+            }*/
             if (!writer.build(descriptorSets[i])) {
                 die("Cannot allocate descriptor set");
             }

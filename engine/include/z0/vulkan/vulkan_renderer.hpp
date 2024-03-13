@@ -16,6 +16,7 @@ namespace z0 {
 
         virtual void drawFrame();
         void wait() { vkDeviceWaitIdle(device); };
+        void waitForFences();
         float getAspectRatio() const {
             return static_cast<float>(vulkanDevice.getSwapChainExtent().width) / static_cast<float>(vulkanDevice.getSwapChainExtent().height);
         }

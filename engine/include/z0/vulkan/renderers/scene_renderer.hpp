@@ -59,18 +59,16 @@ namespace z0 {
         void drawFrame() override;
         void loadScene(std::shared_ptr<Node>& rootNode);
 
-        std::shared_ptr<ShadowMap> shadowMap;
-        std::vector<MeshInstance*> meshes {};
-
     private:
         Camera* currentCamera{nullptr};
         DirectionalLight* directionalLight{nullptr};
         Environment* environement{nullptr};
         std::vector<OmniLight*> omniLights;
 
-        ShadowMapRenderer shadowMapRenderer;
+        //std::shared_ptr<ShadowMap> shadowMap;
+        //ShadowMapRenderer shadowMapRenderer;
 
-
+        std::vector<MeshInstance*> meshes {};
         std::map<Resource::rid_t, int32_t> imagesIndices {};
         std::unordered_set<std::shared_ptr<VulkanImage>> images {};
 

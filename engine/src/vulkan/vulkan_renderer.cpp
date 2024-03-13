@@ -113,9 +113,13 @@ namespace z0 {
         }
     }
 
+    void VulkanRenderer::waitForFences() {
+        vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+    }
+
     // https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Rendering_and_presentation
     void VulkanRenderer::drawFrame() {
-        vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+        waitForFences();
         uint32_t imageIndex;
 
         if (presentToSwapChain) {
@@ -136,7 +140,6 @@ namespace z0 {
         }
 
         vkResetFences(device, 1, &inFlightFences[currentFrame]);
-
         {
             vkResetCommandBuffer(commandBuffers[currentFrame], 0);
             const VkCommandBufferBeginInfo beginInfo{
@@ -155,8 +158,6 @@ namespace z0 {
                 die("failed to record command buffer!");
             }
         }
-
-
 
         if (presentToSwapChain) {
             const VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
