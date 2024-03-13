@@ -1,12 +1,12 @@
 #version 450
 layout (location = 0) out vec4 COLOR;
 
-in vec2 TexCoords;
+//in vec2 TexCoords;
 
-uniform sampler2D depthMap;
+//uniform sampler2D depthMap;
 
 void main()
 {
-    float depthValue = texture(depthMap, TexCoords).r;
-    FragColor = vec4(vec3(depthValue), 1.0);
+    //float depthValue = texture(depthMap, TexCoords).r;
+    //FragColor = vec4(vec3(depthValue), 1.0);
 }
