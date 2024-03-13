@@ -1,0 +1,41 @@
+name: ZeroZero
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Create shader build directory
+      run:
+          mkdir shaders
+
+    - name: Create .env file
+      uses: SpicyPizza/create-envfile@v2.0.3
+      with:
+        file_name: .env.cmake
+    
+    - name: Install Packages
+      uses: ConorMacBride/install-package@v1.1.0
+      with:
+        apt: libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl-dev
+      
+    - name: Install Vulkan SDK
+      uses: humbletim/install-vulkan-sdk@v1.1.1
+
+    - name: Configure CMake
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -D GLFW_BUILD_WAYLAND=false
+        
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+              

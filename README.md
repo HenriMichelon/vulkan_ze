@@ -12,3 +12,5 @@ This project uses the following Vulkan extensions :
 - This engine is not intended for general use
 
 Released under the [MIT license](https://raw.githubusercontent.com/HenriMichelon/zero_zero/main/LICENSE.txt).
+
+![example workflow](https://github.com/HenriMichelon/zero_zero/actions/workflows/main.yml/badge.svg)
