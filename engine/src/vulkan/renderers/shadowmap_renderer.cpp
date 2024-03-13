@@ -52,7 +52,34 @@ namespace z0 {
 
         vkCmdSetRasterizationSamplesEXT(commandBuffer, VK_SAMPLE_COUNT_1_BIT);
         vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
+        vkCmdSetDepthBiasEnable(commandBuffer, VK_TRUE);
         vkCmdSetDepthBias(commandBuffer, depthBiasConstant, 0.0f, depthBiasSlope);
+
+        {
+            const VkExtent2D extent = { shadowMap->size, shadowMap->size };
+            const VkViewport viewport{
+                    .x = 0.0f,
+                    .y = 0.0f,
+                    .width = static_cast<float>(extent.width),
+                    .height = static_cast<float>(extent.height),
+                    .minDepth = 0.0f,
+                    .maxDepth = 1.0f
+            };
+            vkCmdSetViewportWithCount(commandBuffer, 1, &viewport);
+            const VkRect2D scissor{
+                    .offset = {0, 0},
+                    .extent = extent
+            };
+            vkCmdSetScissorWithCount(commandBuffer, 1, &scissor);
+        }
+
+        std::vector<VkVertexInputBindingDescription2EXT> vertexBinding = VulkanModel::getBindingDescription();
+        std::vector<VkVertexInputAttributeDescription2EXT> vertexAttribute = VulkanModel::getAttributeDescription();
+        vkCmdSetVertexInputEXT(commandBuffer,
+                               vertexBinding.size(),
+                               vertexBinding.data(),
+                               vertexAttribute.size(),
+                               vertexAttribute.data());
 
         uint32_t modelIndex = 0;
         for (const auto&meshInstance: meshes) {

@@ -97,7 +97,7 @@ namespace z0 {
 
     void SceneRenderer::loadShaders() {
         vertShader = createShader("default.vert", VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
-        fragShader = createShader("quad.frag", VK_SHADER_STAGE_FRAGMENT_BIT, 0);
+        fragShader = createShader("default.frag", VK_SHADER_STAGE_FRAGMENT_BIT, 0);
     }
 
     void SceneRenderer::drawFrame() {
@@ -186,6 +186,33 @@ namespace z0 {
         vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
         bindShader(commandBuffer, *vertShader);
         bindShader(commandBuffer, *fragShader);
+
+        {
+            const VkExtent2D extent = vulkanDevice.getSwapChainExtent();
+            const VkViewport viewport{
+                    .x = 0.0f,
+                    .y = 0.0f,
+                    .width = static_cast<float>(extent.width),
+                    .height = static_cast<float>(extent.height),
+                    .minDepth = 0.0f,
+                    .maxDepth = 1.0f
+            };
+            vkCmdSetViewportWithCount(commandBuffer, 1, &viewport);
+            const VkRect2D scissor{
+                    .offset = {0, 0},
+                    .extent = extent
+            };
+            vkCmdSetScissorWithCount(commandBuffer, 1, &scissor);
+        }
+
+
+        std::vector<VkVertexInputBindingDescription2EXT> vertexBinding = VulkanModel::getBindingDescription();
+        std::vector<VkVertexInputAttributeDescription2EXT> vertexAttribute = VulkanModel::getAttributeDescription();
+        vkCmdSetVertexInputEXT(commandBuffer,
+                               vertexBinding.size(),
+                               vertexBinding.data(),
+                               vertexAttribute.size(),
+                               vertexAttribute.data());
 
         uint32_t modelIndex = 0;
         uint32_t surfaceIndex = 0;

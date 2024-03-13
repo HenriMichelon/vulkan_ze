@@ -11,5 +11,6 @@ layout (binding = 1) uniform ModelUBO {
 } model;
 
 void main() {
-    gl_Position = global.lightSpace *  model.matrix * vec4(position, 1.0);
+    vec4 globalPosition = model.matrix * vec4(position, 1.0);
+    gl_Position = global.lightSpace * globalPosition;
 }

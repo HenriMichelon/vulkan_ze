@@ -198,6 +198,7 @@ namespace z0 {
                 die("failed to present swap chain image!");
             }
         } else {
+            update();
             const VkSubmitInfo submitInfo{
                     .sType                  = VK_STRUCTURE_TYPE_SUBMIT_INFO,
                     .waitSemaphoreCount     = 0,
@@ -216,24 +217,6 @@ namespace z0 {
     void VulkanRenderer::setInitialState(VkCommandBuffer commandBuffer)
     {
         {
-            const VkExtent2D extent = vulkanDevice.getSwapChainExtent();
-            const VkViewport viewport{
-                .x = 0.0f,
-                .y = 0.0f,
-                .width = static_cast<float>(extent.width),
-                .height = static_cast<float>(extent.height),
-                .minDepth = 0.0f,
-                .maxDepth = 1.0f
-            };
-            vkCmdSetViewportWithCount(commandBuffer, 1, &viewport);
-            const VkRect2D scissor{
-                .offset = {0, 0},
-                .extent = extent
-            };
-            vkCmdSetScissorWithCount(commandBuffer, 1, &scissor);
-        }
-
-        {
             vkCmdSetRasterizerDiscardEnable(commandBuffer, VK_FALSE);
             const VkColorBlendEquationEXT colorBlendEquation{
                     .srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
@@ -245,14 +228,6 @@ namespace z0 {
             };
             vkCmdSetColorBlendEquationEXT(commandBuffer, 0, 1, &colorBlendEquation);
         }
-
-        std::vector<VkVertexInputBindingDescription2EXT> vertexBinding = VulkanModel::getBindingDescription();
-        std::vector<VkVertexInputAttributeDescription2EXT> vertexAttribute = VulkanModel::getAttributeDescription();
-        vkCmdSetVertexInputEXT(commandBuffer,
-                               vertexBinding.size(),
-                               vertexBinding.data(),
-                               vertexAttribute.size(),
-                               vertexAttribute.data());
 
         // Set the topology to triangles, don't restart primitives
         vkCmdSetPrimitiveTopologyEXT(commandBuffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
