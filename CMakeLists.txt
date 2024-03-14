@@ -1,3 +1,4 @@
+cmake_policy(SET CMP0002 NEW)
 set(Z0_ENGINE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/engine)
 set(Z0_SHADERS_DIR ${Z0_ENGINE_DIR}/shaders)
 set(Z0_SHADERS_BUILD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/shaders)
@@ -13,6 +14,12 @@ project(ZeroZero)
 set(CMAKE_CXX_STANDARD 23)
 #set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
 add_compile_definitions(VULKAN_STATS)
+
+file(GLOB_RECURSE Z0_GLSL_SOURCE_FILES
+		"${Z0_SHADERS_DIR}/*.frag"
+		"${Z0_SHADERS_DIR}/*.vert"
+)
+add_shaders(${PROJECT_NAME}_shaders ${Z0_GLSL_SOURCE_FILES})
 
 add_executable(${PROJECT_NAME}
         example/main.cpp
@@ -80,12 +87,8 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/resource.cpp
         ${Z0_ENGINE_DIR}/src/loader.cpp
 )
-target_include_directories(${PROJECT_NAME} PUBLIC ${Z0_ENGINE_DIR}/include)
+add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_shaders)
 
-file(GLOB_RECURSE Z0_GLSL_SOURCE_FILES
-	"${Z0_SHADERS_DIR}/*.frag"
-	"${Z0_SHADERS_DIR}/*.vert"
-)
-add_shaders(${PROJECT_NAME} ${Z0_GLSL_SOURCE_FILES})
+target_include_directories(${PROJECT_NAME} PUBLIC ${Z0_ENGINE_DIR}/include)
 
 include(cmake/libraries.cmake)
