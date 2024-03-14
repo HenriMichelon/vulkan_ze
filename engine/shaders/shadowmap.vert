@@ -1,16 +1,16 @@
 #version 450
 
-layout (location = 0) in vec3 position;
+layout(location = 0) in vec3 position;
 
-layout (binding = 0) uniform UBO {
-    mat4 depthMVP;
-    mat4 model;
-} ubo;
+layout (binding = 0) uniform GlobalUBO {
+    mat4 lightSpace;
+} global;
 
-out gl_PerVertex  {
-    vec4 gl_Position;
-};
+layout (binding = 1) uniform ModelUBO {
+    mat4 matrix;
+} model;
 
 void main() {
-    gl_Position =  ubo.depthMVP * ubo.model * vec4(position, 1.0);
+    vec4 globalPosition = model.matrix * vec4(position, 1.0);
+    gl_Position = global.lightSpace * globalPosition;
 }

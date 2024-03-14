@@ -64,13 +64,207 @@ namespace z0 {
         }
         createDevice();
         createSwapChain();
+
+        // Create command buffers
+        // https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Command_buffers
+        {
+            commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+            const VkCommandBufferAllocateInfo allocInfo{
+                .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+                .commandPool = commandPool,
+                .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+                .commandBufferCount = static_cast<uint32_t>(commandBuffers.size())
+            };
+            if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
+                die("failed to allocate command buffers!");
+            }
+        }
+
+        // Create sync objects
+        {
+            imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+            renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+            inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+            const VkSemaphoreCreateInfo semaphoreInfo{
+                .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
+            };
+            const VkFenceCreateInfo fenceInfo{
+                .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+                .flags = VK_FENCE_CREATE_SIGNALED_BIT
+            };
+            for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+                if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
+                    vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
+                    vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
+                    die("failed to create semaphores!");
+                }
+            }
+        }
     }
 
     VulkanDevice::~VulkanDevice() {
+        for (auto& renderer: renderers) {
+            renderer->cleanup();
+        }
+        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+            vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
+            vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
+            vkDestroyFence(device, inFlightFences[i], nullptr);
+        }
         cleanupSwapChain();
         vkDestroyCommandPool(device, commandPool, nullptr);
         vkDestroyDevice(device, nullptr);
         vkDestroySurfaceKHR(vulkanInstance.getInstance(), surface, nullptr);
+    }
+
+    void VulkanDevice::wait() {
+        vkDeviceWaitIdle(device);
+    }
+
+    void VulkanDevice::registerRenderer(const std::shared_ptr<VulkanRenderer>& renderer) {
+        renderers.push_back(renderer);
+    }
+
+    // https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Rendering_and_presentation
+    void VulkanDevice::drawFrame() {
+        vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+        uint32_t imageIndex;
+        VkResult result = vkAcquireNextImageKHR(device,
+                                                swapChain,
+                                                UINT64_MAX,
+                                                imageAvailableSemaphores[currentFrame],
+                                                VK_NULL_HANDLE,
+                                                &imageIndex);
+        if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+            recreateSwapChain();
+            for (auto& renderer: renderers) {
+                renderer->cleanupImagesResources();
+                renderer->createImagesResources();
+            }
+            return;
+        } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+            die("failed to acquire swap chain image!");
+        }
+        vkResetFences(device, 1, &inFlightFences[currentFrame]);
+
+        {
+            vkResetCommandBuffer(commandBuffers[currentFrame], 0);
+            const VkCommandBufferBeginInfo beginInfo{
+                    .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+                    .flags = 0,
+                    .pInheritanceInfo = nullptr
+            };
+            if (vkBeginCommandBuffer(commandBuffers[currentFrame], &beginInfo) != VK_SUCCESS) {
+                die("failed to begin recording command buffer!");
+            }
+            setInitialState(commandBuffers[currentFrame]);
+            for (auto& renderer: renderers) {
+                renderer->beginRendering(commandBuffers[currentFrame]);
+                renderer->recordCommands(commandBuffers[currentFrame], currentFrame);
+                renderer->endRendering(commandBuffers[currentFrame], swapChainImages[imageIndex]);
+            }
+            if (vkEndCommandBuffer(commandBuffers[currentFrame]) != VK_SUCCESS) {
+                die("failed to record command buffer!");
+            }
+        }
+
+        const VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
+        {
+            const VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
+            const VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+            for (auto& renderer: renderers) {
+                renderer->update(currentFrame);
+            }
+            const VkSubmitInfo submitInfo{
+                    .sType                  = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+                    .waitSemaphoreCount     = 1,
+                    .pWaitSemaphores        = waitSemaphores,
+                    .pWaitDstStageMask      = waitStages,
+                    .commandBufferCount     = 1,
+                    .pCommandBuffers        = &commandBuffers[currentFrame],
+                    .signalSemaphoreCount   = 1,
+                    .pSignalSemaphores      = signalSemaphores
+            };
+            if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
+                die("failed to submit draw command buffer!");
+            }
+        }
+
+        {
+            const VkSwapchainKHR swapChains[] = {swapChain};
+            const VkPresentInfoKHR presentInfo{
+                    .sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+                    .waitSemaphoreCount = 1,
+                    .pWaitSemaphores    = signalSemaphores,
+                    .swapchainCount     = 1,
+                    .pSwapchains        = swapChains,
+                    .pImageIndices      = &imageIndex,
+                    .pResults           = nullptr // Optional
+            };
+            VkResult result = vkQueuePresentKHR(presentQueue, &presentInfo);
+            if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || window.windowResized) {
+                recreateSwapChain();
+                for (auto& renderer: renderers) {
+                    renderer->cleanupImagesResources();
+                    renderer->createImagesResources();
+                }
+            } else if (result != VK_SUCCESS) {
+                die("failed to present swap chain image!");
+            }
+        }
+
+        currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+    }
+
+    // https://github.com/KhronosGroup/Vulkan-Samples/blob/main/samples/extensions/shader_object/shader_object.cpp
+    void VulkanDevice::setInitialState(VkCommandBuffer commandBuffer)
+    {
+        {
+            vkCmdSetRasterizerDiscardEnable(commandBuffer, VK_FALSE);
+            const VkColorBlendEquationEXT colorBlendEquation{
+                    .srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
+                    .dstColorBlendFactor = VK_BLEND_FACTOR_ZERO,
+                    .colorBlendOp = VK_BLEND_OP_ADD,
+                    .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
+                    .dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
+                    .alphaBlendOp = VK_BLEND_OP_ADD,
+            };
+            vkCmdSetColorBlendEquationEXT(commandBuffer, 0, 1, &colorBlendEquation);
+        }
+
+        // Set the topology to triangles, don't restart primitives
+        vkCmdSetPrimitiveTopologyEXT(commandBuffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+        vkCmdSetPrimitiveRestartEnableEXT(commandBuffer, VK_FALSE);
+        vkCmdSetRasterizationSamplesEXT(commandBuffer, samples);
+
+        const VkSampleMask sample_mask = 0xffffffff;
+        vkCmdSetSampleMaskEXT(commandBuffer, samples, &sample_mask);
+
+        // Do not use alpha to coverage or alpha to one because not using MSAA
+        vkCmdSetAlphaToCoverageEnableEXT(commandBuffer, VK_TRUE);
+
+        vkCmdSetPolygonModeEXT(commandBuffer, VK_POLYGON_MODE_FILL);
+
+        // Set front face, cull mode is set in build_command_buffers.
+        vkCmdSetFrontFace(commandBuffer, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+
+        // Set depth state, the depth write. Don't enable depth bounds, bias, or stencil test.
+        vkCmdSetDepthTestEnable(commandBuffer, VK_TRUE);
+        vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_LESS);
+        vkCmdSetDepthBoundsTestEnable(commandBuffer, VK_FALSE);
+        vkCmdSetDepthBiasEnable(commandBuffer, VK_FALSE);
+        vkCmdSetStencilTestEnable(commandBuffer, VK_FALSE);
+
+        // Do not enable logic op
+        vkCmdSetLogicOpEnableEXT(commandBuffer, VK_FALSE);
+
+        // Disable color blending
+        VkBool32 color_blend_enables[] = {VK_FALSE};
+        vkCmdSetColorBlendEnableEXT(commandBuffer, 0, 1, color_blend_enables);
+
+        // Use RGBA color write mask
+        VkColorComponentFlags color_component_flags[] = {VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_A_BIT};
+        vkCmdSetColorWriteMaskEXT(commandBuffer, 0, 1, color_component_flags);
     }
 
     void VulkanDevice::createDevice() {

@@ -25,19 +25,20 @@ namespace z0 {
                 window,
                 cfg.msaa != MSAA_DISABLED,
                 MSAA_VULKAN.at(cfg.msaa));
-        vulkanRenderer = std::make_unique<SceneRenderer>(*vulkanDevice, (cfg.appDir / "shaders").string());
+        sceneRenderer = std::make_shared<SceneRenderer>(*vulkanDevice, (cfg.appDir / "shaders").string());
+        vulkanDevice->registerRenderer(sceneRenderer);
     }
 
     Viewport::~Viewport() {
     }
 
     void Viewport::wait() {
-        vulkanRenderer->wait();
+        vulkanDevice->wait();
     }
 
     void Viewport::drawFrame() {
         window.process();
-        vulkanRenderer->drawFrame();
+        vulkanDevice->drawFrame();
     }
 
     MSAA Viewport::getMSAA() const {
@@ -49,10 +50,10 @@ namespace z0 {
     }
 
     float Viewport::getAspectRatio() const {
-        return vulkanRenderer->getAspectRatio();
+        return vulkanDevice->getAspectRatio();
     }
 
     void Viewport::loadScene(std::shared_ptr<Node>& rootNode) {
-        vulkanRenderer->loadScene(rootNode);
+        sceneRenderer->loadScene(rootNode);
     }
 }

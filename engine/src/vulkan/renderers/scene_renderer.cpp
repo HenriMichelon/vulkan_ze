@@ -6,25 +6,27 @@
 namespace z0 {
 
     SceneRenderer::SceneRenderer(VulkanDevice &dev,
-                                 const std::string& sDir) :
-         VulkanRenderer{dev, sDir},
-         shadowMapRenderer{dev, sDir}
+                                 std::string sDir) :
+            BaseRenderer{dev, sDir}
      {
          createImagesResources();
      }
 
-    SceneRenderer::~SceneRenderer() {
-        vkDeviceWaitIdle(device);
-        cleanupImagesResources();
+    void SceneRenderer::cleanup() {
+        images.clear();
+        pointLightBuffers.clear();
+        surfacesBuffers.clear();
+        modelsBuffers.clear();
+        BaseRenderer::cleanup();
     }
 
     void SceneRenderer::loadScene(std::shared_ptr<Node>& rootNode) {
         loadNode(rootNode);
         createImagesIndex(rootNode);
         createResources();
-        if (shadowMap != nullptr) {
-            shadowMapRenderer.loadScene(shadowMap, meshes);
-        }
+        /*if (shadowMap != nullptr) {
+            shadowMapRenderer.loadScene(rootNode);
+        }*/
     }
 
     void SceneRenderer::loadNode(std::shared_ptr<Node>& parent) {
@@ -48,9 +50,9 @@ namespace z0 {
         }
         if (auto omniLight = dynamic_cast<OmniLight *>(parent.get())) {
             omniLights.push_back(omniLight);
-            if (auto spotLight = dynamic_cast<SpotLight *>(parent.get())) {
+           /* if (auto spotLight = dynamic_cast<SpotLight *>(parent.get())) {
                 if (shadowMap == nullptr) shadowMap = std::make_shared<ShadowMap>(vulkanDevice, spotLight);
-            }
+            }*/
         }
         createImagesList(parent);
         for(auto& child: parent->getChildren()) {
@@ -100,22 +102,21 @@ namespace z0 {
         fragShader = createShader("default.frag", VK_SHADER_STAGE_FRAGMENT_BIT, 0);
     }
 
-    void SceneRenderer::drawFrame() {
-        if (shadowMap != nullptr) {
-            shadowMapRenderer.drawFrame();
-        }
-        VulkanRenderer::drawFrame();
-    }
-
-    void SceneRenderer::update() {
+    void SceneRenderer::update(uint32_t currentFrame) {
         if (meshes.empty() || currentCamera == nullptr) return;
 
         GobalUniformBufferObject globalUbo{
             .projection = currentCamera->getProjection(),
             .view = currentCamera->getView(),
             .cameraPosition = currentCamera->getPosition(),
-            .haveShadowMap = shadowMap != nullptr,
+            .haveShadowMap = false, // shadowMap != nullptr,
         };
+        /*if (shadowMap != nullptr) {
+            glm::mat4 lightProjection = glm::perspective(glm::radians(shadowMap->getLight()->getOuterCutOff()), 1.0f, 0.1f, 100.0f);
+            glm::mat4 lightView = glm::lookAt(shadowMap->getLight()->getPosition(), glm::vec3(0.0f), glm::vec3(0, -1, 0));
+            globalUbo.lightSpace = lightProjection * lightView;
+            globalUbo.lightPos = shadowMap->getLight()->getPosition();
+        };*/
         if (directionalLight != nullptr) {
             globalUbo.directionalLight = {
                 .direction = directionalLight->getDirection(),
@@ -128,7 +129,7 @@ namespace z0 {
             globalUbo.ambient = environement->getAmbientColorAndIntensity();
         }
         globalUbo.pointLightsCount = omniLights.size();
-        writeUniformBuffer(globalBuffers, &globalUbo);
+        writeUniformBuffer(globalBuffers, currentFrame, &globalUbo);
 
         auto pointLightsArray =  std::make_unique<PointLightUniform[]>(globalUbo.pointLightsCount);
         for(int i=0; i < globalUbo.pointLightsCount; i++) {
@@ -145,7 +146,7 @@ namespace z0 {
                 pointLightsArray[i].outerCutOff =spot->getOuterCutOff();
             }
         }
-        writeUniformBuffer(pointLightBuffers, pointLightsArray.get());
+        writeUniformBuffer(pointLightBuffers, currentFrame, pointLightsArray.get());
 
         uint32_t modelIndex = 0;
         uint32_t surfaceIndex = 0;
@@ -154,7 +155,7 @@ namespace z0 {
                 .matrix = meshInstance->getGlobalTransform(),
                 .normalMatrix = meshInstance->getGlobalNormalTransform(),
             };
-            writeUniformBuffer(modelsBuffers, &modelUbo, modelIndex);
+            writeUniformBuffer(modelsBuffers, currentFrame, &modelUbo, modelIndex);
             if (meshInstance->getMesh()->isValid()) {
                 for (const auto &surface: meshInstance->getMesh()->getSurfaces()) {
                     SurfaceUniformBufferObject surfaceUbo { };
@@ -167,7 +168,7 @@ namespace z0 {
                             surfaceUbo.specularIndex = imagesIndices[standardMaterial->specularTexture->getImage().getId()];
                         }
                     }
-                    writeUniformBuffer(surfacesBuffers, &surfaceUbo, surfaceIndex);
+                    writeUniformBuffer(surfacesBuffers, currentFrame, &surfaceUbo, surfaceIndex);
                     surfaceIndex += 1;
                 }
             }
@@ -175,11 +176,49 @@ namespace z0 {
         }
     }
 
-    void SceneRenderer::recordCommands(VkCommandBuffer commandBuffer) {
+    void SceneRenderer::recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) {
         if (meshes.empty() || currentCamera == nullptr) return;
         vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
         bindShader(commandBuffer, *vertShader);
         bindShader(commandBuffer, *fragShader);
+
+        {
+            const VkExtent2D extent = vulkanDevice.getSwapChainExtent();
+            const VkViewport viewport{
+                    .x = 0.0f,
+                    .y = 0.0f,
+                    .width = static_cast<float>(extent.width),
+                    .height = static_cast<float>(extent.height),
+                    .minDepth = 0.0f,
+                    .maxDepth = 1.0f
+            };
+            vkCmdSetViewportWithCount(commandBuffer, 1, &viewport);
+            const VkRect2D scissor{
+                    .offset = {0, 0},
+                    .extent = extent
+            };
+            vkCmdSetScissorWithCount(commandBuffer, 1, &scissor);
+        }
+
+    /*    vkCmdSetVertexInputEXT(commandBuffer, 0, nullptr, 0, nullptr);
+        vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_NONE);
+        std::array<uint32_t, 4> offsets = {
+                0, // globalBuffers
+                0,
+                0,
+                0, // pointLightBuffers
+        };
+        bindDescriptorSets(commandBuffer, offsets.size(), offsets.data());
+        vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+        return;*/
+
+        std::vector<VkVertexInputBindingDescription2EXT> vertexBinding = VulkanModel::getBindingDescription();
+        std::vector<VkVertexInputAttributeDescription2EXT> vertexAttribute = VulkanModel::getAttributeDescription();
+        vkCmdSetVertexInputEXT(commandBuffer,
+                               vertexBinding.size(),
+                               vertexBinding.data(),
+                               vertexAttribute.size(),
+                               vertexAttribute.data());
 
         uint32_t modelIndex = 0;
         uint32_t surfaceIndex = 0;
@@ -201,13 +240,14 @@ namespace z0 {
                         static_cast<uint32_t>(surfacesBuffers[currentFrame]->getAlignmentSize() * surfaceIndex),
                         0, // pointLightBuffers
                     };
-                    bindDescriptorSets(commandBuffer, offsets.size(), offsets.data());
+                    bindDescriptorSets(commandBuffer, currentFrame, offsets.size(), offsets.data());
                     mesh->_getModel()->draw(commandBuffer, surface->firstVertexIndex, surface->indexCount);
                     surfaceIndex += 1;
                 }
             }
             modelIndex += 1;
         }
+
     }
 
     void SceneRenderer::createDescriptorSetLayout() {
@@ -261,9 +301,9 @@ namespace z0 {
                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
                         VK_SHADER_STAGE_FRAGMENT_BIT);
          //if (shadowMap != nullptr) {
-             builder.addBinding(5,
+             /*builder.addBinding(5,
                                 VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                VK_SHADER_STAGE_FRAGMENT_BIT);
+                                VK_SHADER_STAGE_FRAGMENT_BIT);*/
          //}
         globalSetLayout = builder.build();
 
@@ -282,14 +322,15 @@ namespace z0 {
                 .writeBuffer(2, &modelBufferInfo)
                 .writeBuffer(3, &surfaceBufferInfo)
                 .writeBuffer(4, &pointLightBufferInfo);
-            if (shadowMap != nullptr) {
+            /*if (shadowMap != nullptr) {
                 VkDescriptorImageInfo imageInfo {
                         .sampler = shadowMap->getSampler(),
                         .imageView = shadowMap->getImageView(),
                         .imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
                 };
+                //VkDescriptorImageInfo imageInfo = imagesInfo[1];
                 writer.writeImage(5, &imageInfo);
-            }
+            }*/
             if (!writer.build(descriptorSets[i])) {
                 die("Cannot allocate descriptor set");
             }
@@ -362,7 +403,7 @@ namespace z0 {
     }
 
     // https://lesleylai.info/en/vk-khr-dynamic-rendering/
-    void SceneRenderer::beginRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
+    void SceneRenderer::beginRendering(VkCommandBuffer commandBuffer) {
         vulkanDevice.transitionImageLayout(commandBuffer,
                                            depthImage,
                                            depthFormat,
@@ -405,11 +446,11 @@ namespace z0 {
         vkCmdBeginRendering(commandBuffer, &renderingInfo);
     }
 
-    void SceneRenderer::endRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
+    void SceneRenderer::endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage) {
         vkCmdEndRendering(commandBuffer);
         vulkanDevice.transitionImageLayout(
                 commandBuffer,
-                vulkanDevice.getSwapChainImages()[imageIndex],
+                swapChainImage,
                 VK_FORMAT_UNDEFINED,
                 VK_IMAGE_LAYOUT_UNDEFINED,
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -420,7 +461,7 @@ namespace z0 {
             vkCmdBlitImage(commandBuffer,
                            colorImage,
                            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                           vulkanDevice.getSwapChainImages()[imageIndex],
+                           swapChainImage,
                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                            1,
                            &colorImageBlit,
@@ -437,7 +478,7 @@ namespace z0 {
             vkCmdResolveImage(commandBuffer,
                               colorImage,
                               VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                              vulkanDevice.getSwapChainImages()[imageIndex],
+                              swapChainImage,
                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                               1,
                               &imageResolve);
@@ -445,7 +486,7 @@ namespace z0 {
 
         vulkanDevice.transitionImageLayout(
                 commandBuffer,
-                vulkanDevice.getSwapChainImages()[imageIndex],
+                swapChainImage,
                 VK_FORMAT_UNDEFINED,
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);

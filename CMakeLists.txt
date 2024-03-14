@@ -1,3 +1,4 @@
+cmake_policy(SET CMP0002 NEW)
 set(Z0_ENGINE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/engine)
 set(Z0_SHADERS_DIR ${Z0_ENGINE_DIR}/shaders)
 set(Z0_SHADERS_BUILD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/shaders)
@@ -14,6 +15,12 @@ set(CMAKE_CXX_STANDARD 23)
 #set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
 add_compile_definitions(VULKAN_STATS)
 
+file(GLOB_RECURSE Z0_GLSL_SOURCE_FILES
+		"${Z0_SHADERS_DIR}/*.frag"
+		"${Z0_SHADERS_DIR}/*.vert"
+)
+add_shaders(${PROJECT_NAME}_shaders ${Z0_GLSL_SOURCE_FILES})
+
 add_executable(${PROJECT_NAME}
         example/main.cpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/window_helper.hpp
@@ -24,7 +31,8 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_shader.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_descriptors.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_instance.hpp
-        ${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/scene_renderer.hpp
+		${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/base_renderer.hpp
+		${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/scene_renderer.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/shadowmap_renderer.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/shadowmap.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_stats.hpp
@@ -56,13 +64,13 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_device.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_buffer.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_model.cpp
-        ${Z0_ENGINE_DIR}/src/vulkan/vulkan_renderer.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_shader.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_descriptors.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_instance.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_image.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_stats.cpp
-        ${Z0_ENGINE_DIR}/src/vulkan/renderers/scene_renderer.cpp
+		${Z0_ENGINE_DIR}/src/vulkan/renderers/base_renderer.cpp
+		${Z0_ENGINE_DIR}/src/vulkan/renderers/scene_renderer.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/renderers/shadowmap_renderer.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/renderers/shadowmap.cpp
         ${Z0_ENGINE_DIR}/src/nodes/node.cpp
@@ -80,12 +88,8 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/resource.cpp
         ${Z0_ENGINE_DIR}/src/loader.cpp
 )
-target_include_directories(${PROJECT_NAME} PUBLIC ${Z0_ENGINE_DIR}/include)
+add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_shaders)
 
-file(GLOB_RECURSE Z0_GLSL_SOURCE_FILES
-	"${Z0_SHADERS_DIR}/*.frag"
-        "${Z0_SHADERS_DIR}/*.vert"
-)
-add_shaders(${PROJECT_NAME} ${Z0_GLSL_SOURCE_FILES})
+target_include_directories(${PROJECT_NAME} PUBLIC ${Z0_ENGINE_DIR}/include)
 
 include(cmake/libraries.cmake)
