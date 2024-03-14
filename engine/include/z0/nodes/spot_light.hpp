@@ -8,8 +8,8 @@ namespace z0 {
     public:
         explicit SpotLight(const std::string name = "SpotLight"): OmniLight{name} {};
         explicit SpotLight(glm::vec3 lightDirection,
-                           float cutOff,
-                           float outerCutOff,
+                           float cutOffDegrees,
+                           float outerCutOffDegrees,
                            float linear,
                            float quadratic,
                            float attenuation = 1.0f,
@@ -23,9 +23,11 @@ namespace z0 {
         float getCutOff() const {return cutOff;}
         void setOuterCutOff(float outerCutOffDegrees);
         float getOuterCutOff() const {return outerCutOff;}
+        float getFov() const { return fov; }
 
     private:
         glm::vec3 direction{0.0f, 0.0f, 1.0f};
+        float fov{0.0f};
         float cutOff { glm::cos(glm::radians(10.f)) };
         float outerCutOff { glm::cos(glm::radians(15.f)) };
     };

@@ -122,7 +122,7 @@ namespace z0 {
     }
 
     void VulkanDevice::registerRenderer(const std::shared_ptr<VulkanRenderer>& renderer) {
-        renderers.push_back(renderer);
+        renderers.insert(renderers.begin(), renderer);
     }
 
     // https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Rendering_and_presentation

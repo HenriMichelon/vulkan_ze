@@ -20,10 +20,10 @@ public:
         directionalLight.setColorAndIntensity({1.0f, 1.0f, 1.0f, 0.2f});
         //addChild(directionalLight);
 
-        z0::SpotLight spotLight1{{-0.75, 1.0, 0.1},
+        z0::SpotLight spotLight1{{-0.75, .5, 0.1},
                                  45.0, 55.0,
                                  0.027, 0.0028};
-        spotLight1.setPosition({3.0, -5.0, 0.1});
+        spotLight1.setPosition({3.0, -6.0, 0.1});
         spotLight1.setColorAndIntensity({1.0f, 1.0f, 1.0f, 4.0f});
         addChild(spotLight1);
         light = z0::Loader::loadModelFromFile("models/light.glb", false);
@@ -35,16 +35,18 @@ public:
         addChild(model1);
 
         model2 = model1->duplicate();
-        model1->setScale(glm::vec3{.5});
-        model1->setPosition({0.0, -2.0, 0.0});
         addChild(model2);
+
+        model1->setScale(glm::vec3{.5});
+        model1->setPosition({0.0, -3.0, 0.0});
+        model2->setPosition({0.0, -1.0, 0.0});
 
         floor = z0::Loader::loadModelFromFile("models/floor.glb", false);
         floor->setPosition({0.0, 2.0, 0.0});
         addChild(floor);
 
         z0::Camera camera{};
-        camera.setPosition({ 0.0f, -2.0f, -10.0f});
+        camera.setPosition({ -2.0f, -1.0f, -10.0f});
         camera.setViewTarget({ 0.0f, 0.0f, 0.0f});
         //camera.setPosition(spotLight1.getPosition());
         //camera.setViewDirection(spotLight1.getDirection());

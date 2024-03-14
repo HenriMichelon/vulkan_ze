@@ -10,10 +10,10 @@ layout (location = 5) in vec3 LIGHT;
 
 layout (location = 0) out vec4 COLOR;
 
-//layout (binding = 5) uniform sampler2D shadowMap;
+layout (binding = 5) uniform sampler2D shadowMap;
 
 vec3 viewDir;
-/*const int enablePCF = 0;
+const int enablePCF = 0;
 
 float textureProj(vec4 shadowCoord, vec2 off)
 {
@@ -49,7 +49,7 @@ float filterPCF(vec4 sc)
         }
     }
     return shadowFactor / count;
-}*/
+}
 
 vec3 calcDirectionalLight(DirectionalLight light, vec3 color) {
     vec3 lightDir = normalize(-light.direction);
@@ -122,13 +122,13 @@ void main() {
     vec3 result = (ambient + diffuse) * material.albedoColor.rgb;
 
     // shadows
-    /*if (global.haveShadowMap) {
+    if (global.haveShadowMap) {
         float shadow = (enablePCF == 1) ? filterPCF(SHADOW_COORD / SHADOW_COORD.w) : textureProj(SHADOW_COORD / SHADOW_COORD.w, vec2(0.0));
         vec3 N = normalize(NORMAL);
         vec3 L = normalize(LIGHT);
         result = max(dot(N, L),  global.ambient.w) * result * shadow;
         //COLOR = vec4(vec3(shadow), 1.0);
-    }*/
+    }
     COLOR = vec4(result, 1.0);
 
 }

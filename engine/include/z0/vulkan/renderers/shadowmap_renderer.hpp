@@ -16,9 +16,9 @@ namespace z0 {
         };
 
         ShadowMapRenderer(VulkanDevice& device, const std::string& shaderDirectory);
-        ~ShadowMapRenderer();
 
         void loadScene(std::shared_ptr<ShadowMap>& shadowMap, std::vector<MeshInstance*>& meshes);
+        void cleanup() override;
 
     private:
         // Keep depth range as small as possible

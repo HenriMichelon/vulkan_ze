@@ -13,10 +13,11 @@ namespace z0 {
      {
      }
 
-    ShadowMapRenderer::~ShadowMapRenderer() {
-        vkDeviceWaitIdle(device);
+    void ShadowMapRenderer::cleanup() {
+        shadowMap.reset();
+        modelsBuffers.clear();
+        BaseRenderer::cleanup();
     }
-
     void ShadowMapRenderer::loadScene(std::shared_ptr<ShadowMap>& _shadowMap, std::vector<MeshInstance*>& _meshes) {
         meshes = _meshes;
         shadowMap = _shadowMap;
@@ -28,8 +29,8 @@ namespace z0 {
     }
 
     void ShadowMapRenderer::update(uint32_t currentFrame) {
-        glm::mat4 lightProjection = glm::perspective(glm::radians(shadowMap->getLight()->getOuterCutOff()), 1.0f, zNear, zFar);
-        glm::mat4 lightView = glm::lookAt(shadowMap->getLight()->getPosition(), glm::vec3(0.0f), glm::vec3(0, -1, 0));
+        glm::mat4 lightProjection = glm::perspective(shadowMap->getLight()->getFov(), 1.0f, zNear, zFar);
+        glm::mat4 lightView = glm::lookAt(shadowMap->getLight()->getPosition(), glm::vec3(0.0f), glm::vec3(0, 1, 0));
         GlobalUniformBufferObject globalUbo {
             .lightSpace = lightProjection * lightView
         };
@@ -58,17 +59,17 @@ namespace z0 {
         {
             const VkExtent2D extent = { shadowMap->size, shadowMap->size };
             const VkViewport viewport{
-                    .x = 0.0f,
-                    .y = 0.0f,
-                    .width = static_cast<float>(extent.width),
-                    .height = static_cast<float>(extent.height),
-                    .minDepth = 0.0f,
-                    .maxDepth = 1.0f
+                .x = 0.0f,
+                .y = 0.0f,
+                .width = static_cast<float>(extent.width),
+                .height = static_cast<float>(extent.height),
+                .minDepth = 0.0f,
+                .maxDepth = 1.0f
             };
             vkCmdSetViewportWithCount(commandBuffer, 1, &viewport);
             const VkRect2D scissor{
-                    .offset = {0, 0},
-                    .extent = extent
+                .offset = {0, 0},
+                .extent = extent
             };
             vkCmdSetScissorWithCount(commandBuffer, 1, &scissor);
         }
@@ -146,11 +147,11 @@ namespace z0 {
                                            shadowMap->getImage(),
                                            shadowMap->format,
                                            VK_IMAGE_LAYOUT_UNDEFINED,
-                                           VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
+                                           VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
         const VkRenderingAttachmentInfo depthAttachmentInfo{
                 .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
                 .imageView = shadowMap->getImageView(),
-                .imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+                .imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                 .resolveMode = VK_RESOLVE_MODE_NONE,
                 .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
                 .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
@@ -172,6 +173,30 @@ namespace z0 {
 
     void ShadowMapRenderer::endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage) {
         vkCmdEndRendering(commandBuffer);
+
+        VkImageMemoryBarrier barrier = {};
+        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        barrier.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        barrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+        barrier.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.image = shadowMap->getImage();
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        barrier.subresourceRange.baseMipLevel = 0;
+        barrier.subresourceRange.levelCount = 1;
+        barrier.subresourceRange.baseArrayLayer = 0;
+        barrier.subresourceRange.layerCount = 1;
+
+        vkCmdPipelineBarrier(
+                commandBuffer,
+                VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, // After depth writes
+                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, // Before depth reads in the shader
+                0, // No special flags
+                0, nullptr, // No memory barriers
+                0, nullptr, // No buffer barriers
+                1, &barrier); // The image barrier
     }
 
     void ShadowMapRenderer::createImagesResources() {
@@ -179,7 +204,7 @@ namespace z0 {
     }
 
     void ShadowMapRenderer::cleanupImagesResources() {
-        shadowMap->cleanupImagesResources();
+        if (shadowMap != nullptr) shadowMap->cleanupImagesResources();
     }
 
 

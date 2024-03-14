@@ -51,10 +51,16 @@ namespace z0 {
     }
 
     void ShadowMap::cleanupImagesResources() {
-        vkDestroySampler(vulkanDevice.getDevice(), sampler, nullptr);
-        vkDestroyImageView(vulkanDevice.getDevice(), imageView, nullptr);
-        vkDestroyImage(vulkanDevice.getDevice(), image, nullptr);
-        vkFreeMemory(vulkanDevice.getDevice(), imageMemory, nullptr);
+        if (imageMemory != VK_NULL_HANDLE) {
+            vkDestroySampler(vulkanDevice.getDevice(), sampler, nullptr);
+            vkDestroyImageView(vulkanDevice.getDevice(), imageView, nullptr);
+            vkDestroyImage(vulkanDevice.getDevice(), image, nullptr);
+            vkFreeMemory(vulkanDevice.getDevice(), imageMemory, nullptr);
+            sampler = VK_NULL_HANDLE;
+            imageView = VK_NULL_HANDLE;
+            image = VK_NULL_HANDLE;
+            imageMemory = VK_NULL_HANDLE;
+        }
     }
 
 

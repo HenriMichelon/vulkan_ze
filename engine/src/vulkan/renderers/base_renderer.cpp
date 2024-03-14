@@ -21,7 +21,10 @@ namespace z0 {
         globalBuffers.clear();
         if (vertShader != nullptr) vertShader.reset();
         if (fragShader != nullptr) fragShader.reset();
-        if (pipelineLayout != VK_NULL_HANDLE) vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+        if (pipelineLayout != VK_NULL_HANDLE) {
+            vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+            pipelineLayout = VK_NULL_HANDLE;
+        }
         globalSetLayout.reset();
         globalPool.reset();
     }

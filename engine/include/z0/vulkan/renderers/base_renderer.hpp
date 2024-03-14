@@ -17,6 +17,7 @@ namespace z0 {
     protected:
         VkDevice device;
         VulkanDevice& vulkanDevice;
+        std::string shaderDirectory;
         VkPipelineLayout pipelineLayout { VK_NULL_HANDLE };
         std::vector<VkDescriptorSet> descriptorSets{MAX_FRAMES_IN_FLIGHT};
         std::unique_ptr<VulkanDescriptorSetLayout> globalSetLayout {};
@@ -45,7 +46,6 @@ namespace z0 {
                                                    VkShaderStageFlags next_stage);
 
     private:
-        std::string shaderDirectory;
 
         void buildShader(VulkanShader& shader);
         void createPipelineLayout();

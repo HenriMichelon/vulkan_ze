@@ -3,8 +3,8 @@
 namespace z0 {
 
     SpotLight::SpotLight(glm::vec3 lightDirection,
-            float _cutOff,
-            float _outerCutOff,
+            float cutOffDegrees,
+            float outerCutOffDegrees,
             float linear,
             float quadratic,
             float attenuation,
@@ -13,8 +13,9 @@ namespace z0 {
             const std::string nodeName):
             OmniLight{linear, quadratic, attenuation, color, specular, nodeName},
             direction{lightDirection},
-            cutOff{glm::cos(glm::radians(_cutOff))},
-            outerCutOff{glm::cos(glm::radians(_outerCutOff))}
+            fov{glm::radians(outerCutOffDegrees)},
+            cutOff{glm::cos(glm::radians(cutOffDegrees))},
+            outerCutOff{glm::cos(fov)}
     {
     }
 
@@ -23,7 +24,8 @@ namespace z0 {
     }
 
     void SpotLight::setOuterCutOff(float outerCutOffDegrees) {
-        SpotLight::outerCutOff = glm::cos(glm::radians(outerCutOffDegrees));
+        fov = glm::radians(outerCutOffDegrees);
+        SpotLight::outerCutOff = glm::cos(fov);
     }
 
 }
