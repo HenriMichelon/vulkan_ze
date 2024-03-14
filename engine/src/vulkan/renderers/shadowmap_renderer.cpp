@@ -9,7 +9,7 @@ namespace z0 {
 
     ShadowMapRenderer::ShadowMapRenderer(VulkanDevice &dev,
                                          const std::string& sDir) :
-         VulkanRenderer{dev, sDir, false}
+            BaseRenderer{dev, sDir}
      {
      }
 
@@ -27,25 +27,25 @@ namespace z0 {
         vertShader = createShader("shadowmap.vert", VK_SHADER_STAGE_VERTEX_BIT, 0);
     }
 
-    void ShadowMapRenderer::update() {
+    void ShadowMapRenderer::update(uint32_t currentFrame) {
         glm::mat4 lightProjection = glm::perspective(glm::radians(shadowMap->getLight()->getOuterCutOff()), 1.0f, zNear, zFar);
         glm::mat4 lightView = glm::lookAt(shadowMap->getLight()->getPosition(), glm::vec3(0.0f), glm::vec3(0, -1, 0));
         GlobalUniformBufferObject globalUbo {
             .lightSpace = lightProjection * lightView
         };
-        writeUniformBuffer(globalBuffers, &globalUbo);
+        writeUniformBuffer(globalBuffers, currentFrame, &globalUbo);
 
         uint32_t modelIndex = 0;
         for (const auto&meshInstance: meshes) {
             ModelUniformBufferObject modelUbo{
                 .matrix = meshInstance->getGlobalTransform(),
             };
-            writeUniformBuffer(modelsBuffers, &modelUbo, modelIndex);
+            writeUniformBuffer(modelsBuffers, currentFrame, &modelUbo, modelIndex);
             modelIndex += 1;
         }
     }
 
-    void ShadowMapRenderer::recordCommands(VkCommandBuffer commandBuffer) {
+    void ShadowMapRenderer::recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) {
         bindShader(commandBuffer, *vertShader);
         VkShaderStageFlagBits stageFlagBits{VK_SHADER_STAGE_FRAGMENT_BIT};
         vkCmdBindShadersEXT(commandBuffer, 1, &stageFlagBits, VK_NULL_HANDLE);
@@ -98,7 +98,7 @@ namespace z0 {
                         0, // globalBuffers
                         static_cast<uint32_t>(modelsBuffers[currentFrame]->getAlignmentSize() * modelIndex),
                     };
-                    bindDescriptorSets(commandBuffer, offsets.size(), offsets.data());
+                    bindDescriptorSets(commandBuffer, currentFrame, offsets.size(), offsets.data());
                     mesh->_getModel()->draw(commandBuffer, surface->firstVertexIndex, surface->indexCount);
                 }
             }
@@ -141,7 +141,7 @@ namespace z0 {
         }
     }
 
-    void ShadowMapRenderer::beginRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
+    void ShadowMapRenderer::beginRendering(VkCommandBuffer commandBuffer) {
         vulkanDevice.transitionImageLayout(commandBuffer,
                                            shadowMap->getImage(),
                                            shadowMap->format,
@@ -170,7 +170,7 @@ namespace z0 {
         vkCmdBeginRendering(commandBuffer, &renderingInfo);
     }
 
-    void ShadowMapRenderer::endRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
+    void ShadowMapRenderer::endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage) {
         vkCmdEndRendering(commandBuffer);
     }
 

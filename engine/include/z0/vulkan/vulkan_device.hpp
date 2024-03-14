@@ -2,12 +2,15 @@
 
 #include "z0/vulkan/vulkan_instance.hpp"
 #include "z0/vulkan/window_helper.hpp"
+#include "z0/vulkan/vulkan_renderer.hpp"
 
 #include <memory>
 #include <optional>
 #include <vector>
 
 namespace z0 {
+
+    const int MAX_FRAMES_IN_FLIGHT = 2;
 
     // used for findQueueFamilies()
     struct QueueFamilyIndices {
@@ -45,9 +48,11 @@ namespace z0 {
         std::vector<VkImageView>& getSwapChainImageViews() { return swapChainImageViews; }
         VkPhysicalDeviceProperties getDeviceProperties() const { return deviceProperties; }
         WindowHelper& getWindowHelper() { return window; }
+        float getAspectRatio() const {return static_cast<float>(swapChainExtent.width) / static_cast<float>(swapChainExtent.height);}
 
-        // Recreation of the swap chain in case of window resizing/minimizing
-        void recreateSwapChain();
+        void drawFrame();
+        void wait();
+        void registerRenderer(const std::shared_ptr<VulkanRenderer>& renderer);
 
         VkCommandBuffer beginSingleTimeCommands();
         void endSingleTimeCommands(VkCommandBuffer commandBuffer);
@@ -71,8 +76,10 @@ namespace z0 {
         // Find a suitable IMAGE_TILING format (for the Depth buffering image)
         VkFormat findImageTilingSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
+
     private:
         VulkanInstance& vulkanInstance;
+        std::vector<std::shared_ptr<VulkanRenderer>> renderers;
 
         // Physical & logical device management
         WindowHelper &window;
@@ -85,6 +92,14 @@ namespace z0 {
         VkPhysicalDeviceProperties deviceProperties;
         void createDevice();
 
+        // Drawing a frame
+        uint32_t currentFrame = 0;
+        std::vector<VkCommandBuffer> commandBuffers;
+        std::vector<VkSemaphore> imageAvailableSemaphores;
+        std::vector<VkSemaphore> renderFinishedSemaphores;
+        std::vector<VkFence> inFlightFences;
+        void setInitialState(VkCommandBuffer commandBuffer);
+
         // Swap chain management
         VkSwapchainKHR swapChain;
         std::vector<VkImage> swapChainImages;
@@ -94,6 +109,7 @@ namespace z0 {
         std::shared_ptr<VkSwapchainKHR> oldSwapChain;
         void createSwapChain();
         void cleanupSwapChain();
+        void recreateSwapChain();
 
         // MSAA
         VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT;

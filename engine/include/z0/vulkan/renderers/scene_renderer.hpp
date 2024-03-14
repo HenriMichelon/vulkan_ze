@@ -1,6 +1,6 @@
 #pragma once
 
-#include "z0/vulkan/vulkan_renderer.hpp"
+#include "base_renderer.hpp"
 #include "z0/vulkan/renderers/shadowmap_renderer.hpp"
 #include "z0/nodes/mesh_instance.hpp"
 #include "z0/nodes/camera.hpp"
@@ -11,7 +11,7 @@
 
 namespace z0 {
 
-    class SceneRenderer: public VulkanRenderer {
+    class SceneRenderer: public BaseRenderer {
     public:
         struct DirectionalLightUniform {
             alignas(16) glm::vec3 direction = { 0.0f, 0.0f, 0.0f };
@@ -53,11 +53,10 @@ namespace z0 {
             alignas(4) float shininess{32.0f};
         };
 
-        SceneRenderer(VulkanDevice& device, const std::string& shaderDirectory);
-        ~SceneRenderer();
+        SceneRenderer(VulkanDevice& device, std::string shaderDirectory);
 
-        void drawFrame() override;
         void loadScene(std::shared_ptr<Node>& rootNode);
+        void cleanup() override;
 
     private:
         Camera* currentCamera{nullptr};
@@ -66,7 +65,6 @@ namespace z0 {
         std::vector<OmniLight*> omniLights;
 
         //std::shared_ptr<ShadowMap> shadowMap;
-        //ShadowMapRenderer shadowMapRenderer;
 
         std::vector<MeshInstance*> meshes {};
         std::map<Resource::rid_t, int32_t> imagesIndices {};
@@ -89,14 +87,14 @@ namespace z0 {
         VkImageBlit colorImageBlit{};
         VkImageResolve colorImageResolve{};
 
-        void update() override;
-        void recordCommands(VkCommandBuffer commandBuffer) override;
+        void update(uint32_t currentFrame) override;
+        void recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) override;
         void createDescriptorSetLayout() override;
         void loadShaders() override;
         void createImagesResources() override;
         void cleanupImagesResources() override;
-        void beginRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) override;
-        void endRendering(VkCommandBuffer commandBuffer,uint32_t imageIndex) override;
+        void beginRendering(VkCommandBuffer commandBuffer) override;
+        void endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage) override;
 
         void loadNode(std::shared_ptr<Node>& parent);
         void createImagesList(std::shared_ptr<Node>& node);

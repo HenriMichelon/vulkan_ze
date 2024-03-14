@@ -6,16 +6,18 @@
 namespace z0 {
 
     SceneRenderer::SceneRenderer(VulkanDevice &dev,
-                                 const std::string& sDir) :
-         VulkanRenderer{dev, sDir}
-         //shadowMapRenderer{dev, sDir}
+                                 std::string sDir) :
+            BaseRenderer{dev, sDir}
      {
          createImagesResources();
      }
 
-    SceneRenderer::~SceneRenderer() {
-        vkDeviceWaitIdle(device);
-        cleanupImagesResources();
+    void SceneRenderer::cleanup() {
+        images.clear();
+        pointLightBuffers.clear();
+        surfacesBuffers.clear();
+        modelsBuffers.clear();
+        BaseRenderer::cleanup();
     }
 
     void SceneRenderer::loadScene(std::shared_ptr<Node>& rootNode) {
@@ -100,15 +102,7 @@ namespace z0 {
         fragShader = createShader("default.frag", VK_SHADER_STAGE_FRAGMENT_BIT, 0);
     }
 
-    void SceneRenderer::drawFrame() {
-        /*if (shadowMap != nullptr) {
-            shadowMapRenderer.drawFrame();
-            shadowMapRenderer.waitForFences();
-        }*/
-        VulkanRenderer::drawFrame();
-    }
-
-    void SceneRenderer::update() {
+    void SceneRenderer::update(uint32_t currentFrame) {
         if (meshes.empty() || currentCamera == nullptr) return;
 
         GobalUniformBufferObject globalUbo{
@@ -135,7 +129,7 @@ namespace z0 {
             globalUbo.ambient = environement->getAmbientColorAndIntensity();
         }
         globalUbo.pointLightsCount = omniLights.size();
-        writeUniformBuffer(globalBuffers, &globalUbo);
+        writeUniformBuffer(globalBuffers, currentFrame, &globalUbo);
 
         auto pointLightsArray =  std::make_unique<PointLightUniform[]>(globalUbo.pointLightsCount);
         for(int i=0; i < globalUbo.pointLightsCount; i++) {
@@ -152,7 +146,7 @@ namespace z0 {
                 pointLightsArray[i].outerCutOff =spot->getOuterCutOff();
             }
         }
-        writeUniformBuffer(pointLightBuffers, pointLightsArray.get());
+        writeUniformBuffer(pointLightBuffers, currentFrame, pointLightsArray.get());
 
         uint32_t modelIndex = 0;
         uint32_t surfaceIndex = 0;
@@ -161,7 +155,7 @@ namespace z0 {
                 .matrix = meshInstance->getGlobalTransform(),
                 .normalMatrix = meshInstance->getGlobalNormalTransform(),
             };
-            writeUniformBuffer(modelsBuffers, &modelUbo, modelIndex);
+            writeUniformBuffer(modelsBuffers, currentFrame, &modelUbo, modelIndex);
             if (meshInstance->getMesh()->isValid()) {
                 for (const auto &surface: meshInstance->getMesh()->getSurfaces()) {
                     SurfaceUniformBufferObject surfaceUbo { };
@@ -174,7 +168,7 @@ namespace z0 {
                             surfaceUbo.specularIndex = imagesIndices[standardMaterial->specularTexture->getImage().getId()];
                         }
                     }
-                    writeUniformBuffer(surfacesBuffers, &surfaceUbo, surfaceIndex);
+                    writeUniformBuffer(surfacesBuffers, currentFrame, &surfaceUbo, surfaceIndex);
                     surfaceIndex += 1;
                 }
             }
@@ -182,7 +176,7 @@ namespace z0 {
         }
     }
 
-    void SceneRenderer::recordCommands(VkCommandBuffer commandBuffer) {
+    void SceneRenderer::recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) {
         if (meshes.empty() || currentCamera == nullptr) return;
         vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
         bindShader(commandBuffer, *vertShader);
@@ -246,7 +240,7 @@ namespace z0 {
                         static_cast<uint32_t>(surfacesBuffers[currentFrame]->getAlignmentSize() * surfaceIndex),
                         0, // pointLightBuffers
                     };
-                    bindDescriptorSets(commandBuffer, offsets.size(), offsets.data());
+                    bindDescriptorSets(commandBuffer, currentFrame, offsets.size(), offsets.data());
                     mesh->_getModel()->draw(commandBuffer, surface->firstVertexIndex, surface->indexCount);
                     surfaceIndex += 1;
                 }
@@ -409,7 +403,7 @@ namespace z0 {
     }
 
     // https://lesleylai.info/en/vk-khr-dynamic-rendering/
-    void SceneRenderer::beginRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
+    void SceneRenderer::beginRendering(VkCommandBuffer commandBuffer) {
         vulkanDevice.transitionImageLayout(commandBuffer,
                                            depthImage,
                                            depthFormat,
@@ -452,11 +446,11 @@ namespace z0 {
         vkCmdBeginRendering(commandBuffer, &renderingInfo);
     }
 
-    void SceneRenderer::endRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
+    void SceneRenderer::endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage) {
         vkCmdEndRendering(commandBuffer);
         vulkanDevice.transitionImageLayout(
                 commandBuffer,
-                vulkanDevice.getSwapChainImages()[imageIndex],
+                swapChainImage,
                 VK_FORMAT_UNDEFINED,
                 VK_IMAGE_LAYOUT_UNDEFINED,
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -467,7 +461,7 @@ namespace z0 {
             vkCmdBlitImage(commandBuffer,
                            colorImage,
                            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                           vulkanDevice.getSwapChainImages()[imageIndex],
+                           swapChainImage,
                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                            1,
                            &colorImageBlit,
@@ -484,7 +478,7 @@ namespace z0 {
             vkCmdResolveImage(commandBuffer,
                               colorImage,
                               VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                              vulkanDevice.getSwapChainImages()[imageIndex],
+                              swapChainImage,
                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                               1,
                               &imageResolve);
@@ -492,7 +486,7 @@ namespace z0 {
 
         vulkanDevice.transitionImageLayout(
                 commandBuffer,
-                vulkanDevice.getSwapChainImages()[imageIndex],
+                swapChainImage,
                 VK_FORMAT_UNDEFINED,
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);

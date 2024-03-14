@@ -31,7 +31,8 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_shader.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_descriptors.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_instance.hpp
-        ${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/scene_renderer.hpp
+		${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/base_renderer.hpp
+		${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/scene_renderer.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/shadowmap_renderer.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/shadowmap.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_stats.hpp
@@ -63,13 +64,13 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_device.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_buffer.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_model.cpp
-        ${Z0_ENGINE_DIR}/src/vulkan/vulkan_renderer.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_shader.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_descriptors.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_instance.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_image.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_stats.cpp
-        ${Z0_ENGINE_DIR}/src/vulkan/renderers/scene_renderer.cpp
+		${Z0_ENGINE_DIR}/src/vulkan/renderers/base_renderer.cpp
+		${Z0_ENGINE_DIR}/src/vulkan/renderers/scene_renderer.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/renderers/shadowmap_renderer.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/renderers/shadowmap.cpp
         ${Z0_ENGINE_DIR}/src/nodes/node.cpp

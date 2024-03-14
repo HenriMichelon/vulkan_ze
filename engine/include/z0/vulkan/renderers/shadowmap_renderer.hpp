@@ -1,12 +1,12 @@
 #pragma once
 
-#include "z0/vulkan/vulkan_renderer.hpp"
+#include "base_renderer.hpp"
 #include "z0/vulkan/renderers/shadowmap.hpp"
 #include "z0/nodes/mesh_instance.hpp"
 
 namespace z0 {
 
-    class ShadowMapRenderer: public VulkanRenderer {
+    class ShadowMapRenderer: public BaseRenderer {
     public:
         struct GlobalUniformBufferObject {
             glm::mat4 lightSpace;
@@ -35,14 +35,14 @@ namespace z0 {
         std::shared_ptr<ShadowMap> shadowMap;
         std::vector<std::unique_ptr<VulkanBuffer>> modelsBuffers{MAX_FRAMES_IN_FLIGHT};
 
-        void update() override;
-        void recordCommands(VkCommandBuffer commandBuffer) override;
+        void update(uint32_t currentFrame) override;
+        void recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) override;
         void createDescriptorSetLayout() override;
         void loadShaders() override;
         void createImagesResources() override;
         void cleanupImagesResources() override;
-        void beginRendering(VkCommandBuffer commandBuffer, uint32_t imageIndex) override;
-        void endRendering(VkCommandBuffer commandBuffer,uint32_t imageIndex) override;
+        void beginRendering(VkCommandBuffer commandBuffer) override;
+        void endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage) override;
 
     public:
         ShadowMapRenderer(const ShadowMapRenderer&) = delete;
