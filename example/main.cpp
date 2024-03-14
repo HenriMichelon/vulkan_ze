@@ -13,7 +13,7 @@ public:
 
     void onReady() override {
         z0::Environment environment{};
-        environment.setAmbientColorAndIntensity({1.0f, 1.0f, 1.0f, 1.1f});
+        environment.setAmbientColorAndIntensity({1.0f, 1.0f, 1.0f, 0.02f});
         addChild(environment);
 
         z0::DirectionalLight directionalLight{glm::vec3{0.0f, .5f, 0.5f}};
@@ -75,7 +75,7 @@ int main() {
         .windowMode = z0::WINDOW_MODE_WINDOWED,
         .windowWidth = 1024,
         .windowHeight = 768,
-        .msaa = z0::MSAA_DISABLED
+        .msaa = z0::MSAA_AUTO
     };
     z0::MainLoop app{applicationConfig};
     app.start(std::make_shared<z0::Scene>(std::make_shared<RootNode>()));

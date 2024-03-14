@@ -6,14 +6,14 @@ layout (location = 0) in vec2 UV;
 layout (location = 1) in vec3 NORMAL;
 layout (location = 2) in vec3 POSITION;
 layout (location = 4) in vec4 SHADOW_COORD;
-layout (location = 5) in vec3 LIGHT;
+/*layout (location = 5) in vec3 LIGHT;*/
 
 layout (location = 0) out vec4 COLOR;
 
-layout (binding = 5) uniform sampler2D shadowMap;
+layout (binding = 5) uniform sampler2DMS shadowMap;
 
 vec3 viewDir;
-const int enablePCF = 0;
+/*const int enablePCF = 0;
 
 float textureProj(vec4 shadowCoord, vec2 off)
 {
@@ -50,7 +50,7 @@ float filterPCF(vec4 sc)
     }
     return shadowFactor / count;
 }
-
+*/
 vec3 calcDirectionalLight(DirectionalLight light, vec3 color) {
     vec3 lightDir = normalize(-light.direction);
     float diff = max(dot(NORMAL, lightDir), 0.0);
@@ -104,6 +104,26 @@ vec3 calcPointLight(PointLight light, vec3 color) {
     return vec3(0, 0, 0);
 }
 
+// https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
+float ShadowCalculation()
+{
+    const vec3 posLightSpaceNDC  = SHADOW_COORD.xyz/SHADOW_COORD.w;    // for orto matrix, we don't need perspective division, you can remove it if you want; this is general case;
+    const vec2 shadowTexCoord    = posLightSpaceNDC.xy*0.5f + vec2(0.5f, 0.5f);  // just shift coords from [-1,1] to [0,1]
+
+    int samples = textureSamples(shadowMap);
+    ivec2 texelCoords = ivec2(textureSize(shadowMap) * shadowTexCoord);
+
+    vec4 color = vec4(0.0);
+    for (int i = 0; i < samples; ++i) {
+        color += texelFetch(shadowMap, texelCoords, i); // Fetch each sample
+    }
+    color /= float(samples); // Average the samples to get the final color
+    bool shadow = (posLightSpaceNDC.z < color.x + 0.001f);
+
+    const bool outOfView = (shadowTexCoord.x < 0.001f || shadowTexCoord.x > 0.999f || shadowTexCoord.y < 0.001f || shadowTexCoord.y > 0.999f);
+    return (shadow || outOfView) ? 1.0f : 0.0f;
+}
+
 void main() {
     viewDir = normalize(global.cameraPosition - POSITION);
     vec3 color = material.albedoColor.rgb;
@@ -122,20 +142,15 @@ void main() {
     vec3 result = (ambient + diffuse) * material.albedoColor.rgb;
 
     // shadows
-    //if (global.haveShadowMap)
+    if (global.haveShadowMap)
     {
-        /*const vec4 posLightClipSpace = global.lightSpace*vec4(POSITION, 1.0f); //
-        const vec3 posLightSpaceNDC  = posLightClipSpace.xyz/posLightClipSpace.w;    // for orto matrix, we don't need perspective division, you can remove it if you want; this is general case;
-        const vec2 shadowTexCoord    = posLightSpaceNDC.xy*0.5f + vec2(0.5f, 0.5f);  // just shift coords from [-1,1] to [0,1]
+        float shadow = ShadowCalculation();
+        result = (ambient + shadow) * result;
 
-        const bool  outOfView = (shadowTexCoord.x < 0.001f || shadowTexCoord.x > 0.999f || shadowTexCoord.y < 0.001f || shadowTexCoord.y > 0.999f);
-        const float shadow    = ((posLightSpaceNDC.z < textureLod(shadowMap, shadowTexCoord, 0).x + 0.001f) || outOfView) ? 1.0f : 0.0f;
-        result = result * shadow;*/
-        float shadow = (enablePCF == 1) ? filterPCF(SHADOW_COORD / SHADOW_COORD.w) : textureProj(SHADOW_COORD / SHADOW_COORD.w, vec2(0.0));
+        /*float shadow = (enablePCF == 1) ? filterPCF(SHADOW_COORD / SHADOW_COORD.w) : textureProj(SHADOW_COORD / SHADOW_COORD.w, vec2(0.0));
         vec3 N = normalize(NORMAL);
         vec3 L = normalize(LIGHT);
-        result = max(dot(N, L),  global.ambient.w) * result * shadow;
-        //COLOR = vec4(vec3(shadow), 1.0);
+        result = max(dot(N, L),  global.ambient.w) * result * shadow;*/
     }
     COLOR = vec4(result, 1.0);
 

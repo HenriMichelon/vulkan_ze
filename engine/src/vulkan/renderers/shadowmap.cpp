@@ -15,12 +15,25 @@ namespace z0 {
     void ShadowMap::createImagesResources() {
         // https://github.com/SaschaWillems/Vulkan/blob/master/examples/shadowmapping/shadowmapping.cpp#L192
         // For shadow mapping we only need a depth attachment
-        vulkanDevice.createImage(size, size,
+        /*vulkanDevice.createImage(size, size,
                                  1,
                                  VK_SAMPLE_COUNT_1_BIT,
                                  format,
                                  VK_IMAGE_TILING_OPTIMAL,
-                                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                                 VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                 image, imageMemory);
+        imageView = vulkanDevice.createImageView(image,
+                                                 format,
+                                                 VK_IMAGE_ASPECT_COLOR_BIT,
+                                                 1);*/
+
+        vulkanDevice.createImage(size, size,
+                                 1,
+                                 vulkanDevice.getSamples(),
+                                 format,
+                                 VK_IMAGE_TILING_OPTIMAL,
+                                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                                  image, imageMemory);
         imageView = vulkanDevice.createImageView(image,
@@ -48,27 +61,44 @@ namespace z0 {
         if (vkCreateSampler(vulkanDevice.getDevice(), &samplerCreateInfo, nullptr, &sampler) != VK_SUCCESS) {
             die("failed to create shadowmap sampler!");
         }
+/*
+        imageBlit.srcOffsets[0] = {0, 0, 0 };
+        imageBlit.srcOffsets[1] = {
+                static_cast<int32_t>(size),
+                static_cast<int32_t>(size), 1 };
+        imageBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        imageBlit.srcSubresource.mipLevel = 0;
+        imageBlit.srcSubresource.baseArrayLayer = 0;
+        imageBlit.srcSubresource.layerCount = 1;
+        imageBlit.dstOffsets[0] = {0, 0, 0 };
+        imageBlit.dstOffsets[1] = {
+                static_cast<int32_t>(size),
+                static_cast<int32_t>(size), 1 };
+        imageBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        imageBlit.dstSubresource.mipLevel = 0;
+        imageBlit.dstSubresource.baseArrayLayer = 0;
+        imageBlit.dstSubresource.layerCount = 1;
 
-        /*VkFormat colorFormat = vulkanDevice.getSwapChainImageFormat();
-        vulkanDevice.createImage(size, size,
-                                 1, VK_SAMPLE_COUNT_1_BIT, colorFormat,
-                                 VK_IMAGE_TILING_OPTIMAL,
-                                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                 colorImage, colorImageMemory);
-        colorImageView = vulkanDevice.createImageView(colorImage, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);*/
+        imageResolve.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+        imageResolve.srcOffset = {0, 0, 0};
+        imageResolve.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+        imageResolve.dstOffset = {0, 0, 0};
+        imageResolve.extent = {size,size,1};*/
     }
 
     void ShadowMap::cleanupImagesResources() {
         if (imageMemory != VK_NULL_HANDLE) {
-            /*vkDestroyImageView(vulkanDevice.getDevice(), colorImageView, nullptr);
-            vkDestroyImage(vulkanDevice.getDevice(), colorImage, nullptr);
-            vkFreeMemory(vulkanDevice.getDevice(), colorImageMemory, nullptr);*/
             vkDestroySampler(vulkanDevice.getDevice(), sampler, nullptr);
+            /*vkDestroyImageView(vulkanDevice.getDevice(), imageViewMultisampled, nullptr);
+            vkDestroyImage(vulkanDevice.getDevice(), imageMultisampled, nullptr);
+            vkFreeMemory(vulkanDevice.getDevice(), imageMemoryMultisampled, nullptr);*/
             vkDestroyImageView(vulkanDevice.getDevice(), imageView, nullptr);
             vkDestroyImage(vulkanDevice.getDevice(), image, nullptr);
             vkFreeMemory(vulkanDevice.getDevice(), imageMemory, nullptr);
             sampler = VK_NULL_HANDLE;
+            /*imageViewMultisampled = VK_NULL_HANDLE;
+            imageMultisampled = VK_NULL_HANDLE;
+            imageMemoryMultisampled = VK_NULL_HANDLE;*/
             imageView = VK_NULL_HANDLE;
             image = VK_NULL_HANDLE;
             imageMemory = VK_NULL_HANDLE;

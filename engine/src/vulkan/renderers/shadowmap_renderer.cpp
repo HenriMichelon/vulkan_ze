@@ -26,7 +26,6 @@ namespace z0 {
 
     void ShadowMapRenderer::loadShaders() {
         vertShader = createShader("shadowmap.vert", VK_SHADER_STAGE_VERTEX_BIT, 0);
-        //fragShader = createShader("depth_buffer.frag", VK_SHADER_STAGE_FRAGMENT_BIT, 0);
     }
 
     void ShadowMapRenderer::update(uint32_t currentFrame) {
@@ -49,11 +48,9 @@ namespace z0 {
 
     void ShadowMapRenderer::recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) {
         bindShader(commandBuffer, *vertShader);
-        //bindShader(commandBuffer, *fragShader);
         VkShaderStageFlagBits stageFlagBits{VK_SHADER_STAGE_FRAGMENT_BIT};
         vkCmdBindShadersEXT(commandBuffer, 1, &stageFlagBits, VK_NULL_HANDLE);
 
-        vkCmdSetRasterizationSamplesEXT(commandBuffer, VK_SAMPLE_COUNT_1_BIT);
         vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
         vkCmdSetDepthBiasEnable(commandBuffer, VK_TRUE);
         vkCmdSetDepthBias(commandBuffer, depthBiasConstant, 0.0f, depthBiasSlope);
@@ -69,18 +66,11 @@ namespace z0 {
                                vertexAttribute.data());
 
         uint32_t modelIndex = 0;
+        vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_FRONT_BIT); // to avoid Peter panning
         for (const auto&meshInstance: meshes) {
             auto mesh = meshInstance->getMesh();
             if (mesh->isValid()) {
                 for (const auto& surface: mesh->getSurfaces()) {
-                    if (auto standardMaterial = dynamic_cast<StandardMaterial*>(surface->material.get())) {
-                        vkCmdSetCullMode(commandBuffer,
-                                         standardMaterial->cullMode == CULLMODE_DISABLED ? VK_CULL_MODE_NONE :
-                                         standardMaterial->cullMode == CULLMODE_BACK ? VK_CULL_MODE_BACK_BIT
-                                                                                     : VK_CULL_MODE_FRONT_BIT);
-                    } else {
-                        vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_NONE);
-                    }
                     std::array<uint32_t, 2> offsets = {
                         0, // globalBuffers
                         static_cast<uint32_t>(modelsBuffers[currentFrame]->getAlignmentSize() * modelIndex),
@@ -129,22 +119,6 @@ namespace z0 {
     }
 
     void ShadowMapRenderer::beginRendering(VkCommandBuffer commandBuffer) {
-       /* vulkanDevice.transitionImageLayout(commandBuffer,
-                                           shadowMap->colorImage,
-                                           vulkanDevice.getSwapChainImageFormat(),
-                                           VK_IMAGE_LAYOUT_UNDEFINED,
-                                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-        // Color attachement : where the rendering is done (multisampled memory image)
-        const VkRenderingAttachmentInfo colorAttachmentInfo{
-                .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
-                .imageView = shadowMap->colorImageView,
-                .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                .resolveMode = VK_RESOLVE_MODE_NONE,
-                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-                .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-                .clearValue = clearColor,
-        };*/
-
         vulkanDevice.transitionImageLayout(commandBuffer,
                                            shadowMap->getImage(),
                                            shadowMap->format,
@@ -165,8 +139,8 @@ namespace z0 {
                 .renderArea = {{0, 0},
                                {shadowMap->size, shadowMap->size}},
                 .layerCount = 1,
-                .colorAttachmentCount = 0, //1,
-                .pColorAttachments = nullptr, //&colorAttachmentInfo,
+                .colorAttachmentCount = 0,
+                .pColorAttachments = nullptr,
                 .pDepthAttachment = &depthAttachmentInfo,
                 .pStencilAttachment = nullptr
         };
@@ -198,29 +172,33 @@ namespace z0 {
                 0, nullptr,
                 1, &barrier);
 /*
-        VkImageMemoryBarrier barrier1 = {};
-        barrier1.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        barrier1.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-        barrier1.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        barrier1.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        barrier1.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        barrier1.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier1.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier1.image = shadowMap->colorImage;
-        barrier1.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        barrier1.subresourceRange.baseMipLevel = 0;
-        barrier1.subresourceRange.levelCount = 1;
-        barrier1.subresourceRange.baseArrayLayer = 0;
-        barrier1.subresourceRange.layerCount = 1;
-
-        vkCmdPipelineBarrier(
-                commandBuffer,
-                VK_PIPELINE_STAGE_TRANSFER_BIT, // After depth writes
-                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, // Before depth reads in the shader
-                0,
-                0, nullptr,
-                0, nullptr,
-                1, &barrier1);*/
+        if (vulkanDevice.getSamples() == VK_SAMPLE_COUNT_1_BIT) {
+            // Blit image to swap chain if MSAA is disabled
+            vkCmdBlitImage(commandBuffer,
+                           shadowMap->getImageMultisampled(),
+                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                           shadowMap->getImage(),
+                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                           1,
+                           &shadowMap->getImageBlit(),
+                           VK_FILTER_LINEAR );
+        } else {
+            // Resolve multisample image to a non-multisample swap chain image if MSAA is enabled
+            const VkImageResolve imageResolve{
+                    .srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+                    .srcOffset = {0, 0, 0},
+                    .dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+                    .dstOffset = {0, 0, 0},
+                    .extent = {vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height, 1}
+            };
+            vkCmdResolveImage(commandBuffer,
+                              shadowMap->getImageMultisampled(),
+                              VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                              shadowMap->getImage(),
+                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                              1,
+                              &shadowMap->getImageResolve());
+        }*/
     }
 
     void ShadowMapRenderer::createImagesResources() {
