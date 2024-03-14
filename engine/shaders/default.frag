@@ -122,7 +122,15 @@ void main() {
     vec3 result = (ambient + diffuse) * material.albedoColor.rgb;
 
     // shadows
-    if (global.haveShadowMap) {
+    //if (global.haveShadowMap)
+    {
+        /*const vec4 posLightClipSpace = global.lightSpace*vec4(POSITION, 1.0f); //
+        const vec3 posLightSpaceNDC  = posLightClipSpace.xyz/posLightClipSpace.w;    // for orto matrix, we don't need perspective division, you can remove it if you want; this is general case;
+        const vec2 shadowTexCoord    = posLightSpaceNDC.xy*0.5f + vec2(0.5f, 0.5f);  // just shift coords from [-1,1] to [0,1]
+
+        const bool  outOfView = (shadowTexCoord.x < 0.001f || shadowTexCoord.x > 0.999f || shadowTexCoord.y < 0.001f || shadowTexCoord.y > 0.999f);
+        const float shadow    = ((posLightSpaceNDC.z < textureLod(shadowMap, shadowTexCoord, 0).x + 0.001f) || outOfView) ? 1.0f : 0.0f;
+        result = result * shadow;*/
         float shadow = (enablePCF == 1) ? filterPCF(SHADOW_COORD / SHADOW_COORD.w) : textureProj(SHADOW_COORD / SHADOW_COORD.w, vec2(0.0));
         vec3 N = normalize(NORMAL);
         vec3 L = normalize(LIGHT);

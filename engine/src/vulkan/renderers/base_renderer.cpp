@@ -109,6 +109,24 @@ namespace z0 {
         vkCmdBindShadersEXT(commandBuffer, 1, shader.getStage(), shader.getShader());
     }
 
+    void BaseRenderer::setViewport(VkCommandBuffer commandBuffer, uint32_t width, uint32_t height) {
+        const VkExtent2D extent = { width, height };
+        const VkViewport viewport{
+                .x = 0.0f,
+                .y = 0.0f,
+                .width = static_cast<float>(extent.width),
+                .height = static_cast<float>(extent.height),
+                .minDepth = 0.0f,
+                .maxDepth = 1.0f
+        };
+        vkCmdSetViewportWithCount(commandBuffer, 1, &viewport);
+        const VkRect2D scissor{
+                .offset = {0, 0},
+                .extent = extent
+        };
+        vkCmdSetScissorWithCount(commandBuffer, 1, &scissor);
+    }
+
     std::vector<char> BaseRenderer::readFile(const std::string &fileName) {
         std::filesystem::path filepath = shaderDirectory;
         filepath /= fileName;

@@ -48,10 +48,22 @@ namespace z0 {
         if (vkCreateSampler(vulkanDevice.getDevice(), &samplerCreateInfo, nullptr, &sampler) != VK_SUCCESS) {
             die("failed to create shadowmap sampler!");
         }
+
+        /*VkFormat colorFormat = vulkanDevice.getSwapChainImageFormat();
+        vulkanDevice.createImage(size, size,
+                                 1, VK_SAMPLE_COUNT_1_BIT, colorFormat,
+                                 VK_IMAGE_TILING_OPTIMAL,
+                                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                 colorImage, colorImageMemory);
+        colorImageView = vulkanDevice.createImageView(colorImage, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);*/
     }
 
     void ShadowMap::cleanupImagesResources() {
         if (imageMemory != VK_NULL_HANDLE) {
+            /*vkDestroyImageView(vulkanDevice.getDevice(), colorImageView, nullptr);
+            vkDestroyImage(vulkanDevice.getDevice(), colorImage, nullptr);
+            vkFreeMemory(vulkanDevice.getDevice(), colorImageMemory, nullptr);*/
             vkDestroySampler(vulkanDevice.getDevice(), sampler, nullptr);
             vkDestroyImageView(vulkanDevice.getDevice(), imageView, nullptr);
             vkDestroyImage(vulkanDevice.getDevice(), image, nullptr);

@@ -26,7 +26,8 @@ void main() {
     POSITION = globalPosition.xyz;
 
     // shadows
-    if (global.haveShadowMap) {
+    //if (global.haveShadowMap)
+    {
         LIGHT = normalize(global.lightPos - position);
         SHADOW_COORD = (biasMat * global.lightSpace * model.matrix) * vec4(position, 1.0);
     }

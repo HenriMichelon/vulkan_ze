@@ -36,6 +36,7 @@ namespace z0 {
         BaseRenderer(VulkanDevice& device, std::string shaderDirectory);
 
         // Helpers function for children classes
+        void setViewport(VkCommandBuffer commandBuffer, uint32_t width, uint32_t height);
         void createResources();
         void writeUniformBuffer(const std::vector<std::unique_ptr<VulkanBuffer>>& buffers, uint32_t currentFrame, void *data, uint32_t index = 0);
         void createUniformBuffers(std::vector<std::unique_ptr<VulkanBuffer>>& buffers, VkDeviceSize size, uint32_t count = 1);

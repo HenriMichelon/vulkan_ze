@@ -10,7 +10,7 @@ namespace z0 {
         explicit ShadowMap(VulkanDevice &dev, SpotLight* spotLight);
         ~ShadowMap();
 
-        const VkFormat format{ VK_FORMAT_D16_UNORM };
+        const VkFormat format{ VK_FORMAT_D32_SFLOAT };
 #if defined(__ANDROID__)
 	    const uint32_t size{ 1024 };
 #else
@@ -26,6 +26,9 @@ namespace z0 {
         void createImagesResources();
         void cleanupImagesResources();
 
+        /*VkImage colorImage;
+        VkDeviceMemory colorImageMemory;
+        VkImageView colorImageView;*/
     private:
         SpotLight* light;
         VulkanDevice& vulkanDevice;

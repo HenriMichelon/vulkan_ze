@@ -106,7 +106,7 @@ namespace z0 {
 
     void SceneRenderer::loadShaders() {
         vertShader = createShader("default.vert", VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
-        fragShader = createShader("depth_buffer.frag", VK_SHADER_STAGE_FRAGMENT_BIT, 0);
+        fragShader = createShader("default.frag", VK_SHADER_STAGE_FRAGMENT_BIT, 0);
     }
 
     void SceneRenderer::update(uint32_t currentFrame) {
@@ -114,18 +114,18 @@ namespace z0 {
 
         glm::mat4 lightProjection = glm::perspective(shadowMap->getLight()->getFov(), 1.0f, 0.1f, 100.0f);
         glm::mat4 lightView = glm::lookAt(shadowMap->getLight()->getPosition(), glm::vec3(0.0f), glm::vec3(0, 1, 0));
-        GobalUniformBufferObject globalUbo{
+        /*GobalUniformBufferObject globalUbo{
                 .projection = lightProjection,
                 .view =lightView,
                 .cameraPosition =shadowMap->getLight()->getPosition(),
                 .haveShadowMap = shadowMap != nullptr,
-        };
-        /*GobalUniformBufferObject globalUbo{
+        };*/
+        GobalUniformBufferObject globalUbo{
             .projection = currentCamera->getProjection(),
             .view = currentCamera->getView(),
             .cameraPosition = currentCamera->getPosition(),
             .haveShadowMap = shadowMap != nullptr,
-        };*/
+        };
         if (shadowMap != nullptr) {
             globalUbo.lightSpace = lightProjection * lightView;
             globalUbo.lightPos = shadowMap->getLight()->getPosition();
@@ -194,26 +194,11 @@ namespace z0 {
         vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
         bindShader(commandBuffer, *vertShader);
         bindShader(commandBuffer, *fragShader);
+        setViewport(commandBuffer, vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height);
 
-        {
-            const VkExtent2D extent = vulkanDevice.getSwapChainExtent();
-            const VkViewport viewport{
-                    .x = 0.0f,
-                    .y = 0.0f,
-                    .width = static_cast<float>(extent.width),
-                    .height = static_cast<float>(extent.height),
-                    .minDepth = 0.0f,
-                    .maxDepth = 1.0f
-            };
-            vkCmdSetViewportWithCount(commandBuffer, 1, &viewport);
-            const VkRect2D scissor{
-                    .offset = {0, 0},
-                    .extent = extent
-            };
-            vkCmdSetScissorWithCount(commandBuffer, 1, &scissor);
-        }
-
-       /* vkCmdSetVertexInputEXT(commandBuffer, 0, nullptr, 0, nullptr);
+        // quad renderer
+        /*
+        vkCmdSetVertexInputEXT(commandBuffer, 0, nullptr, 0, nullptr);
         vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_NONE);
         std::array<uint32_t, 4> offsets = {
                 0, // globalBuffers

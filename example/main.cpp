@@ -23,7 +23,7 @@ public:
         z0::SpotLight spotLight1{{-0.75, .5, 0.1},
                                  45.0, 55.0,
                                  0.027, 0.0028};
-        spotLight1.setPosition({3.0, -6.0, 0.1});
+        spotLight1.setPosition({3.0, -6.0, -2.1});
         spotLight1.setColorAndIntensity({1.0f, 1.0f, 1.0f, 4.0f});
         addChild(spotLight1);
         light = z0::Loader::loadModelFromFile("models/light.glb", false);
@@ -32,10 +32,10 @@ public:
 
         model1 = z0::Loader::loadModelFromFile("models/cube2.glb", false);
         //model1->setRotationDegrees({0.0, 30.0, 0.0});
-        addChild(model1);
 
         model2 = model1->duplicate();
         addChild(model2);
+        addChild(model1);
 
         model1->setScale(glm::vec3{.5});
         model1->setPosition({0.0, -3.0, 0.0});
