@@ -38,7 +38,7 @@ public:
         addChild(model1);
 
         model1->setScale(glm::vec3{.5});
-        model1->setPosition({0.0, -3.0, 0.0});
+        model1->setPosition({2.0, 0.0, 0.0});
         model2->setPosition({0.0, -1.0, 0.0});
 
         floor = z0::Loader::loadModelFromFile("models/floor.glb", false);
