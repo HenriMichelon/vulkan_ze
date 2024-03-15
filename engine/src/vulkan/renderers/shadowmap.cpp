@@ -20,7 +20,7 @@ namespace z0 {
                                  VK_SAMPLE_COUNT_1_BIT,
                                  format,
                                  VK_IMAGE_TILING_OPTIMAL,
-                                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                                  image, imageMemory);
         imageView = vulkanDevice.createImageView(image,
@@ -48,13 +48,20 @@ namespace z0 {
         if (vkCreateSampler(vulkanDevice.getDevice(), &samplerCreateInfo, nullptr, &sampler) != VK_SUCCESS) {
             die("failed to create shadowmap sampler!");
         }
+
     }
 
     void ShadowMap::cleanupImagesResources() {
-        vkDestroySampler(vulkanDevice.getDevice(), sampler, nullptr);
-        vkDestroyImageView(vulkanDevice.getDevice(), imageView, nullptr);
-        vkDestroyImage(vulkanDevice.getDevice(), image, nullptr);
-        vkFreeMemory(vulkanDevice.getDevice(), imageMemory, nullptr);
+        if (imageMemory != VK_NULL_HANDLE) {
+            vkDestroySampler(vulkanDevice.getDevice(), sampler, nullptr);
+            vkDestroyImageView(vulkanDevice.getDevice(), imageView, nullptr);
+            vkDestroyImage(vulkanDevice.getDevice(), image, nullptr);
+            vkFreeMemory(vulkanDevice.getDevice(), imageMemory, nullptr);
+            sampler = VK_NULL_HANDLE;
+            imageView = VK_NULL_HANDLE;
+            image = VK_NULL_HANDLE;
+            imageMemory = VK_NULL_HANDLE;
+        }
     }
 
 

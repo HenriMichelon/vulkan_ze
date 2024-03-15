@@ -1,6 +1,5 @@
 #pragma once
 
-#include "z0/vulkan/vulkan_device.hpp"
 #include "z0/vulkan/vulkan_shader.hpp"
 #include "z0/vulkan/vulkan_model.hpp"
 #include "z0/vulkan/vulkan_descriptors.hpp"
@@ -17,6 +16,7 @@ namespace z0 {
     protected:
         VkDevice device;
         VulkanDevice& vulkanDevice;
+        std::string shaderDirectory;
         VkPipelineLayout pipelineLayout { VK_NULL_HANDLE };
         std::vector<VkDescriptorSet> descriptorSets{MAX_FRAMES_IN_FLIGHT};
         std::unique_ptr<VulkanDescriptorSetLayout> globalSetLayout {};
@@ -35,6 +35,7 @@ namespace z0 {
         BaseRenderer(VulkanDevice& device, std::string shaderDirectory);
 
         // Helpers function for children classes
+        void setViewport(VkCommandBuffer commandBuffer, uint32_t width, uint32_t height);
         void createResources();
         void writeUniformBuffer(const std::vector<std::unique_ptr<VulkanBuffer>>& buffers, uint32_t currentFrame, void *data, uint32_t index = 0);
         void createUniformBuffers(std::vector<std::unique_ptr<VulkanBuffer>>& buffers, VkDeviceSize size, uint32_t count = 1);
@@ -46,7 +47,6 @@ namespace z0 {
 
     private:
         std::string shaderDirectory;
-
         void buildShader(VulkanShader& shader);
         void createPipelineLayout();
         std::vector<char> readFile(const std::string& fileName);

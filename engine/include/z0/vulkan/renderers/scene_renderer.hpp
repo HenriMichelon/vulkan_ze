@@ -63,9 +63,6 @@ namespace z0 {
         DirectionalLight* directionalLight{nullptr};
         Environment* environement{nullptr};
         std::vector<OmniLight*> omniLights;
-
-        //std::shared_ptr<ShadowMap> shadowMap;
-
         std::vector<MeshInstance*> meshes {};
         std::map<Resource::rid_t, int32_t> imagesIndices {};
         std::unordered_set<std::shared_ptr<VulkanImage>> images {};
@@ -84,8 +81,12 @@ namespace z0 {
         VkImage colorImage;
         VkDeviceMemory colorImageMemory;
         VkImageView colorImageView;
-        VkImageBlit colorImageBlit{};
+        //VkImageBlit colorImageBlit{};
         VkImageResolve colorImageResolve{};
+
+        // Shadow mapping
+        std::shared_ptr<ShadowMap> shadowMap;
+        std::shared_ptr<ShadowMapRenderer> shadowMapRenderer;
 
         void update(uint32_t currentFrame) override;
         void recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) override;
@@ -93,6 +94,7 @@ namespace z0 {
         void loadShaders() override;
         void createImagesResources() override;
         void cleanupImagesResources() override;
+        void recreateImagesResources() override;
         void beginRendering(VkCommandBuffer commandBuffer) override;
         void endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage) override;
 

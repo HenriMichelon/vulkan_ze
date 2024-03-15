@@ -13,6 +13,7 @@ namespace z0 {
         virtual void endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage)  = 0;
         virtual void createImagesResources() = 0;
         virtual void cleanupImagesResources() = 0;
+        virtual void recreateImagesResources() = 0;
     };
 
 }

@@ -30,24 +30,15 @@ namespace z0 {
 
     class VulkanDevice {
     public:
-        // if useMSAA == true && samples == VK_SAMPLE_COUNT_1_BIT then use the maximum sample count
-        VulkanDevice(VulkanInstance& instance, WindowHelper &window, bool useMSAA = false, VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT);
+        VulkanDevice(VulkanInstance& instance, WindowHelper &window, bool autoMSAA = false, VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT);
         ~VulkanDevice();
 
         VkDevice getDevice() { return device; }
         VkPhysicalDevice getPhysicalDevice() { return physicalDevice; }
-        VkSwapchainKHR getSwapChain() { return swapChain; }
-        VkQueue getGraphicsQueue() { return graphicsQueue; }
-        VkQueue getPresentQueue() { return presentQueue; }
-        VkCommandPool getCommandPool() { return commandPool; }
         VkSampleCountFlagBits getSamples() { return samples; }
         const VkExtent2D& getSwapChainExtent() const { return swapChainExtent;}
-        //float getSwapChainAspectRatio() const;
         VkFormat getSwapChainImageFormat() const { return swapChainImageFormat; }
-        std::vector<VkImage>& getSwapChainImages() { return swapChainImages; }
-        std::vector<VkImageView>& getSwapChainImageViews() { return swapChainImageViews; }
         VkPhysicalDeviceProperties getDeviceProperties() const { return deviceProperties; }
-        WindowHelper& getWindowHelper() { return window; }
         float getAspectRatio() const {return static_cast<float>(swapChainExtent.width) / static_cast<float>(swapChainExtent.height);}
 
         void drawFrame();
@@ -57,7 +48,6 @@ namespace z0 {
         VkCommandBuffer beginSingleTimeCommands();
         void endSingleTimeCommands(VkCommandBuffer commandBuffer);
 
-        // Image management helpers
         void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples,
                          VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
                          VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory,

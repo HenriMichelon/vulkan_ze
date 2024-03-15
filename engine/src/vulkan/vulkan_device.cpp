@@ -21,7 +21,7 @@ namespace z0 {
 
 
     VulkanDevice::VulkanDevice(VulkanInstance& _instance, WindowHelper &_window,
-                               bool useMSAA, VkSampleCountFlagBits _samples):
+                               bool autoMSAA, VkSampleCountFlagBits _samples):
         vulkanInstance{_instance}, window{_window}, samples(_samples)
     {
         // Check for at least one supported Vulkan physical device
@@ -55,7 +55,7 @@ namespace z0 {
         if (candidates.rbegin()->first > 0) {
             // Select the better suitable device and get some useful properties
             physicalDevice = candidates.rbegin()->second;
-            if (useMSAA && samples == VK_SAMPLE_COUNT_1_BIT) {
+            if (autoMSAA) {
                 samples = getMaxUsableMSAASampleCount();
             }
             vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
@@ -122,7 +122,7 @@ namespace z0 {
     }
 
     void VulkanDevice::registerRenderer(const std::shared_ptr<VulkanRenderer>& renderer) {
-        renderers.push_back(renderer);
+        renderers.insert(renderers.begin(), renderer);
     }
 
     // https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Rendering_and_presentation
@@ -138,8 +138,7 @@ namespace z0 {
         if (result == VK_ERROR_OUT_OF_DATE_KHR) {
             recreateSwapChain();
             for (auto& renderer: renderers) {
-                renderer->cleanupImagesResources();
-                renderer->createImagesResources();
+                renderer->recreateImagesResources();
             }
             return;
         } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
@@ -205,8 +204,7 @@ namespace z0 {
             if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || window.windowResized) {
                 recreateSwapChain();
                 for (auto& renderer: renderers) {
-                    renderer->cleanupImagesResources();
-                    renderer->createImagesResources();
+                    renderer->recreateImagesResources();
                 }
             } else if (result != VK_SUCCESS) {
                 die("failed to present swap chain image!");
@@ -259,7 +257,7 @@ namespace z0 {
         vkCmdSetLogicOpEnableEXT(commandBuffer, VK_FALSE);
 
         // Disable color blending
-        VkBool32 color_blend_enables[] = {VK_FALSE};
+        VkBool32 color_blend_enables[] = {VK_TRUE};
         vkCmdSetColorBlendEnableEXT(commandBuffer, 0, 1, color_blend_enables);
 
         // Use RGBA color write mask

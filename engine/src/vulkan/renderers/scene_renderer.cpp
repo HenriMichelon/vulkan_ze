@@ -13,6 +13,11 @@ namespace z0 {
      }
 
     void SceneRenderer::cleanup() {
+        if (shadowMap != nullptr) {
+            shadowMapRenderer->cleanup();
+            shadowMapRenderer.reset();
+            shadowMap.reset();
+        }
         images.clear();
         pointLightBuffers.clear();
         surfacesBuffers.clear();
@@ -24,9 +29,11 @@ namespace z0 {
         loadNode(rootNode);
         createImagesIndex(rootNode);
         createResources();
-        /*if (shadowMap != nullptr) {
-            shadowMapRenderer.loadScene(rootNode);
-        }*/
+        if (shadowMap != nullptr) {
+            shadowMapRenderer = std::make_shared<ShadowMapRenderer>(vulkanDevice, shaderDirectory);
+            shadowMapRenderer->loadScene(shadowMap, meshes);
+            vulkanDevice.registerRenderer(shadowMapRenderer);
+        }
     }
 
     void SceneRenderer::loadNode(std::shared_ptr<Node>& parent) {
@@ -104,19 +111,18 @@ namespace z0 {
 
     void SceneRenderer::update(uint32_t currentFrame) {
         if (meshes.empty() || currentCamera == nullptr) return;
-
         GobalUniformBufferObject globalUbo{
             .projection = currentCamera->getProjection(),
             .view = currentCamera->getView(),
             .cameraPosition = currentCamera->getPosition(),
             .haveShadowMap = false, // shadowMap != nullptr,
         };
-        /*if (shadowMap != nullptr) {
-            glm::mat4 lightProjection = glm::perspective(glm::radians(shadowMap->getLight()->getOuterCutOff()), 1.0f, 0.1f, 100.0f);
-            glm::mat4 lightView = glm::lookAt(shadowMap->getLight()->getPosition(), glm::vec3(0.0f), glm::vec3(0, -1, 0));
+        if (shadowMap != nullptr) {
+            glm::mat4 lightProjection = glm::perspective(shadowMap->getLight()->getFov(), 1.0f, 0.1f, 100.0f);
+            glm::mat4 lightView = glm::lookAt(shadowMap->getLight()->getPosition(), glm::vec3(0.0f), glm::vec3(0, 1, 0));
             globalUbo.lightSpace = lightProjection * lightView;
             globalUbo.lightPos = shadowMap->getLight()->getPosition();
-        };*/
+        };
         if (directionalLight != nullptr) {
             globalUbo.directionalLight = {
                 .direction = directionalLight->getDirection(),
@@ -178,9 +184,33 @@ namespace z0 {
 
     void SceneRenderer::recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) {
         if (meshes.empty() || currentCamera == nullptr) return;
+        vkCmdSetRasterizationSamplesEXT(commandBuffer, vulkanDevice.getSamples());
         vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
         bindShader(commandBuffer, *vertShader);
         bindShader(commandBuffer, *fragShader);
+        setViewport(commandBuffer, vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height);
+
+        // quad renderer
+        /*
+        vkCmdSetVertexInputEXT(commandBuffer, 0, nullptr, 0, nullptr);
+        vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_NONE);
+        std::array<uint32_t, 4> offsets = {
+                0, // globalBuffers
+                0,
+                0,
+                0, // pointLightBuffers
+        };
+        bindDescriptorSets(commandBuffer, currentFrame, offsets.size(), offsets.data());
+        vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+        return;*/
+
+        std::vector<VkVertexInputBindingDescription2EXT> vertexBinding = VulkanModel::getBindingDescription();
+        std::vector<VkVertexInputAttributeDescription2EXT> vertexAttribute = VulkanModel::getAttributeDescription();
+        vkCmdSetVertexInputEXT(commandBuffer,
+                               vertexBinding.size(),
+                               vertexBinding.data(),
+                               vertexAttribute.size(),
+                               vertexAttribute.data());
 
         {
             const VkExtent2D extent = vulkanDevice.getSwapChainExtent();
@@ -283,7 +313,7 @@ namespace z0 {
         VkDeviceSize pointLightBufferSize = sizeof(PointLightUniform) * (omniLights.size()+ (omniLights.empty() ? 1 : 0));
         createUniformBuffers(pointLightBuffers, pointLightBufferSize);
 
-         auto builder = VulkanDescriptorSetLayout::Builder(vulkanDevice)
+        globalSetLayout = VulkanDescriptorSetLayout::Builder(vulkanDevice)
             .addBinding(0, // global UBO
                     VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
                     VK_SHADER_STAGE_ALL_GRAPHICS)
@@ -299,13 +329,11 @@ namespace z0 {
                         VK_SHADER_STAGE_FRAGMENT_BIT)
             .addBinding(4, // PointLight array UBO
                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-                        VK_SHADER_STAGE_FRAGMENT_BIT);
-         //if (shadowMap != nullptr) {
-             /*builder.addBinding(5,
-                                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                VK_SHADER_STAGE_FRAGMENT_BIT);*/
-         //}
-        globalSetLayout = builder.build();
+                        VK_SHADER_STAGE_FRAGMENT_BIT)
+            .addBinding(5, // shadow map
+                   VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                   VK_SHADER_STAGE_FRAGMENT_BIT)
+           .build();
 
         for (int i = 0; i < descriptorSets.size(); i++) {
             auto globalBufferInfo = globalBuffers[i]->descriptorInfo(sizeof(GobalUniformBufferObject));
@@ -322,7 +350,7 @@ namespace z0 {
                 .writeBuffer(2, &modelBufferInfo)
                 .writeBuffer(3, &surfaceBufferInfo)
                 .writeBuffer(4, &pointLightBufferInfo);
-            /*if (shadowMap != nullptr) {
+             if (shadowMap != nullptr) {
                 VkDescriptorImageInfo imageInfo {
                         .sampler = shadowMap->getSampler(),
                         .imageView = shadowMap->getImageView(),
@@ -330,11 +358,19 @@ namespace z0 {
                 };
                 //VkDescriptorImageInfo imageInfo = imagesInfo[1];
                 writer.writeImage(5, &imageInfo);
-            }*/
+            } else {
+                 VkDescriptorImageInfo imageInfo = imagesInfo[0]; // find a better solution (blank image ?)
+                 writer.writeImage(5, &imageInfo);
+             }
             if (!writer.build(descriptorSets[i])) {
                 die("Cannot allocate descriptor set");
             }
         }
+    }
+
+    void SceneRenderer::recreateImagesResources() {
+        cleanupImagesResources();
+        createImagesResources();
     }
 
     void SceneRenderer::createImagesResources() {
@@ -349,7 +385,7 @@ namespace z0 {
                                  colorImage, colorImageMemory);
         colorImageView = vulkanDevice.createImageView(colorImage, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
 
-        colorImageBlit.srcOffsets[0] = {0, 0, 0 };
+        /*colorImageBlit.srcOffsets[0] = {0, 0, 0 };
         colorImageBlit.srcOffsets[1] = {
                 static_cast<int32_t>(vulkanDevice.getSwapChainExtent().width),
                 static_cast<int32_t>(vulkanDevice.getSwapChainExtent().height), 1 };
@@ -364,7 +400,7 @@ namespace z0 {
         colorImageBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         colorImageBlit.dstSubresource.mipLevel = 0;
         colorImageBlit.dstSubresource.baseArrayLayer = 0;
-        colorImageBlit.dstSubresource.layerCount = 1;
+        colorImageBlit.dstSubresource.layerCount = 1;*/
 
         colorImageResolve.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
         colorImageResolve.srcOffset = {0, 0, 0};
@@ -456,7 +492,7 @@ namespace z0 {
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
         // Since we render in a memory image we need to manually present the image in the swap chain
-        if (vulkanDevice.getSamples() == VK_SAMPLE_COUNT_1_BIT) {
+        /*if (vulkanDevice.getSamples() == VK_SAMPLE_COUNT_1_BIT) {
             // Blit image to swap chain if MSAA is disabled
             vkCmdBlitImage(commandBuffer,
                            colorImage,
@@ -466,7 +502,7 @@ namespace z0 {
                            1,
                            &colorImageBlit,
                            VK_FILTER_LINEAR );
-        } else {
+        } else*/ {
             // Resolve multisample image to a non-multisample swap chain image if MSAA is enabled
             const VkImageResolve imageResolve{
                     .srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},

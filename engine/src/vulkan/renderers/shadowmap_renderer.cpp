@@ -13,10 +13,11 @@ namespace z0 {
      {
      }
 
-    ShadowMapRenderer::~ShadowMapRenderer() {
-        vkDeviceWaitIdle(device);
+    void ShadowMapRenderer::cleanup() {
+        shadowMap.reset();
+        modelsBuffers.clear();
+        BaseRenderer::cleanup();
     }
-
     void ShadowMapRenderer::loadScene(std::shared_ptr<ShadowMap>& _shadowMap, std::vector<MeshInstance*>& _meshes) {
         meshes = _meshes;
         shadowMap = _shadowMap;
@@ -28,8 +29,8 @@ namespace z0 {
     }
 
     void ShadowMapRenderer::update(uint32_t currentFrame) {
-        glm::mat4 lightProjection = glm::perspective(glm::radians(shadowMap->getLight()->getOuterCutOff()), 1.0f, zNear, zFar);
-        glm::mat4 lightView = glm::lookAt(shadowMap->getLight()->getPosition(), glm::vec3(0.0f), glm::vec3(0, -1, 0));
+        glm::mat4 lightProjection = glm::perspective(shadowMap->getLight()->getFov(), 1.0f, zNear, zFar);
+        glm::mat4 lightView = glm::lookAt(shadowMap->getLight()->getPosition(), glm::vec3(0.0f), glm::vec3(0, 1, 0));
         GlobalUniformBufferObject globalUbo {
             .lightSpace = lightProjection * lightView
         };
@@ -55,23 +56,7 @@ namespace z0 {
         vkCmdSetDepthBiasEnable(commandBuffer, VK_TRUE);
         vkCmdSetDepthBias(commandBuffer, depthBiasConstant, 0.0f, depthBiasSlope);
 
-        {
-            const VkExtent2D extent = { shadowMap->size, shadowMap->size };
-            const VkViewport viewport{
-                    .x = 0.0f,
-                    .y = 0.0f,
-                    .width = static_cast<float>(extent.width),
-                    .height = static_cast<float>(extent.height),
-                    .minDepth = 0.0f,
-                    .maxDepth = 1.0f
-            };
-            vkCmdSetViewportWithCount(commandBuffer, 1, &viewport);
-            const VkRect2D scissor{
-                    .offset = {0, 0},
-                    .extent = extent
-            };
-            vkCmdSetScissorWithCount(commandBuffer, 1, &scissor);
-        }
+        setViewport(commandBuffer, shadowMap->size, shadowMap->size);
 
         std::vector<VkVertexInputBindingDescription2EXT> vertexBinding = VulkanModel::getBindingDescription();
         std::vector<VkVertexInputAttributeDescription2EXT> vertexAttribute = VulkanModel::getAttributeDescription();
@@ -82,18 +67,11 @@ namespace z0 {
                                vertexAttribute.data());
 
         uint32_t modelIndex = 0;
+        vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_FRONT_BIT); // to avoid Peter panning
         for (const auto&meshInstance: meshes) {
             auto mesh = meshInstance->getMesh();
             if (mesh->isValid()) {
                 for (const auto& surface: mesh->getSurfaces()) {
-                    if (auto standardMaterial = dynamic_cast<StandardMaterial*>(surface->material.get())) {
-                        vkCmdSetCullMode(commandBuffer,
-                                         standardMaterial->cullMode == CULLMODE_DISABLED ? VK_CULL_MODE_NONE :
-                                         standardMaterial->cullMode == CULLMODE_BACK ? VK_CULL_MODE_BACK_BIT
-                                                                                     : VK_CULL_MODE_FRONT_BIT);
-                    } else {
-                        vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_NONE);
-                    }
                     std::array<uint32_t, 2> offsets = {
                         0, // globalBuffers
                         static_cast<uint32_t>(modelsBuffers[currentFrame]->getAlignmentSize() * modelIndex),
@@ -146,11 +124,11 @@ namespace z0 {
                                            shadowMap->getImage(),
                                            shadowMap->format,
                                            VK_IMAGE_LAYOUT_UNDEFINED,
-                                           VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
+                                           VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
         const VkRenderingAttachmentInfo depthAttachmentInfo{
                 .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
                 .imageView = shadowMap->getImageView(),
-                .imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+                .imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                 .resolveMode = VK_RESOLVE_MODE_NONE,
                 .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
                 .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
@@ -172,6 +150,56 @@ namespace z0 {
 
     void ShadowMapRenderer::endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage) {
         vkCmdEndRendering(commandBuffer);
+        VkImageMemoryBarrier barrier = {};
+        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        barrier.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        barrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.image = shadowMap->getImage();
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        barrier.subresourceRange.baseMipLevel = 0;
+        barrier.subresourceRange.levelCount = 1;
+        barrier.subresourceRange.baseArrayLayer = 0;
+        barrier.subresourceRange.layerCount = 1;
+        vkCmdPipelineBarrier(
+                commandBuffer,
+                VK_PIPELINE_STAGE_TRANSFER_BIT, // After depth writes
+                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, // Before depth reads in the shader
+                0,
+                0, nullptr,
+                0, nullptr,
+                1, &barrier);
+/*
+        if (vulkanDevice.getSamples() == VK_SAMPLE_COUNT_1_BIT) {
+            // Blit image to swap chain if MSAA is disabled
+            vkCmdBlitImage(commandBuffer,
+                           shadowMap->getImageMultisampled(),
+                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                           shadowMap->getImage(),
+                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                           1,
+                           &shadowMap->getImageBlit(),
+                           VK_FILTER_LINEAR );
+        } else {
+            // Resolve multisample image to a non-multisample swap chain image if MSAA is enabled
+            const VkImageResolve imageResolve{
+                    .srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+                    .srcOffset = {0, 0, 0},
+                    .dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+                    .dstOffset = {0, 0, 0},
+                    .extent = {vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height, 1}
+            };
+            vkCmdResolveImage(commandBuffer,
+                              shadowMap->getImageMultisampled(),
+                              VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                              shadowMap->getImage(),
+                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                              1,
+                              &shadowMap->getImageResolve());
+        }*/
     }
 
     void ShadowMapRenderer::createImagesResources() {
@@ -179,9 +207,11 @@ namespace z0 {
     }
 
     void ShadowMapRenderer::cleanupImagesResources() {
-        shadowMap->cleanupImagesResources();
+        if (shadowMap != nullptr) shadowMap->cleanupImagesResources();
     }
 
+    void ShadowMapRenderer::recreateImagesResources() {
 
+    }
 
 }
