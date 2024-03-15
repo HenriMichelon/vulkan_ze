@@ -17,19 +17,10 @@ namespace z0 {
         const uint32_t size{ 2048 };
 #endif
 
+        SpotLight* getLight() { return light; }
         const VkImage& getImage() const { return image; }
         const VkImageView& getImageView() const { return imageView; }
-        const VkDeviceMemory& getImageMemory() const { return imageMemory; }
-
-        /*const VkImage& getImageMultisampled() const { return imageMultisampled; }
-        const VkImageView& getImageViewMultisampled() const { return imageViewMultisampled; }
-        const VkDeviceMemory& getImageMemoryMultisampled() const { return imageMemoryMultisampled; }
-
-        const VkImageBlit& getImageBlit() const { return imageBlit; }
-        const VkImageResolve& getImageResolve() const { return imageResolve; }*/
-
         const VkSampler& getSampler() const { return sampler; }
-        SpotLight* getLight() { return light; }
 
         void createImagesResources();
         void cleanupImagesResources();
@@ -41,11 +32,6 @@ namespace z0 {
         VkImageView imageView;
         VkDeviceMemory imageMemory;
         VkSampler sampler;
-        /*VkImage imageMultisampled;
-        VkImageView imageViewMultisampled;
-        VkDeviceMemory imageMemoryMultisampled;
-        VkImageBlit imageBlit{};
-        VkImageResolve imageResolve{};*/
 
     public:
         ShadowMap(const ShadowMap&) = delete;

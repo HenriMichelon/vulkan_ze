@@ -111,15 +111,6 @@ namespace z0 {
 
     void SceneRenderer::update(uint32_t currentFrame) {
         if (meshes.empty() || currentCamera == nullptr) return;
-
-        glm::mat4 lightProjection = glm::perspective(shadowMap->getLight()->getFov(), 1.0f, 0.1f, 100.0f);
-        glm::mat4 lightView = glm::lookAt(shadowMap->getLight()->getPosition(), glm::vec3(0.0f), glm::vec3(0, 1, 0));
-        /*GobalUniformBufferObject globalUbo{
-                .projection = lightProjection,
-                .view =lightView,
-                .cameraPosition =shadowMap->getLight()->getPosition(),
-                .haveShadowMap = shadowMap != nullptr,
-        };*/
         GobalUniformBufferObject globalUbo{
             .projection = currentCamera->getProjection(),
             .view = currentCamera->getView(),
@@ -127,6 +118,8 @@ namespace z0 {
             .haveShadowMap = shadowMap != nullptr,
         };
         if (shadowMap != nullptr) {
+            glm::mat4 lightProjection = glm::perspective(shadowMap->getLight()->getFov(), 1.0f, 0.1f, 100.0f);
+            glm::mat4 lightView = glm::lookAt(shadowMap->getLight()->getPosition(), glm::vec3(0.0f), glm::vec3(0, 1, 0));
             globalUbo.lightSpace = lightProjection * lightView;
             globalUbo.lightPos = shadowMap->getLight()->getPosition();
         };
@@ -191,6 +184,7 @@ namespace z0 {
 
     void SceneRenderer::recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) {
         if (meshes.empty() || currentCamera == nullptr) return;
+        vkCmdSetRasterizationSamplesEXT(commandBuffer, vulkanDevice.getSamples());
         vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
         bindShader(commandBuffer, *vertShader);
         bindShader(commandBuffer, *fragShader);

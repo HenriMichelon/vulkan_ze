@@ -10,7 +10,7 @@ layout (location = 4) in vec4 SHADOW_COORD;
 
 layout (location = 0) out vec4 COLOR;
 
-layout (binding = 5) uniform sampler2DMS shadowMap;
+layout (binding = 5) uniform sampler2D shadowMap;
 
 vec3 viewDir;
 /*const int enablePCF = 0;
@@ -105,19 +105,12 @@ vec3 calcPointLight(PointLight light, vec3 color) {
 }
 
 // https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
-float ShadowCalculation()
+float calcShadows()
 {
     const vec3 posLightSpaceNDC  = SHADOW_COORD.xyz/SHADOW_COORD.w;    // for orto matrix, we don't need perspective division, you can remove it if you want; this is general case;
     const vec2 shadowTexCoord    = posLightSpaceNDC.xy*0.5f + vec2(0.5f, 0.5f);  // just shift coords from [-1,1] to [0,1]
 
-    int samples = textureSamples(shadowMap);
-    ivec2 texelCoords = ivec2(textureSize(shadowMap) * shadowTexCoord);
-
-    vec4 color = vec4(0.0);
-    for (int i = 0; i < samples; ++i) {
-        color += texelFetch(shadowMap, texelCoords, i); // Fetch each sample
-    }
-    color /= float(samples); // Average the samples to get the final color
+    vec4 color = textureLod(shadowMap, shadowTexCoord, 0);
     bool shadow = (posLightSpaceNDC.z < color.x + 0.001f);
 
     const bool outOfView = (shadowTexCoord.x < 0.001f || shadowTexCoord.x > 0.999f || shadowTexCoord.y < 0.001f || shadowTexCoord.y > 0.999f);
@@ -144,7 +137,7 @@ void main() {
     // shadows
     if (global.haveShadowMap)
     {
-        float shadow = ShadowCalculation();
+        float shadow = calcShadows();
         result = (ambient + shadow) * result;
 
         /*float shadow = (enablePCF == 1) ? filterPCF(SHADOW_COORD / SHADOW_COORD.w) : textureProj(SHADOW_COORD / SHADOW_COORD.w, vec2(0.0));
