@@ -46,7 +46,6 @@ namespace z0 {
                                                    VkShaderStageFlags next_stage);
 
     private:
-        std::string shaderDirectory;
         void buildShader(VulkanShader& shader);
         void createPipelineLayout();
         std::vector<char> readFile(const std::string& fileName);

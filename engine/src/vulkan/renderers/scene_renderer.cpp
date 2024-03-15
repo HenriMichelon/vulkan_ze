@@ -204,14 +204,6 @@ namespace z0 {
         vkCmdDraw(commandBuffer, 3, 1, 0, 0);
         return;*/
 
-        std::vector<VkVertexInputBindingDescription2EXT> vertexBinding = VulkanModel::getBindingDescription();
-        std::vector<VkVertexInputAttributeDescription2EXT> vertexAttribute = VulkanModel::getAttributeDescription();
-        vkCmdSetVertexInputEXT(commandBuffer,
-                               vertexBinding.size(),
-                               vertexBinding.data(),
-                               vertexAttribute.size(),
-                               vertexAttribute.data());
-
         {
             const VkExtent2D extent = vulkanDevice.getSwapChainExtent();
             const VkViewport viewport{
