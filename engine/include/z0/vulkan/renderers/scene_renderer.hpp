@@ -94,6 +94,7 @@ namespace z0 {
         void loadShaders() override;
         void createImagesResources() override;
         void cleanupImagesResources() override;
+        void recreateImagesResources() override;
         void beginRendering(VkCommandBuffer commandBuffer) override;
         void endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage) override;
 

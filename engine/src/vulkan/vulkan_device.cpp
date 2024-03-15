@@ -138,8 +138,7 @@ namespace z0 {
         if (result == VK_ERROR_OUT_OF_DATE_KHR) {
             recreateSwapChain();
             for (auto& renderer: renderers) {
-                renderer->cleanupImagesResources();
-                renderer->createImagesResources();
+                renderer->recreateImagesResources();
             }
             return;
         } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
@@ -205,8 +204,7 @@ namespace z0 {
             if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || window.windowResized) {
                 recreateSwapChain();
                 for (auto& renderer: renderers) {
-                    renderer->cleanupImagesResources();
-                    renderer->createImagesResources();
+                    renderer->recreateImagesResources();
                 }
             } else if (result != VK_SUCCESS) {
                 die("failed to present swap chain image!");
@@ -259,7 +257,7 @@ namespace z0 {
         vkCmdSetLogicOpEnableEXT(commandBuffer, VK_FALSE);
 
         // Disable color blending
-        VkBool32 color_blend_enables[] = {VK_FALSE};
+        VkBool32 color_blend_enables[] = {VK_TRUE};
         vkCmdSetColorBlendEnableEXT(commandBuffer, 0, 1, color_blend_enables);
 
         // Use RGBA color write mask

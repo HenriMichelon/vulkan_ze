@@ -97,18 +97,20 @@ float shadowFactor()
 
 void main() {
     viewDir = normalize(global.cameraPosition - POSITION);
-    vec3 color = material.albedoColor.rgb;
+    vec4 color = material.albedoColor;
     if (material.diffuseIndex != -1) {
-        color = texture(texSampler[material.diffuseIndex], UV).rgb;
+        color = texture(texSampler[material.diffuseIndex], UV);
     }
-    vec3 ambient = global.ambient.w * global.ambient.rgb * color;
+    //if (color.a < 0.1) discard;
+
+    vec3 ambient = global.ambient.w * global.ambient.rgb * color.rgb;
 
     vec3 diffuse = vec3(0, 0, 0);
     if (global.haveDirectionalLight) {
-        diffuse = calcDirectionalLight(global.directionalLight, color);
+        diffuse = calcDirectionalLight(global.directionalLight, color.rgb);
     }
     for(int i = 0; i < global.pointLightsCount; i++) {
-        diffuse += calcPointLight(pointLights.lights[i], color);
+        diffuse += calcPointLight(pointLights.lights[i], color.rgb);
     }
     vec3 result = (ambient + diffuse) * material.albedoColor.rgb;
 
@@ -123,6 +125,6 @@ void main() {
         vec3 L = normalize(LIGHT);
         result = max(dot(N, L),  global.ambient.w) * result * shadow;*/
     }
-    COLOR = vec4(result, 1.0);
+    COLOR = vec4(result, color.a);
 
 }

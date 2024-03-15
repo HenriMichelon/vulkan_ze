@@ -210,6 +210,8 @@ namespace z0 {
         if (shadowMap != nullptr) shadowMap->cleanupImagesResources();
     }
 
+    void ShadowMapRenderer::recreateImagesResources() {
 
+    }
 
 }

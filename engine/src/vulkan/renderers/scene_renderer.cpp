@@ -330,6 +330,11 @@ namespace z0 {
         }
     }
 
+    void SceneRenderer::recreateImagesResources() {
+        cleanupImagesResources();
+        createImagesResources();
+    }
+
     void SceneRenderer::createImagesResources() {
         // Create Color Resources (where we draw)
         // https://vulkan-tutorial.com/Multisampling#page_Setting-up-a-render-target
