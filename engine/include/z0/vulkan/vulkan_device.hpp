@@ -51,8 +51,9 @@ namespace z0 {
         void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples,
                          VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
                          VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory,
-                         VkImageCreateFlags flags = 0);
-        VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
+                         VkImageCreateFlags flags = 0, uint32_t layers = 1);
+        VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags,
+                                    uint32_t mipLevels = 1, VkImageViewType type = VK_IMAGE_VIEW_TYPE_2D);
         void transitionImageLayout(VkImage image, VkFormat format,
                                    VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels = 1);
         void transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format,

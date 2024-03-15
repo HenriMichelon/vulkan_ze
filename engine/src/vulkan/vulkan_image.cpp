@@ -15,7 +15,14 @@ namespace z0 {
     VulkanImage::VulkanImage(VulkanDevice& device, uint32_t w, uint32_t h, VkDeviceSize imageSize, void* data):
         vulkanDevice{device}, width{w}, height{h}
     {
+        const VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
         mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
+        vulkanDevice.createImage(width, height, mipLevels, VK_SAMPLE_COUNT_1_BIT, format,
+                                 VK_IMAGE_TILING_OPTIMAL,
+                                 VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
+        textureImageView = vulkanDevice.createImageView(textureImage, format, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
+
         VulkanBuffer textureStagingBuffer{
                 vulkanDevice,
                 imageSize,
@@ -25,12 +32,6 @@ namespace z0 {
         };
         textureStagingBuffer.map();
         textureStagingBuffer.writeToBuffer(data);
-
-        const VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
-        vulkanDevice.createImage(width, height, mipLevels, VK_SAMPLE_COUNT_1_BIT, format,
-                                 VK_IMAGE_TILING_OPTIMAL,
-                                 VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
         vulkanDevice.transitionImageLayout(
                 textureImage, format,
                 VK_IMAGE_LAYOUT_UNDEFINED,
@@ -38,12 +39,10 @@ namespace z0 {
                 mipLevels);
         copyBufferToImage(textureStagingBuffer.getBuffer(),
                           textureImage);
-
         //transitioned to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL while generating mipmaps
-        generateMipmaps(format);
-        textureImageView = vulkanDevice.createImageView(textureImage, format, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
-        createTextureSampler();
 
+        generateMipmaps(format);
+        createTextureSampler();
 #ifdef VULKAN_STATS
         VulkanStats::get().imagesCount += 1;
 #endif
