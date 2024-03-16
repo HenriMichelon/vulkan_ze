@@ -3,12 +3,13 @@
 #include "z0/vulkan/renderers/base_renderer.hpp"
 #include "z0/vulkan/renderers/depth_buffer.hpp"
 #include "z0/nodes/mesh_instance.hpp"
+#include "z0/nodes/camera.hpp"
 
 namespace z0 {
 
-    class DepthPressPassRenderer: public BaseRenderer {
+    class DepthPrepassRenderer: public BaseRenderer {
     public:
-        struct GobalUniformBufferObject {
+        struct GlobalUniformBufferObject {
             glm::mat4 projection{1.0f};
             glm::mat4 view{1.0f};
         };
@@ -16,12 +17,14 @@ namespace z0 {
             glm::mat4 matrix;
         };
 
-        DepthPressPassRenderer(VulkanDevice& device, const std::string& shaderDirectory);
+        DepthPrepassRenderer(VulkanDevice& device, const std::string& shaderDirectory);
 
-        void loadScene(std::vector<MeshInstance*>& meshes);
+        void loadScene(std::shared_ptr<DepthBuffer>& buffer, std::shared_ptr<Camera>& camera, std::vector<MeshInstance*>& meshes);
         void cleanup() override;
 
     private:
+        std::shared_ptr<Camera> camera;
+        std::shared_ptr<DepthBuffer> depthBuffer;
         std::vector<MeshInstance*> meshes {};
         std::vector<std::unique_ptr<VulkanBuffer>> modelsBuffers{MAX_FRAMES_IN_FLIGHT};
 
@@ -36,10 +39,10 @@ namespace z0 {
         void endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage) override;
 
     public:
-        DepthPressPassRenderer(const DepthPressPassRenderer&) = delete;
-        DepthPressPassRenderer &operator=(const DepthPressPassRenderer&) = delete;
-        DepthPressPassRenderer(const DepthPressPassRenderer&&) = delete;
-        DepthPressPassRenderer &&operator=(const DepthPressPassRenderer&&) = delete;
+        DepthPrepassRenderer(const DepthPrepassRenderer&) = delete;
+        DepthPrepassRenderer &operator=(const DepthPrepassRenderer&) = delete;
+        DepthPrepassRenderer(const DepthPrepassRenderer&&) = delete;
+        DepthPrepassRenderer &&operator=(const DepthPrepassRenderer&&) = delete;
     };
 
 }

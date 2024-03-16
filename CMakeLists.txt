@@ -93,6 +93,7 @@ add_executable(${PROJECT_NAME}
 		engine/include/z0/vulkan/renderers/depth_buffer.hpp
 		engine/include/z0/vulkan/renderers/base_shared_image.hpp
 		engine/src/vulkan/renderers/depth_buffer.cpp
+		engine/src/vulkan/renderers/depth_prepass_renderer.cpp
 )
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_shaders)
 
