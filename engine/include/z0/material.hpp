@@ -11,6 +11,13 @@ namespace z0 {
         CULLMODE_FRONT      = 2,
     };
 
+    enum Transparency {
+        TRANSPARENCY_DISABLED               = 0,
+        TRANSPARENCY_ALPHA                  = 1,
+        TRANSPARENCY_ALPHA_SCISSOR          = 2,
+        TRANSPARENCY_ALPHA_DEPTH_PRE_PASS   = 3,
+    };
+
     class Material: public Resource {
     public:
         explicit Material(std::string name = ""): Resource(name) {}

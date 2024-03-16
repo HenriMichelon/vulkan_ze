@@ -247,7 +247,7 @@ namespace z0 {
         vkCmdSetFrontFace(commandBuffer, VK_FRONT_FACE_COUNTER_CLOCKWISE);
 
         // Set depth state, the depth write. Don't enable depth bounds, bias, or stencil test.
-        vkCmdSetDepthTestEnable(commandBuffer, VK_TRUE);
+        vkCmdSetDepthTestEnable(commandBuffer, VK_FALSE);
         vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_LESS);
         vkCmdSetDepthBoundsTestEnable(commandBuffer, VK_FALSE);
         vkCmdSetDepthBiasEnable(commandBuffer, VK_FALSE);
@@ -256,8 +256,7 @@ namespace z0 {
         // Do not enable logic op
         vkCmdSetLogicOpEnableEXT(commandBuffer, VK_FALSE);
 
-        // Disable color blending
-        VkBool32 color_blend_enables[] = {VK_TRUE};
+        VkBool32 color_blend_enables[] = {VK_FALSE};
         vkCmdSetColorBlendEnableEXT(commandBuffer, 0, 1, color_blend_enables);
 
         // Use RGBA color write mask
