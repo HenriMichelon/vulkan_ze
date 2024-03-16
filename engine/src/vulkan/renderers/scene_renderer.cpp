@@ -18,6 +18,7 @@ namespace z0 {
             shadowMapRenderer.reset();
             shadowMap.reset();
         }
+        depthBuffer.reset();
         images.clear();
         pointLightBuffers.clear();
         surfacesBuffers.clear();
@@ -378,23 +379,6 @@ namespace z0 {
                                  colorImage, colorImageMemory);
         colorImageView = vulkanDevice.createImageView(colorImage, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
 
-        /*colorImageBlit.srcOffsets[0] = {0, 0, 0 };
-        colorImageBlit.srcOffsets[1] = {
-                static_cast<int32_t>(vulkanDevice.getSwapChainExtent().width),
-                static_cast<int32_t>(vulkanDevice.getSwapChainExtent().height), 1 };
-        colorImageBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        colorImageBlit.srcSubresource.mipLevel = 0;
-        colorImageBlit.srcSubresource.baseArrayLayer = 0;
-        colorImageBlit.srcSubresource.layerCount = 1;
-        colorImageBlit.dstOffsets[0] = {0, 0, 0 };
-        colorImageBlit.dstOffsets[1] = {
-                static_cast<int32_t>(vulkanDevice.getSwapChainExtent().width),
-                static_cast<int32_t>(vulkanDevice.getSwapChainExtent().height), 1 };
-        colorImageBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        colorImageBlit.dstSubresource.mipLevel = 0;
-        colorImageBlit.dstSubresource.baseArrayLayer = 0;
-        colorImageBlit.dstSubresource.layerCount = 1;*/
-
         colorImageResolve.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
         colorImageResolve.srcOffset = {0, 0, 0};
         colorImageResolve.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -404,28 +388,10 @@ namespace z0 {
                 vulkanDevice.getSwapChainExtent().height,
                 1};
 
-        // Create depth resources
-        // https://vulkan-tutorial.com/Depth_buffering#page_Depth-image-and-view
-        depthFormat = vulkanDevice.findImageTilingSupportedFormat(
-                {VK_FORMAT_D16_UNORM, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
-                VK_IMAGE_TILING_OPTIMAL,
-                VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
-        );
-        vulkanDevice.createImage(vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height,
-                                 1,
-                                 vulkanDevice.getSamples(),
-                                 depthFormat,
-                                 VK_IMAGE_TILING_OPTIMAL,
-                                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                 depthImage, depthImageMemory);
-        depthImageView = vulkanDevice.createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
+        depthBuffer = std::make_shared<DepthBuffer>(vulkanDevice);
     }
 
     void SceneRenderer::cleanupImagesResources() {
-        vkDestroyImageView(device, depthImageView, nullptr);
-        vkDestroyImage(device, depthImage, nullptr);
-        vkFreeMemory(device, depthImageMemory, nullptr);
         vkDestroyImageView(device, colorImageView, nullptr);
         vkDestroyImage(device, colorImage, nullptr);
         vkFreeMemory(device, colorImageMemory, nullptr);
@@ -434,8 +400,8 @@ namespace z0 {
     // https://lesleylai.info/en/vk-khr-dynamic-rendering/
     void SceneRenderer::beginRendering(VkCommandBuffer commandBuffer) {
         vulkanDevice.transitionImageLayout(commandBuffer,
-                                           depthImage,
-                                           depthFormat,
+                                           depthBuffer->getImage(),
+                                           depthBuffer->getFormat(),
                                            VK_IMAGE_LAYOUT_UNDEFINED,
                                            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
         vulkanDevice.transitionImageLayout(commandBuffer,
@@ -455,7 +421,7 @@ namespace z0 {
         };
         const VkRenderingAttachmentInfo depthAttachmentInfo{
                 .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
-                .imageView = depthImageView,
+                .imageView = depthBuffer->getImageView(),
                 .imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                 .resolveMode = VK_RESOLVE_MODE_NONE,
                 .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,

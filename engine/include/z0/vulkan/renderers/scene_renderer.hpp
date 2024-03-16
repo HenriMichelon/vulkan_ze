@@ -1,13 +1,11 @@
 #pragma once
 
-#include "base_renderer.hpp"
 #include "z0/vulkan/renderers/shadowmap_renderer.hpp"
-#include "z0/nodes/mesh_instance.hpp"
+#include "z0/vulkan/renderers/depth_prepass_renderer.hpp"
 #include "z0/nodes/camera.hpp"
 #include "z0/nodes/directional_light.hpp"
 #include "z0/nodes/environment.hpp"
 #include "z0/nodes/omni_light.hpp"
-#include "z0/nodes/spot_light.hpp"
 
 namespace z0 {
 
@@ -71,18 +69,15 @@ namespace z0 {
         std::vector<std::unique_ptr<VulkanBuffer>> surfacesBuffers{MAX_FRAMES_IN_FLIGHT};
         std::vector<std::unique_ptr<VulkanBuffer>> pointLightBuffers{MAX_FRAMES_IN_FLIGHT};
 
-        // Depth buffering
-        VkImage depthImage;
-        VkFormat depthFormat;
-        VkDeviceMemory depthImageMemory;
-        VkImageView depthImageView;
-
         // Offscreen frame buffer for MSAA
         VkImage colorImage;
         VkDeviceMemory colorImageMemory;
         VkImageView colorImageView;
         //VkImageBlit colorImageBlit{};
         VkImageResolve colorImageResolve{};
+
+        // Depth prepass buffer
+        std::shared_ptr<DepthBuffer> depthBuffer;
 
         // Shadow mapping
         std::shared_ptr<ShadowMap> shadowMap;

@@ -123,7 +123,7 @@ namespace z0 {
     void ShadowMapRenderer::beginRendering(VkCommandBuffer commandBuffer) {
         vulkanDevice.transitionImageLayout(commandBuffer,
                                            shadowMap->getImage(),
-                                           shadowMap->format,
+                                           shadowMap->getFormat(),
                                            VK_IMAGE_LAYOUT_UNDEFINED,
                                            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
         const VkRenderingAttachmentInfo depthAttachmentInfo{

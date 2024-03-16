@@ -1,10 +1,11 @@
-#include "z0/vulkan/renderers/shadowmap.hpp"
+#include "z0/vulkan/renderers/shadow_map.hpp"
 #include "z0/log.hpp"
 
 namespace z0 {
 
     ShadowMap::ShadowMap(VulkanDevice &dev, SpotLight* spotLight) :
-        vulkanDevice{dev}, light(spotLight) {
+            BaseSharedImage{dev, VK_FORMAT_D16_UNORM},
+            light(spotLight) {
          createImagesResources();
      }
 
