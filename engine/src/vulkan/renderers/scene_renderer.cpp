@@ -18,6 +18,7 @@ namespace z0 {
             shadowMapRenderer.reset();
             shadowMap.reset();
         }
+        //depthPrepassRenderer->cleanup();
         depthBuffer.reset();
         images.clear();
         pointLightBuffers.clear();
@@ -35,6 +36,8 @@ namespace z0 {
             shadowMapRenderer->loadScene(shadowMap, meshes);
             vulkanDevice.registerRenderer(shadowMapRenderer);
         }
+        //depthPrepassRenderer->loadScene(depthBuffer, currentCamera, meshes);
+        //vulkanDevice.registerRenderer(depthPrepassRenderer);
     }
 
     void SceneRenderer::loadNode(std::shared_ptr<Node>& parent) {
@@ -58,9 +61,9 @@ namespace z0 {
         }
         if (auto omniLight = dynamic_cast<OmniLight *>(parent.get())) {
             omniLights.push_back(omniLight);
-           /* if (auto spotLight = dynamic_cast<SpotLight *>(parent.get())) {
+            if (auto spotLight = dynamic_cast<SpotLight *>(parent.get())) {
                 if (shadowMap == nullptr) shadowMap = std::make_shared<ShadowMap>(vulkanDevice, spotLight);
-            }*/
+            }
         }
         createImagesList(parent);
         for(auto& child: parent->getChildren()) {
@@ -185,15 +188,17 @@ namespace z0 {
 
     void SceneRenderer::recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) {
         if (meshes.empty() || currentCamera == nullptr) return;
-        vkCmdSetRasterizationSamplesEXT(commandBuffer, vulkanDevice.getSamples());
-        vkCmdSetDepthTestEnable(commandBuffer, VK_TRUE);
-        vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
         bindShader(commandBuffer, *vertShader);
         bindShader(commandBuffer, *fragShader);
         setViewport(commandBuffer, vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height);
+        vkCmdSetRasterizationSamplesEXT(commandBuffer, vulkanDevice.getSamples());
+        vkCmdSetDepthTestEnable(commandBuffer, VK_TRUE);
+        vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
+
+        setViewport(commandBuffer, vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height);
 
         // quad renderer
-        /*
+/*
         vkCmdSetVertexInputEXT(commandBuffer, 0, nullptr, 0, nullptr);
         vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_NONE);
         std::array<uint32_t, 4> offsets = {
@@ -204,38 +209,8 @@ namespace z0 {
         };
         bindDescriptorSets(commandBuffer, currentFrame, offsets.size(), offsets.data());
         vkCmdDraw(commandBuffer, 3, 1, 0, 0);
-        return;*/
-
-        {
-            const VkExtent2D extent = vulkanDevice.getSwapChainExtent();
-            const VkViewport viewport{
-                    .x = 0.0f,
-                    .y = 0.0f,
-                    .width = static_cast<float>(extent.width),
-                    .height = static_cast<float>(extent.height),
-                    .minDepth = 0.0f,
-                    .maxDepth = 1.0f
-            };
-            vkCmdSetViewportWithCount(commandBuffer, 1, &viewport);
-            const VkRect2D scissor{
-                    .offset = {0, 0},
-                    .extent = extent
-            };
-            vkCmdSetScissorWithCount(commandBuffer, 1, &scissor);
-        }
-
-    /*    vkCmdSetVertexInputEXT(commandBuffer, 0, nullptr, 0, nullptr);
-        vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_NONE);
-        std::array<uint32_t, 4> offsets = {
-                0, // globalBuffers
-                0,
-                0,
-                0, // pointLightBuffers
-        };
-        bindDescriptorSets(commandBuffer, offsets.size(), offsets.data());
-        vkCmdDraw(commandBuffer, 3, 1, 0, 0);
-        return;*/
-
+        return;
+*/
         std::vector<VkVertexInputBindingDescription2EXT> vertexBinding = VulkanModel::getBindingDescription();
         std::vector<VkVertexInputAttributeDescription2EXT> vertexAttribute = VulkanModel::getAttributeDescription();
         vkCmdSetVertexInputEXT(commandBuffer,
@@ -389,6 +364,9 @@ namespace z0 {
                 1};
 
         depthBuffer = std::make_shared<DepthBuffer>(vulkanDevice);
+        /*if (depthPrepassRenderer == nullptr) {
+            depthPrepassRenderer = std::make_shared<DepthPrepassRenderer>(vulkanDevice, shaderDirectory);
+        }*/
     }
 
     void SceneRenderer::cleanupImagesResources() {

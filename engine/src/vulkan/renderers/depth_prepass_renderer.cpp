@@ -16,7 +16,7 @@ namespace z0 {
         BaseRenderer::cleanup();
     }
     void DepthPrepassRenderer::loadScene(std::shared_ptr<DepthBuffer>& _depthBuffer,
-                                         std::shared_ptr<Camera>& _camera,
+                                         Camera* _camera,
                                          std::vector<MeshInstance*>& _meshes) {
         meshes = _meshes;
         depthBuffer = _depthBuffer;
@@ -29,6 +29,7 @@ namespace z0 {
     }
 
     void DepthPrepassRenderer::update(uint32_t currentFrame) {
+        if (meshes.empty() || camera == nullptr) return;
         GlobalUniformBufferObject globalUbo {
             .projection = camera->getProjection(),
             .view = camera->getView()
@@ -46,6 +47,7 @@ namespace z0 {
     }
 
     void DepthPrepassRenderer::recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) {
+        if (meshes.empty() || camera == nullptr) return;
         bindShader(commandBuffer, *vertShader);
         VkShaderStageFlagBits stageFlagBits{VK_SHADER_STAGE_FRAGMENT_BIT};
         vkCmdBindShadersEXT(commandBuffer, 1, &stageFlagBits, VK_NULL_HANDLE);
@@ -113,7 +115,7 @@ namespace z0 {
             .build();
 
         for (int i = 0; i < descriptorSets.size(); i++) {
-            auto globalBufferInfo = globalBuffers[i]->descriptorInfo(modelBufferSize);
+            auto globalBufferInfo = globalBuffers[i]->descriptorInfo(sizeof(GlobalUniformBufferObject));
             auto modelBufferInfo = modelsBuffers[i]->descriptorInfo(modelBufferSize);
             if (!VulkanDescriptorWriter(*globalSetLayout, *globalPool)
                 .writeBuffer(0, &globalBufferInfo)
@@ -158,9 +160,9 @@ namespace z0 {
         VkImageMemoryBarrier barrier = {};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         barrier.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        barrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+        barrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
         barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.image = depthBuffer->getImage();
@@ -171,8 +173,8 @@ namespace z0 {
         barrier.subresourceRange.layerCount = 1;
         vkCmdPipelineBarrier(
                 commandBuffer,
-                VK_PIPELINE_STAGE_TRANSFER_BIT, // After depth writes
-                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, // Before depth reads in the shader
+                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
                 0,
                 0, nullptr,
                 0, nullptr,
@@ -184,7 +186,7 @@ namespace z0 {
     }
 
     void DepthPrepassRenderer::cleanupImagesResources() {
-        depthBuffer->cleanupImagesResources();
+        if (depthBuffer != nullptr) depthBuffer->cleanupImagesResources();
     }
 
     void DepthPrepassRenderer::recreateImagesResources() {

@@ -5,7 +5,7 @@ layout(set = 0, binding = 0) uniform GlobalUniformBufferObject {
     mat4 view;
 } global;
 
-layout(set = 0, binding = 2) uniform ModelUniformBufferObject {
+layout(set = 0, binding = 1) uniform ModelUniformBufferObject {
     mat4 matrix;
 } model;
 

@@ -9,8 +9,8 @@ layout(location = 2) in vec2 uv;
 layout(location = 0) out vec2 UV;
 layout(location = 1) out vec3 NORMAL;
 layout(location = 2) out vec3 POSITION;
-layout (location = 4) out vec4 SHADOW_COORD;
-layout (location = 5) out vec3 LIGHT_DIR;
+layout(location = 4) out vec4 SHADOW_COORD;
+layout(location = 5) out vec3 LIGHT_DIR;
 
 void main() {
     vec4 globalPosition = model.matrix * vec4(position, 1.0);

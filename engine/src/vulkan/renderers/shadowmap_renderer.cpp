@@ -109,7 +109,7 @@ namespace z0 {
             .build();
 
         for (int i = 0; i < descriptorSets.size(); i++) {
-            auto globalBufferInfo = globalBuffers[i]->descriptorInfo(modelBufferSize);
+            auto globalBufferInfo = globalBuffers[i]->descriptorInfo(sizeof(GlobalUniformBufferObject));
             auto modelBufferInfo = modelsBuffers[i]->descriptorInfo(modelBufferSize);
             if (!VulkanDescriptorWriter(*globalSetLayout, *globalPool)
                 .writeBuffer(0, &globalBufferInfo)

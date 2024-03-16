@@ -19,11 +19,11 @@ namespace z0 {
 
         DepthPrepassRenderer(VulkanDevice& device, const std::string& shaderDirectory);
 
-        void loadScene(std::shared_ptr<DepthBuffer>& buffer, std::shared_ptr<Camera>& camera, std::vector<MeshInstance*>& meshes);
+        void loadScene(std::shared_ptr<DepthBuffer>& buffer,  Camera* camera, std::vector<MeshInstance*>& meshes);
         void cleanup() override;
 
     private:
-        std::shared_ptr<Camera> camera;
+        Camera* camera;
         std::shared_ptr<DepthBuffer> depthBuffer;
         std::vector<MeshInstance*> meshes {};
         std::vector<std::unique_ptr<VulkanBuffer>> modelsBuffers{MAX_FRAMES_IN_FLIGHT};

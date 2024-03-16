@@ -11,7 +11,6 @@ namespace z0 {
 
         void createImagesResources();
         void cleanupImagesResources();
-
     };
 
 }
