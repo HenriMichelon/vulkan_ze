@@ -38,11 +38,6 @@ namespace z0 {
         void beginRendering(VkCommandBuffer commandBuffer) override;
         void endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage) override;
 
-    public:
-        DepthPrepassRenderer(const DepthPrepassRenderer&) = delete;
-        DepthPrepassRenderer &operator=(const DepthPrepassRenderer&) = delete;
-        DepthPrepassRenderer(const DepthPrepassRenderer&&) = delete;
-        DepthPrepassRenderer &&operator=(const DepthPrepassRenderer&&) = delete;
     };
 
 }

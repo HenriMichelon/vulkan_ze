@@ -18,7 +18,7 @@ namespace z0 {
             shadowMapRenderer.reset();
             shadowMap.reset();
         }
-        //depthPrepassRenderer->cleanup();
+        depthPrepassRenderer->cleanup();
         depthBuffer.reset();
         images.clear();
         pointLightBuffers.clear();
@@ -36,8 +36,8 @@ namespace z0 {
             shadowMapRenderer->loadScene(shadowMap, meshes);
             vulkanDevice.registerRenderer(shadowMapRenderer);
         }
-        //depthPrepassRenderer->loadScene(depthBuffer, currentCamera, meshes);
-        //vulkanDevice.registerRenderer(depthPrepassRenderer);
+        depthPrepassRenderer->loadScene(depthBuffer, currentCamera, meshes);
+        vulkanDevice.registerRenderer(depthPrepassRenderer);
     }
 
     void SceneRenderer::loadNode(std::shared_ptr<Node>& parent) {
@@ -190,11 +190,9 @@ namespace z0 {
         if (meshes.empty() || currentCamera == nullptr) return;
         bindShader(commandBuffer, *vertShader);
         bindShader(commandBuffer, *fragShader);
-        setViewport(commandBuffer, vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height);
         vkCmdSetRasterizationSamplesEXT(commandBuffer, vulkanDevice.getSamples());
         vkCmdSetDepthTestEnable(commandBuffer, VK_TRUE);
         vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
-
         setViewport(commandBuffer, vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height);
 
         // quad renderer
@@ -381,9 +379,9 @@ namespace z0 {
         colorImageBlit.dstSubresource.layerCount = 1;
 
         depthBuffer = std::make_shared<DepthBuffer>(vulkanDevice);
-        /*if (depthPrepassRenderer == nullptr) {
+        if (depthPrepassRenderer == nullptr) {
             depthPrepassRenderer = std::make_shared<DepthPrepassRenderer>(vulkanDevice, shaderDirectory);
-        }*/
+        }
     }
 
     void SceneRenderer::cleanupImagesResources() {

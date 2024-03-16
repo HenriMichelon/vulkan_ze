@@ -78,7 +78,7 @@ namespace z0 {
 
         // Depth prepass buffer
         std::shared_ptr<DepthBuffer> depthBuffer;
-        //std::shared_ptr<DepthPrepassRenderer> depthPrepassRenderer;
+        std::shared_ptr<DepthPrepassRenderer> depthPrepassRenderer;
 
         // Shadow mapping
         std::shared_ptr<ShadowMap> shadowMap;

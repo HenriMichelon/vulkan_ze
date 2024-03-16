@@ -173,34 +173,6 @@ namespace z0 {
                 0, nullptr,
                 0, nullptr,
                 1, &barrier);
-/*
-        if (vulkanDevice.getSamples() == VK_SAMPLE_COUNT_1_BIT) {
-            // Blit image to swap chain if MSAA is disabled
-            vkCmdBlitImage(commandBuffer,
-                           shadowMap->getImageMultisampled(),
-                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                           shadowMap->getImage(),
-                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                           1,
-                           &shadowMap->getImageBlit(),
-                           VK_FILTER_LINEAR );
-        } else {
-            // Resolve multisample image to a non-multisample swap chain image if MSAA is enabled
-            const VkImageResolve imageResolve{
-                    .srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-                    .srcOffset = {0, 0, 0},
-                    .dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-                    .dstOffset = {0, 0, 0},
-                    .extent = {vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height, 1}
-            };
-            vkCmdResolveImage(commandBuffer,
-                              shadowMap->getImageMultisampled(),
-                              VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                              shadowMap->getImage(),
-                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                              1,
-                              &shadowMap->getImageResolve());
-        }*/
     }
 
     void ShadowMapRenderer::createImagesResources() {

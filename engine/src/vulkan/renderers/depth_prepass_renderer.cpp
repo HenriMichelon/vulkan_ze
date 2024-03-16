@@ -51,11 +51,9 @@ namespace z0 {
         bindShader(commandBuffer, *vertShader);
         VkShaderStageFlagBits stageFlagBits{VK_SHADER_STAGE_FRAGMENT_BIT};
         vkCmdBindShadersEXT(commandBuffer, 1, &stageFlagBits, VK_NULL_HANDLE);
-
         vkCmdSetRasterizationSamplesEXT(commandBuffer, vulkanDevice.getSamples());
         vkCmdSetDepthTestEnable(commandBuffer, VK_TRUE);
         vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
-
         setViewport(commandBuffer, vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height);
 
         std::vector<VkVertexInputBindingDescription2EXT> vertexBinding = VulkanModel::getBindingDescription();
