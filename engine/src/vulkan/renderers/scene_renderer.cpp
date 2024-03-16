@@ -363,6 +363,23 @@ namespace z0 {
                 vulkanDevice.getSwapChainExtent().height,
                 1};
 
+        colorImageBlit.srcOffsets[0] = {0, 0, 0 };
+        colorImageBlit.srcOffsets[1] = {
+                static_cast<int32_t>(vulkanDevice.getSwapChainExtent().width),
+                static_cast<int32_t>(vulkanDevice.getSwapChainExtent().height), 1 };
+        colorImageBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        colorImageBlit.srcSubresource.mipLevel = 0;
+        colorImageBlit.srcSubresource.baseArrayLayer = 0;
+        colorImageBlit.srcSubresource.layerCount = 1;
+        colorImageBlit.dstOffsets[0] = {0, 0, 0 };
+        colorImageBlit.dstOffsets[1] = {
+                static_cast<int32_t>(vulkanDevice.getSwapChainExtent().width),
+                static_cast<int32_t>(vulkanDevice.getSwapChainExtent().height), 1 };
+        colorImageBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        colorImageBlit.dstSubresource.mipLevel = 0;
+        colorImageBlit.dstSubresource.baseArrayLayer = 0;
+        colorImageBlit.dstSubresource.layerCount = 1;
+
         depthBuffer = std::make_shared<DepthBuffer>(vulkanDevice);
         /*if (depthPrepassRenderer == nullptr) {
             depthPrepassRenderer = std::make_shared<DepthPrepassRenderer>(vulkanDevice, shaderDirectory);
@@ -429,7 +446,7 @@ namespace z0 {
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
         // Since we render in a memory image we need to manually present the image in the swap chain
-        /*if (vulkanDevice.getSamples() == VK_SAMPLE_COUNT_1_BIT) {
+        if (vulkanDevice.getSamples() == VK_SAMPLE_COUNT_1_BIT) {
             // Blit image to swap chain if MSAA is disabled
             vkCmdBlitImage(commandBuffer,
                            colorImage,
@@ -439,22 +456,15 @@ namespace z0 {
                            1,
                            &colorImageBlit,
                            VK_FILTER_LINEAR );
-        } else*/ {
+        } else {
             // Resolve multisample image to a non-multisample swap chain image if MSAA is enabled
-            const VkImageResolve imageResolve{
-                    .srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-                    .srcOffset = {0, 0, 0},
-                    .dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-                    .dstOffset = {0, 0, 0},
-                    .extent = {vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height, 1}
-            };
             vkCmdResolveImage(commandBuffer,
                               colorImage,
                               VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                               swapChainImage,
                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                               1,
-                              &imageResolve);
+                              &colorImageResolve);
         }
 
         vulkanDevice.transitionImageLayout(

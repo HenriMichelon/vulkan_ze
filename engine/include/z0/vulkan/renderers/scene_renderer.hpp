@@ -73,7 +73,7 @@ namespace z0 {
         VkImage colorImage;
         VkDeviceMemory colorImageMemory;
         VkImageView colorImageView;
-        //VkImageBlit colorImageBlit{};
+        VkImageBlit colorImageBlit{};
         VkImageResolve colorImageResolve{};
 
         // Depth prepass buffer
