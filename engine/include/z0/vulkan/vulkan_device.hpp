@@ -54,14 +54,20 @@ namespace z0 {
                          VkImageCreateFlags flags = 0, uint32_t layers = 1);
         VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags,
                                     uint32_t mipLevels = 1, VkImageViewType type = VK_IMAGE_VIEW_TYPE_2D);
-        void transitionImageLayout(VkImage image, VkFormat format,
-                                   VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels = 1);
-        void transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format,
-                                   VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels = 1);
+
+        void transitionImageLayout(VkImage image,
+                                   VkImageLayout oldLayout, VkImageLayout newLayout,
+                                   VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
+                                   VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+                                   VkImageAspectFlags aspectMask, uint32_t mipLevels = 1);
+        void transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image,
+                                   VkImageLayout oldLayout, VkImageLayout newLayout,
+                                   VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
+                                   VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+                                   VkImageAspectFlags aspectMask, uint32_t mipLevels = 1);
 
         static QueueFamilyIndices findQueueFamilies(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR surface);
         uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
-        static bool hasStencilComponent(VkFormat format);
         // Returns if a given format support LINEAR filtering
         VkBool32 formatIsFilterable(VkFormat format, VkImageTiling tiling);
         // Find a suitable IMAGE_TILING format (for the Depth buffering image)

@@ -190,9 +190,11 @@ namespace z0 {
         if (meshes.empty() || currentCamera == nullptr) return;
         bindShader(commandBuffer, *vertShader);
         bindShader(commandBuffer, *fragShader);
+
         vkCmdSetRasterizationSamplesEXT(commandBuffer, vulkanDevice.getSamples());
         vkCmdSetDepthTestEnable(commandBuffer, VK_TRUE);
-        vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
+        vkCmdSetDepthWriteEnable(commandBuffer, VK_FALSE); // we have a depth prepass
+        vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_LESS_OR_EQUAL); // comparing with the depth prepass
         setViewport(commandBuffer, vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height);
 
         // quad renderer
@@ -392,16 +394,11 @@ namespace z0 {
 
     // https://lesleylai.info/en/vk-khr-dynamic-rendering/
     void SceneRenderer::beginRendering(VkCommandBuffer commandBuffer) {
-        vulkanDevice.transitionImageLayout(commandBuffer,
-                                           depthBuffer->getImage(),
-                                           depthBuffer->getFormat(),
-                                           VK_IMAGE_LAYOUT_UNDEFINED,
-                                           VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-        vulkanDevice.transitionImageLayout(commandBuffer,
-                                           colorImage,
-                                           vulkanDevice.getSwapChainImageFormat(),
-                                           VK_IMAGE_LAYOUT_UNDEFINED,
-                                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+        vulkanDevice.transitionImageLayout(commandBuffer, colorImage,
+                                           VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                           0, VK_ACCESS_TRANSFER_WRITE_BIT,
+                                           VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                           VK_IMAGE_ASPECT_COLOR_BIT);
         // Color attachement : where the rendering is done (multisampled memory image)
         const VkRenderingAttachmentInfo colorAttachmentInfo{
                 .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
@@ -417,7 +414,7 @@ namespace z0 {
                 .imageView = depthBuffer->getImageView(),
                 .imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                 .resolveMode = VK_RESOLVE_MODE_NONE,
-                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
                 .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
                 .clearValue = depthClearValue,
         };
@@ -437,12 +434,11 @@ namespace z0 {
     void SceneRenderer::endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage) {
         vkCmdEndRendering(commandBuffer);
         vulkanDevice.transitionImageLayout(
-                commandBuffer,
-                swapChainImage,
-                VK_FORMAT_UNDEFINED,
-                VK_IMAGE_LAYOUT_UNDEFINED,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-
+                commandBuffer,swapChainImage,
+                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                0, VK_ACCESS_TRANSFER_WRITE_BIT,
+                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                VK_IMAGE_ASPECT_COLOR_BIT);
         // Since we render in a memory image we need to manually present the image in the swap chain
         if (vulkanDevice.getSamples() == VK_SAMPLE_COUNT_1_BIT) {
             // Blit image to swap chain if MSAA is disabled
@@ -464,13 +460,12 @@ namespace z0 {
                               1,
                               &colorImageResolve);
         }
-
         vulkanDevice.transitionImageLayout(
-                commandBuffer,
-                swapChainImage,
-                VK_FORMAT_UNDEFINED,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+                commandBuffer,swapChainImage,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, 0,
+                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                VK_IMAGE_ASPECT_COLOR_BIT);
     }
 
 

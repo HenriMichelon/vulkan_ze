@@ -56,7 +56,6 @@ namespace z0 {
         vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
         vkCmdSetDepthBiasEnable(commandBuffer, VK_TRUE);
         vkCmdSetDepthBias(commandBuffer, depthBiasConstant, 0.0f, depthBiasSlope);
-
         setViewport(commandBuffer, shadowMap->size, shadowMap->size);
 
         std::vector<VkVertexInputBindingDescription2EXT> vertexBinding = VulkanModel::getBindingDescription();
@@ -83,6 +82,7 @@ namespace z0 {
             }
             modelIndex += 1;
         }
+        vkCmdSetDepthBiasEnable(commandBuffer, VK_FALSE);
     }
 
     void ShadowMapRenderer::createDescriptorSetLayout() {
@@ -121,11 +121,11 @@ namespace z0 {
     }
 
     void ShadowMapRenderer::beginRendering(VkCommandBuffer commandBuffer) {
-        vulkanDevice.transitionImageLayout(commandBuffer,
-                                           shadowMap->getImage(),
-                                           shadowMap->getFormat(),
-                                           VK_IMAGE_LAYOUT_UNDEFINED,
-                                           VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+        vulkanDevice.transitionImageLayout(commandBuffer, shadowMap->getImage(),
+                                           VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                           0, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT,
+                                           VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+                                           VK_IMAGE_ASPECT_DEPTH_BIT);
         const VkRenderingAttachmentInfo depthAttachmentInfo{
                 .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
                 .imageView = shadowMap->getImageView(),
@@ -151,28 +151,13 @@ namespace z0 {
 
     void ShadowMapRenderer::endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage) {
         vkCmdEndRendering(commandBuffer);
-        VkImageMemoryBarrier barrier = {};
-        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        barrier.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        barrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.image = shadowMap->getImage();
-        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-        barrier.subresourceRange.baseMipLevel = 0;
-        barrier.subresourceRange.levelCount = 1;
-        barrier.subresourceRange.baseArrayLayer = 0;
-        barrier.subresourceRange.layerCount = 1;
-        vkCmdPipelineBarrier(
-                commandBuffer,
+        vulkanDevice.transitionImageLayout(
+                commandBuffer, shadowMap->getImage(),
+                VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+                VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
                 VK_PIPELINE_STAGE_TRANSFER_BIT, // After depth writes
                 VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, // Before depth reads in the shader
-                0,
-                0, nullptr,
-                0, nullptr,
-                1, &barrier);
+                VK_IMAGE_ASPECT_DEPTH_BIT);
     }
 
     void ShadowMapRenderer::createImagesResources() {

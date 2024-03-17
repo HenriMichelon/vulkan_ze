@@ -51,6 +51,7 @@ namespace z0 {
         bindShader(commandBuffer, *vertShader);
         VkShaderStageFlagBits stageFlagBits{VK_SHADER_STAGE_FRAGMENT_BIT};
         vkCmdBindShadersEXT(commandBuffer, 1, &stageFlagBits, VK_NULL_HANDLE);
+
         vkCmdSetRasterizationSamplesEXT(commandBuffer, vulkanDevice.getSamples());
         vkCmdSetDepthTestEnable(commandBuffer, VK_TRUE);
         vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
@@ -104,12 +105,12 @@ namespace z0 {
         createUniformBuffers(modelsBuffers, modelBufferSize, meshes.size());;
 
         globalSetLayout = VulkanDescriptorSetLayout::Builder(vulkanDevice)
-                .addBinding(0, // global UBO
-                            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-                            VK_SHADER_STAGE_VERTEX_BIT)
-                .addBinding(1, // model UBO
-                            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-                            VK_SHADER_STAGE_VERTEX_BIT)
+            .addBinding(0, // global UBO
+                        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                        VK_SHADER_STAGE_VERTEX_BIT)
+            .addBinding(1, // model UBO
+                        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                        VK_SHADER_STAGE_VERTEX_BIT)
             .build();
 
         for (int i = 0; i < descriptorSets.size(); i++) {
@@ -125,11 +126,17 @@ namespace z0 {
     }
 
     void DepthPrepassRenderer::beginRendering(VkCommandBuffer commandBuffer) {
-        vulkanDevice.transitionImageLayout(commandBuffer,
-                                           depthBuffer->getImage(),
-                                           depthBuffer->getFormat(),
-                                           VK_IMAGE_LAYOUT_UNDEFINED,
-                                           VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+        vulkanDevice.transitionImageLayout(
+                commandBuffer,
+               depthBuffer->getImage(),
+                VK_IMAGE_LAYOUT_UNDEFINED,
+                VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+               0, // no need to wait for any prior operation (VK_IMAGE_LAYOUT_UNDEFINED))
+               VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+               VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, // as soon as possible
+               VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+               VK_IMAGE_ASPECT_DEPTH_BIT);
+
         const VkRenderingAttachmentInfo depthAttachmentInfo{
                 .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
                 .imageView = depthBuffer->getImageView(),
@@ -155,28 +162,12 @@ namespace z0 {
 
     void DepthPrepassRenderer::endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage) {
         vkCmdEndRendering(commandBuffer);
-        VkImageMemoryBarrier barrier = {};
-        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        barrier.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        barrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.image = depthBuffer->getImage();
-        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-        barrier.subresourceRange.baseMipLevel = 0;
-        barrier.subresourceRange.levelCount = 1;
-        barrier.subresourceRange.baseArrayLayer = 0;
-        barrier.subresourceRange.layerCount = 1;
-        vkCmdPipelineBarrier(
-                commandBuffer,
-                VK_PIPELINE_STAGE_TRANSFER_BIT,
-                VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-                0,
-                0, nullptr,
-                0, nullptr,
-                1, &barrier);
+        vulkanDevice.transitionImageLayout(
+                commandBuffer,depthBuffer->getImage(),
+                VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT,
+                VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+                VK_IMAGE_ASPECT_DEPTH_BIT);
     }
 
     void DepthPrepassRenderer::createImagesResources() {

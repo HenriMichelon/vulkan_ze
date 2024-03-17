@@ -32,11 +32,13 @@ namespace z0 {
         };
         textureStagingBuffer.map();
         textureStagingBuffer.writeToBuffer(data);
+
         vulkanDevice.transitionImageLayout(
-                textureImage, format,
-                VK_IMAGE_LAYOUT_UNDEFINED,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                mipLevels);
+                textureImage,
+                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                0, VK_ACCESS_TRANSFER_WRITE_BIT,
+                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
         copyBufferToImage(textureStagingBuffer.getBuffer(),
                           textureImage);
         //transitioned to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL while generating mipmaps
