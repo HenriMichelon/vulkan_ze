@@ -101,7 +101,7 @@ void main() {
     if (material.diffuseIndex != -1) {
         color = texture(texSampler[material.diffuseIndex], UV);
     }
-    //if (color.a < 0.1) discard;
+    //if (color.a < 0.99) discard;
 
     vec3 ambient = global.ambient.w * global.ambient.rgb * color.rgb;
 

@@ -36,7 +36,7 @@ namespace z0 {
             shadowMapRenderer->loadScene(shadowMap, meshes);
             vulkanDevice.registerRenderer(shadowMapRenderer);
         }
-        depthPrepassRenderer->loadScene(depthBuffer, currentCamera, meshes);
+        depthPrepassRenderer->loadScene(depthBuffer, currentCamera, meshes, imagesIndices, images);
         vulkanDevice.registerRenderer(depthPrepassRenderer);
     }
 
@@ -161,12 +161,12 @@ namespace z0 {
         uint32_t modelIndex = 0;
         uint32_t surfaceIndex = 0;
         for (const auto&meshInstance: meshes) {
-            ModelUniformBufferObject modelUbo {
-                .matrix = meshInstance->getGlobalTransform(),
-                .normalMatrix = meshInstance->getGlobalNormalTransform(),
-            };
-            writeUniformBuffer(modelsBuffers, currentFrame, &modelUbo, modelIndex);
             if (meshInstance->getMesh()->isValid()) {
+                ModelUniformBufferObject modelUbo {
+                    .matrix = meshInstance->getGlobalTransform(),
+                    .normalMatrix = meshInstance->getGlobalNormalTransform(),
+                };
+                writeUniformBuffer(modelsBuffers, currentFrame, &modelUbo, modelIndex);
                 for (const auto &surface: meshInstance->getMesh()->getSurfaces()) {
                     SurfaceUniformBufferObject surfaceUbo { };
                     if (auto standardMaterial = dynamic_cast<StandardMaterial*>(surface->material.get())) {
@@ -177,6 +177,7 @@ namespace z0 {
                         if (standardMaterial->specularTexture != nullptr) {
                             surfaceUbo.specularIndex = imagesIndices[standardMaterial->specularTexture->getImage().getId()];
                         }
+                        surfaceUbo.transparency = standardMaterial->transparency;
                     }
                     writeUniformBuffer(surfacesBuffers, currentFrame, &surfaceUbo, surfaceIndex);
                     surfaceIndex += 1;
@@ -195,6 +196,8 @@ namespace z0 {
         vkCmdSetDepthTestEnable(commandBuffer, VK_TRUE);
         vkCmdSetDepthWriteEnable(commandBuffer, VK_FALSE); // we have a depth prepass
         vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_LESS_OR_EQUAL); // comparing with the depth prepass
+        VkBool32 color_blend_enables[] = {VK_TRUE};
+        vkCmdSetColorBlendEnableEXT(commandBuffer, 0, 1, color_blend_enables);
         setViewport(commandBuffer, vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height);
 
         // quad renderer

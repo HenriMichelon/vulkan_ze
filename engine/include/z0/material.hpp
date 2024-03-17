@@ -29,6 +29,7 @@ namespace z0 {
         std::shared_ptr<Texture>    albedoTexture;
         std::shared_ptr<Texture>    specularTexture;
         CullMode                    cullMode { CULLMODE_BACK };
+        Transparency                transparency { TRANSPARENCY_DISABLED };
 
         explicit StandardMaterial(std::string name = ""): Material(name) {}
         bool isValid() override { return true; }

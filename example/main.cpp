@@ -7,6 +7,7 @@
 #include "z0/nodes/omni_light.hpp"
 #include "z0/nodes/spot_light.hpp"
 #include "z0/vulkan/vulkan_cubemap.hpp"
+#include "z0/nodes/mesh_instance.hpp"
 
 class RootNode: public z0::Node {
 public:
@@ -40,6 +41,9 @@ public:
         model3 = z0::Loader::loadModelFromFile("models/window.glb", false);
         model3->setRotationDegrees({-90.0, 0.0, 0.0});
         model3->setPosition({1.0, -0.0, -3.0});
+        z0::MeshInstance* mi = dynamic_cast<z0::MeshInstance*>(model3->getChildren().front().get());
+        z0::StandardMaterial* mat = dynamic_cast<z0::StandardMaterial*>(mi->getMesh()->getSurfaceMaterial(0).get());
+        mat->transparency = z0::TRANSPARENCY_ALPHA;
 
         model4 = model3->duplicate();
         model4->setPosition({0.0, -0.0, -4.0});

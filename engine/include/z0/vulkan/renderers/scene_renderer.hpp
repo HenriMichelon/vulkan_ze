@@ -45,6 +45,7 @@ namespace z0 {
             glm::mat4 normalMatrix;
         };
         struct SurfaceUniformBufferObject {
+            alignas(4) bool transparency;
             alignas(4) int32_t diffuseIndex{-1};
             alignas(4) int32_t specularIndex{-1};
             alignas(16) glm::vec4 albedoColor;
