@@ -117,11 +117,11 @@ void main() {
     vec3 result = (ambient + diffuse) * material.albedoColor.rgb;
 
     // shadows
-    float shadows = 0.0;
-    //for (int i = 0; i < global.shadowMapsCount; i++) {
-        shadows += shadowFactor(1);
-    //}
-    result = (ambient + shadows) * result;
+    for (int i = 0; i < global.shadowMapsCount; i++) {
+        float shadows = shadowFactor(i);
+        result = (ambient + shadows) * result;
+    }
+
     COLOR = vec4(result, material.transparency == 1 || material.transparency == 3 ? color.a : 1.0);
 
 }

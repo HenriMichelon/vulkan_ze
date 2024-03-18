@@ -33,7 +33,6 @@ public:
                                  0.027, 0.0028};
         spotLight1.setPosition({3.0, -6.0, -2.1});
         spotLight1.setColorAndIntensity({1.0f, 1.0f, 1.0f, 4.0f});
-        addChild(spotLight1);
         light1 = z0::Loader::loadModelFromFile("models/light.glb", false);
         light1->setPosition(spotLight1.getPosition());
         addChild(light1);
@@ -43,10 +42,12 @@ public:
                                  0.027, 0.0028};
         spotLight2.setPosition({-3.0, -4.0, -2.1});
         spotLight2.setColorAndIntensity({1.0f, 1.0f, 1.0f, 4.0f});
-        addChild(spotLight2);
         light2 =  z0::Loader::loadModelFromFile("models/light.glb", false);
         light2->setPosition(spotLight2.getPosition());
         addChild(light2);
+
+        addChild(spotLight2);
+        addChild(spotLight1);
 
         model3 = z0::Loader::loadModelFromFile("models/window.glb", false);
         model3->setRotationDegrees({-90.0, 0.0, 0.0});

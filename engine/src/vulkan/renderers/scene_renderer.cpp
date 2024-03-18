@@ -10,7 +10,7 @@ namespace z0 {
      }
 
     void SceneRenderer::cleanup() {
-        for (auto &shadowMapRenderer : shadowMapRenderers) {
+        for (auto shadowMapRenderer : shadowMapRenderers) {
             shadowMapRenderer->cleanup();
         }
         shadowMapRenderers.clear();
@@ -19,6 +19,7 @@ namespace z0 {
         transparentsMeshes.clear();
         depthPrepassRenderer->cleanup();
         images.clear();
+        shadowMapsBuffers.clear();
         surfacesBuffers.clear();
         pointLightBuffers.clear();
         BaseMeshesRenderer::cleanup();
@@ -234,6 +235,7 @@ namespace z0 {
                 0,
                 0,
                 0, // pointLightBuffers
+                0
         };
         bindDescriptorSets(commandBuffer, currentFrame, offsets.size(), offsets.data());
         vkCmdDraw(commandBuffer, 3, 1, 0, 0);
@@ -333,12 +335,13 @@ namespace z0 {
             .addBinding(4, // PointLight array UBO
                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
                         VK_SHADER_STAGE_FRAGMENT_BIT)
-            .addBinding(5, // shadow map infos
+            .addBinding(5, // shadow maps infos
                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
                         VK_SHADER_STAGE_FRAGMENT_BIT)
-            .addBinding(6, // shadow map
+            .addBinding(6, // shadow maps
                         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                        VK_SHADER_STAGE_FRAGMENT_BIT)
+                        VK_SHADER_STAGE_FRAGMENT_BIT,
+                        shadowMaps.size())
            .build();
 
         for (int i = 0; i < descriptorSets.size(); i++) {
@@ -358,18 +361,19 @@ namespace z0 {
                 .writeBuffer(3, &surfaceBufferInfo)
                 .writeBuffer(4, &pointLightBufferInfo)
                 .writeBuffer(5, &shadowMapBufferInfo);
+            std::vector<VkDescriptorImageInfo> shadowMapsInfo{};
             if (shadowMaps.empty()) {
                 VkDescriptorImageInfo imageInfo = imagesInfo[0]; // find a better solution (blank image ?)
                 writer.writeImage(6, &imageInfo);
             } else {
                 for (const auto &shadowMap: shadowMaps) {
-                    VkDescriptorImageInfo imageInfo{
+                    shadowMapsInfo.push_back(VkDescriptorImageInfo{
                         .sampler = shadowMap->getSampler(),
                         .imageView = shadowMap->getImageView(),
                         .imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
-                    };
-                    writer.writeImage(6, &imageInfo);
+                    });
                 }
+                writer.writeImage(6, shadowMapsInfo.data());
             }
             if (!writer.build(descriptorSets[i])) {
                 die("Cannot allocate descriptor set");

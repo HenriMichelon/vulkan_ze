@@ -29,7 +29,7 @@ namespace z0 {
             alignas(4) float outerCutOff = { glm::cos(glm::radians(15.f)) };
         };
         struct ShadowMapUniform {
-            alignas(16) glm::mat4 lightSpace;
+            glm::mat4 lightSpace;
             alignas(16) glm::vec3 lightPos;
         };
         struct GobalUniformBufferObject {
