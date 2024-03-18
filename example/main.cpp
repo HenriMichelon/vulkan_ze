@@ -52,13 +52,13 @@ public:
         model3 = z0::Loader::loadModelFromFile("models/window.glb", false);
         model3->setRotationDegrees({-90.0, 0.0, 0.0});
         model3->setPosition({1.0, -0.0, -3.0});
-        z0::MeshInstance* mi = dynamic_cast<z0::MeshInstance*>(model3->getChildren().front().get());
-        z0::StandardMaterial* mat = dynamic_cast<z0::StandardMaterial*>(mi->getMesh()->getSurfaceMaterial(0).get());
+        auto* mi = dynamic_cast<z0::MeshInstance*>(model3->getChildren().front().get());
+        auto* mat = dynamic_cast<z0::StandardMaterial*>(mi->getMesh()->getSurfaceMaterial(0).get());
         mat->transparency = z0::TRANSPARENCY_ALPHA;
         //mat->alphaScissor = 0.4;
 
         model4 = model3->duplicate();
-        model4->setPosition({0.0, -0.0, -4.0});
+        model4->setPosition({0.0, -0.0, 4.0});
 
         addChild(model4);
         addChild(model3);

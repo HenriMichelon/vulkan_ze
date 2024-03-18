@@ -4,7 +4,10 @@
 namespace z0 {
 
     ShadowMap::ShadowMap(VulkanDevice &dev, SpotLight* spotLight) :
-            BaseSharedImage{dev, VK_FORMAT_D16_UNORM},
+            BaseSharedImage{dev, dev.findImageTilingSupportedFormat(
+                    {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D16_UNORM, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT,},
+                    VK_IMAGE_TILING_OPTIMAL,
+                    VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)},
             light(spotLight) {
          createImagesResources();
      }
@@ -32,20 +35,20 @@ namespace z0 {
         // Create sampler to sample from to depth attachment
         // Used to sample in the fragment shader for shadowed rendering
         VkFilter shadowmap_filter = vulkanDevice.formatIsFilterable( format, VK_IMAGE_TILING_OPTIMAL) ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
-        VkSamplerCreateInfo samplerCreateInfo {};
-        samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-        samplerCreateInfo.maxAnisotropy = 1.0f;
-        samplerCreateInfo.magFilter = shadowmap_filter;
-        samplerCreateInfo.minFilter = shadowmap_filter;
-        samplerCreateInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-        samplerCreateInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-        samplerCreateInfo.addressModeV = samplerCreateInfo.addressModeU;
-        samplerCreateInfo.addressModeW = samplerCreateInfo.addressModeU;
-        samplerCreateInfo.mipLodBias = 0.0f;
-        samplerCreateInfo.maxAnisotropy = 1.0f;
-        samplerCreateInfo.minLod = 0.0f;
-        samplerCreateInfo.maxLod = 1.0f;
-        samplerCreateInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+        VkSamplerCreateInfo samplerCreateInfo{
+            .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+            .magFilter = shadowmap_filter,
+            .minFilter = shadowmap_filter,
+            .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+            .addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+            .addressModeV = samplerCreateInfo.addressModeU,
+            .addressModeW = samplerCreateInfo.addressModeU,
+            .mipLodBias = 0.0f,
+            .maxAnisotropy = 1.0f,
+            .minLod = 0.0f,
+            .maxLod = 1.0f,
+            .borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE
+        };
         if (vkCreateSampler(vulkanDevice.getDevice(), &samplerCreateInfo, nullptr, &sampler) != VK_SUCCESS) {
             die("failed to create shadowmap sampler!");
         }

@@ -16,10 +16,13 @@ namespace z0 {
         void setColorAndIntensity(glm::vec4 color) { colorAndIntensity = color; }
         float getSpecularIntensity() const { return specularIntensity; }
         void setSpecularIntensity(float specular) { specularIntensity = specular; }
+        bool getCastShadows() const { return castShadows; }
+        void setCastShadow(bool cast) { castShadows = cast; }
 
     private:
-        glm::vec4 colorAndIntensity{1.0f, 1.0f, 1.0f, 1.0f};
-        float specularIntensity{1.0f};
+        glm::vec4 colorAndIntensity {1.0f, 1.0f, 1.0f, 1.0f};
+        float specularIntensity {1.0f};
+        bool castShadows {false};
     };
 
 }

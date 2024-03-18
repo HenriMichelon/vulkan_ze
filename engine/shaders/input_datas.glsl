@@ -33,7 +33,7 @@ layout(set = 0, binding = 0) uniform GlobalUniformBufferObject  {
     int shadowMapsCount;
 } global;
 
-layout(set = 0, binding = 1) uniform sampler2D texSampler[100]; // put a limit into the default renderer
+layout(set = 0, binding = 1) uniform sampler2D texSampler[1];
 
 layout(set = 0, binding = 2) uniform ModelUniformBufferObject  {
     mat4 matrix;

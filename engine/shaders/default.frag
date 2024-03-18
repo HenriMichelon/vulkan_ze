@@ -116,7 +116,6 @@ void main() {
     }
     vec3 result = (ambient + diffuse) * material.albedoColor.rgb;
 
-    // shadows
     for (int i = 0; i < global.shadowMapsCount; i++) {
         float shadows = shadowFactor(i);
         result = (ambient + shadows) * result;
