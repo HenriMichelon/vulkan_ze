@@ -7,7 +7,7 @@ namespace z0 {
     class Light: public Node {
     public:
         explicit Light(const std::string nodeName = "Light"): Node{nodeName} {}
-        Light(glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f},
+        explicit Light(glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f},
               float specular = 1.0f,
               const std::string nodeName = "Light"):
             Node{nodeName}, colorAndIntensity{color}, specularIntensity{specular}  {}

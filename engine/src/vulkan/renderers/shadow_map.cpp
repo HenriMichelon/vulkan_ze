@@ -1,9 +1,10 @@
 #include "z0/vulkan/renderers/shadow_map.hpp"
 #include "z0/log.hpp"
+#include "z0/nodes/directional_light.hpp"
 
 namespace z0 {
 
-    ShadowMap::ShadowMap(VulkanDevice &dev, SpotLight* spotLight) :
+    ShadowMap::ShadowMap(VulkanDevice &dev, Light* spotLight) :
             BaseSharedImage{dev, dev.findImageTilingSupportedFormat(
                     {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D16_UNORM, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT,},
                     VK_IMAGE_TILING_OPTIMAL,
@@ -14,6 +15,35 @@ namespace z0 {
 
     ShadowMap::~ShadowMap() {
         cleanupImagesResources();
+    }
+
+    glm::mat4 ShadowMap::getLightSpace() const {
+        if (auto* directionalLight = dynamic_cast<DirectionalLight*>(light)) {
+            // Light properties
+            glm::vec3 lightDir = glm::normalize(directionalLight->getDirection());
+            // Scene bounds (you should calculate these based on your scene)
+            glm::vec3 sceneMin = glm::vec3(-10.0f, -10.0f, -10.0f);
+            glm::vec3 sceneMax = glm::vec3(10.0f, 10.0f, 10.0f);
+            // Calculate center of the scene
+            glm::vec3 sceneCenter = (sceneMin + sceneMax) / 2.0f;
+            // Set up the orthographic projection matrix
+            float orthoWidth = glm::distance(sceneMin.x, sceneMax.x);
+            float orthoHeight = glm::distance(sceneMin.y, sceneMax.y);
+            float orthoDepth = glm::distance(sceneMin.z, sceneMax.z);
+            glm::mat4 lightProjection = glm::ortho(-orthoWidth / 2, orthoWidth / 2,
+                                                   -orthoHeight / 2, orthoHeight / 2,
+                                                   zNear, orthoDepth);
+            // Set up the view matrix for the light
+            glm::mat4 lightView = glm::lookAt(sceneCenter - lightDir * (orthoDepth / 2.0f), // Position is scene center offset by light direction
+                                              sceneCenter,                                // Looks at the center of the scene
+                                              glm::vec3(0.0f, 1.0f, 0.0f));               // Up is in the Y direction
+            // Combine to form the light's space matrix
+            return lightProjection * lightView;
+        } else if (auto* spotLight = dynamic_cast<SpotLight*>(light)) {
+            return  glm::perspective(spotLight->getFov(), 1.0f, zNear, zFar) *
+                    glm::lookAt(light->getPosition(), glm::vec3(0.0f), glm::vec3(0, 1,0));
+        }
+        return glm::mat4{};
     }
 
     void ShadowMap::createImagesResources() {

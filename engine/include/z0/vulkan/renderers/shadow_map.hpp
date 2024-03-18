@@ -7,8 +7,13 @@ namespace z0 {
 
     class ShadowMap: public BaseSharedImage {
     public:
-        explicit ShadowMap(VulkanDevice &dev, SpotLight* spotLight);
+        explicit ShadowMap(VulkanDevice &dev, Light* light);
         ~ShadowMap();
+
+        // Keep depth range as small as possible
+        // for better shadow map precision const
+        const float zNear = .1f;
+        const float zFar = 100.0f;
 
 #if defined(__ANDROID__)
 	    const uint32_t size{ 1024 };
@@ -16,14 +21,15 @@ namespace z0 {
         const uint32_t size{ 2048 };
 #endif
 
-        SpotLight* getLight() { return light; }
+        glm::mat4 getLightSpace() const;
+        glm::vec3 getLightPosition() const { return light->getPosition(); }
         const VkSampler& getSampler() const { return sampler; }
 
         void createImagesResources();
         void cleanupImagesResources();
 
     private:
-        SpotLight* light;
+        Light* light;
         VkSampler sampler;
     };
 

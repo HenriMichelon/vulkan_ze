@@ -10,7 +10,7 @@ namespace z0 {
      }
 
     void SceneRenderer::cleanup() {
-        for (auto shadowMapRenderer : shadowMapRenderers) {
+        for (const auto& shadowMapRenderer : shadowMapRenderers) {
             shadowMapRenderer->cleanup();
         }
         shadowMapRenderers.clear();
@@ -29,7 +29,8 @@ namespace z0 {
         loadNode(rootNode);
         createImagesIndex(rootNode);
 
-        // Building indices collections for uniform buffer to model & surfaces relation
+        // Build indices collections for uniform buffer to model & surfaces relations
+        // Build transparent objets sorted collection
         std::multiset<DistanceSortedNode> sortedTransparentNodes;
         uint32_t surfaceIndex = 0;
         uint32_t modelIndex = 0;
@@ -39,7 +40,7 @@ namespace z0 {
             for (const auto &material: meshInstance->getMesh()->_getMaterials()) {
                 surfacesIndices[material->getId()] = surfaceIndex;
                 surfaceIndex += 1;
-                if (auto standardMaterial = dynamic_cast<StandardMaterial*>(material.get())) {
+                if (auto* standardMaterial = dynamic_cast<StandardMaterial*>(material.get())) {
                     if (standardMaterial->transparency != TRANSPARENCY_DISABLED) {
                         transparent = true;
                     }
@@ -69,27 +70,32 @@ namespace z0 {
 
     void SceneRenderer::loadNode(std::shared_ptr<Node>& parent) {
         if (currentCamera == nullptr) {
-            if (auto camera = dynamic_cast<Camera*>(parent.get())) {
+            if (auto* camera = dynamic_cast<Camera*>(parent.get())) {
                 currentCamera = camera;
                 log("Using camera", currentCamera->toString());
             }
         }
         if (directionalLight == nullptr) {
-            if (auto light = dynamic_cast<DirectionalLight*>(parent.get())) {
+            if (auto* light = dynamic_cast<DirectionalLight*>(parent.get())) {
                 directionalLight = light;
                 log("Using directional light", directionalLight->toString());
+                if (directionalLight->getCastShadows()) {
+                    shadowMaps.push_back(std::make_shared<ShadowMap>(vulkanDevice, directionalLight));
+                }
             }
         }
         if (environement == nullptr) {
-            if (auto env = dynamic_cast<Environment*>(parent.get())) {
+            if (auto* env = dynamic_cast<Environment*>(parent.get())) {
                 environement = env;
                 log("Using environment", environement->toString());
             }
         }
-        if (auto omniLight = dynamic_cast<OmniLight*>(parent.get())) {
-            omniLights.push_back(omniLight);
-            if (auto spotLight = dynamic_cast<SpotLight*>(parent.get())) {
-                shadowMaps.push_back(std::make_shared<ShadowMap>(vulkanDevice, spotLight));
+        if (auto* omniLight = dynamic_cast<OmniLight*>(parent.get())) {
+            if (omniLight->getCastShadows()) {
+                omniLights.push_back(omniLight);
+                if (auto *spotLight = dynamic_cast<SpotLight *>(parent.get())) {
+                    shadowMaps.push_back(std::make_shared<ShadowMap>(vulkanDevice, spotLight));
+                }
             }
         }
         createImagesList(parent);
@@ -99,7 +105,7 @@ namespace z0 {
     }
 
     void SceneRenderer::createImagesList(std::shared_ptr<Node>& node) {
-        if (auto meshInstance = dynamic_cast<MeshInstance*>(node.get())) {
+        if (auto* meshInstance = dynamic_cast<MeshInstance*>(node.get())) {
             meshes.push_back(meshInstance);
             for(const auto& material : meshInstance->getMesh()->_getMaterials()) {
                 if (auto standardMaterial = dynamic_cast<StandardMaterial *>(material.get())) {
@@ -115,9 +121,9 @@ namespace z0 {
     }
 
     void SceneRenderer::createImagesIndex(std::shared_ptr<Node>& node) {
-        if (auto meshInstance = dynamic_cast<MeshInstance*>(node.get())) {
+        if (auto* meshInstance = dynamic_cast<MeshInstance*>(node.get())) {
             for(const auto& material : meshInstance->getMesh()->_getMaterials()) {
-                if (auto standardMaterial = dynamic_cast<StandardMaterial*>(material.get())) {
+                if (auto* standardMaterial = dynamic_cast<StandardMaterial*>(material.get())) {
                     if (standardMaterial->albedoTexture != nullptr) {
                         auto &image = standardMaterial->albedoTexture->getImage();
                         auto index = std::distance(std::begin(images), images.find(image._getImage()));
@@ -153,11 +159,8 @@ namespace z0 {
         // TODO if empty
         auto shadowMapArray =  std::make_unique<ShadowMapUniform[]>(globalUbo.shadowMapsCount);
         for(int i=0; i < globalUbo.shadowMapsCount; i++) {
-            const auto& shadowMap = shadowMaps[i];
-            glm::mat4 lightProjection = glm::perspective(shadowMap->getLight()->getFov(), 1.0f, 0.1f, 100.0f);
-            glm::mat4 lightView = glm::lookAt(shadowMap->getLight()->getPosition(), glm::vec3(0.0f), glm::vec3(0, 1, 0));
-            shadowMapArray[i].lightSpace = lightProjection * lightView;
-            shadowMapArray[i].lightPos = shadowMap->getLight()->getPosition();
+            shadowMapArray[i].lightSpace = shadowMaps[i]->getLightSpace();
+            shadowMapArray[i].lightPos = shadowMaps[i]->getLightPosition();
         }
         writeUniformBuffer(shadowMapsBuffers, currentFrame, shadowMapArray.get());
 
@@ -184,7 +187,7 @@ namespace z0 {
             pointLightsArray[i].constant = omniLights[i]->getAttenuation();
             pointLightsArray[i].linear = omniLights[i]->getLinear();
             pointLightsArray[i].quadratic = omniLights[i]->getQuadratic();
-            if (auto spot = dynamic_cast<SpotLight*>(omniLights[i])) {
+            if (auto* spot = dynamic_cast<SpotLight*>(omniLights[i])) {
                 pointLightsArray[i].isSpot = true;
                 pointLightsArray[i].direction = spot->getDirection();
                 pointLightsArray[i].cutOff = spot->getCutOff();
@@ -204,7 +207,7 @@ namespace z0 {
                 writeUniformBuffer(modelsBuffers, currentFrame, &modelUbo, modelIndex);
                 for (const auto &surface: meshInstance->getMesh()->getSurfaces()) {
                     SurfaceUniformBufferObject surfaceUbo { };
-                    if (auto standardMaterial = dynamic_cast<StandardMaterial*>(surface->material.get())) {
+                    if (auto* standardMaterial = dynamic_cast<StandardMaterial*>(surface->material.get())) {
                         surfaceUbo.albedoColor = standardMaterial->albedoColor.color;
                         if (standardMaterial->albedoTexture != nullptr) {
                             surfaceUbo.diffuseIndex = imagesIndices[standardMaterial->albedoTexture->getImage().getId()];
@@ -278,7 +281,6 @@ namespace z0 {
                 }
             }
         }
-
     }
 
     void SceneRenderer::createDescriptorSetLayout() {

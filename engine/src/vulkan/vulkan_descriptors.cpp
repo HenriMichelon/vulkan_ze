@@ -5,8 +5,8 @@
  * https://vulkan-tutorial.com/Uniform_buffers/Descriptor_layout_and_buffer
 */
 #include "z0/vulkan/vulkan_descriptors.hpp"
-#include "z0/log.hpp"
 #include "z0/vulkan/vulkan_stats.hpp"
+#include "z0/log.hpp"
 
 #include <cassert>
 #include <stdexcept>
@@ -22,7 +22,7 @@ namespace z0 {
         VkDescriptorSetLayoutBinding layoutBinding{
             .binding = binding,
             .descriptorType = descriptorType,
-            .descriptorCount = count,
+            .descriptorCount = count == 0 ? 1 : count,
             .stageFlags = stageFlags,
         };
         bindings[binding] = layoutBinding;

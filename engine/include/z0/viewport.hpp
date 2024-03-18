@@ -14,7 +14,6 @@ namespace z0 {
     class Viewport: public Object {
     public:
         Viewport(VulkanInstance& instance, const ApplicationConfig& applicationConfig);
-        ~Viewport();
 
         MSAA getMSAA() const;
         void setMSAA(MSAA samples);

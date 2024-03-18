@@ -64,7 +64,7 @@ namespace z0 {
         DirectionalLight* directionalLight{nullptr};
         Environment* environement{nullptr};
 
-        std::map<Node::id_t, int32_t> modelIndices {};
+        std::map<Node::id_t, uint32_t> modelIndices {};
         std::vector<MeshInstance*> opaquesMeshes {};
         std::vector<MeshInstance*> transparentsMeshes {};
 
@@ -74,7 +74,7 @@ namespace z0 {
         std::map<Resource::rid_t, int32_t> imagesIndices {};
         std::unordered_set<std::shared_ptr<VulkanImage>> images {};
 
-        std::map<Resource::rid_t, int32_t> surfacesIndices {};
+        std::map<Resource::rid_t, uint32_t> surfacesIndices {};
         std::vector<std::unique_ptr<VulkanBuffer>> surfacesBuffers{MAX_FRAMES_IN_FLIGHT};
 
         // Offscreen frame buffer for MSAA

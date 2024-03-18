@@ -29,9 +29,6 @@ namespace z0 {
         vulkanDevice->registerRenderer(sceneRenderer);
     }
 
-    Viewport::~Viewport() {
-    }
-
     void Viewport::wait() {
         vulkanDevice->wait();
     }

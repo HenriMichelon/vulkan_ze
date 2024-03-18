@@ -20,11 +20,6 @@ namespace z0 {
         void loadScene(std::shared_ptr<ShadowMap>& shadowMap, std::vector<MeshInstance*>& meshes);
         void cleanup() override;
 
-    private:
-        // Keep depth range as small as possible
-        // for better shadow map precision const
-        const float zNear = .1f;
-        const float zFar = 100.0f;
         // Depth bias (and slope) are used to avoid shadowing artifacts
         // Constant depth bias factor (always applied)
         const float depthBiasConstant = 1.25f;

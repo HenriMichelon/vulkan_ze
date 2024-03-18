@@ -29,10 +29,8 @@ namespace z0 {
     }
 
     void ShadowMapRenderer::update(uint32_t currentFrame) {
-        glm::mat4 lightProjection = glm::perspective(shadowMap->getLight()->getFov(), 1.0f, zNear, zFar);
-        glm::mat4 lightView = glm::lookAt(shadowMap->getLight()->getPosition(), glm::vec3(0.0f), glm::vec3(0, 1, 0));
         GlobalUniformBufferObject globalUbo {
-            .lightSpace = lightProjection * lightView
+            .lightSpace = shadowMap->getLightSpace()
         };
         writeUniformBuffer(globalBuffers, currentFrame, &globalUbo);
 
