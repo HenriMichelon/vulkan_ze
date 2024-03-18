@@ -234,10 +234,7 @@ namespace z0 {
 
         vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
         vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_LESS_OR_EQUAL);
-        VkBool32 color_blend_enables[] = {VK_TRUE};
-        vkCmdSetColorBlendEnableEXT(commandBuffer, 0, 1, color_blend_enables);
         drawMeshes(commandBuffer, currentFrame, transparentsMeshes);
-
     }
 
     void SceneRenderer::drawMeshes(VkCommandBuffer commandBuffer, uint32_t currentFrame, const std::vector<MeshInstance*>& meshesToDraw) {
