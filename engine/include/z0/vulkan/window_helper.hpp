@@ -1,12 +1,28 @@
 #pragma once
 
 #include <volk.h>
+#include <iostream>
+
 #define GLFW_INCLUDE_VULKAN
 #include "GLFW/glfw3.h"
 #ifdef _WIN64
   #define GLFW_EXPOSE_NATIVE_WIN32
   #include "GLFW/glfw3native.h"
 #endif
+
+#define IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_vulkan.h"
+
+static void check_vk_result(VkResult err)
+{
+    if (err == 0)
+        return;
+    std::cout << "[vulkan] Error: VkResult\n" << std::endl;
+    if (err < 0)
+        abort();
+}
 
 #include "z0/window.hpp"
 #include <string>

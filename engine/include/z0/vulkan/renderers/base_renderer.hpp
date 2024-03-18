@@ -22,7 +22,7 @@ namespace z0 {
         std::unique_ptr<VulkanDescriptorSetLayout> globalSetLayout {};
         std::unique_ptr<VulkanShader> vertShader;
         std::unique_ptr<VulkanShader> fragShader;
-        std::unique_ptr<VulkanDescriptorPool> globalPool {};
+        std::shared_ptr<VulkanDescriptorPool> globalPool {};
         std::vector<std::unique_ptr<VulkanBuffer>> globalBuffers{MAX_FRAMES_IN_FLIGHT};
 
         const VkClearValue clearColor {{{

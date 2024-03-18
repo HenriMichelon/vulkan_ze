@@ -100,9 +100,13 @@ namespace z0 {
                 }
             }
         }
+
     }
 
     VulkanDevice::~VulkanDevice() {
+        ImGui_ImplVulkan_Shutdown();
+        ImGui_ImplGlfw_Shutdown();
+        ImGui::DestroyContext();
         for (auto& renderer: renderers) {
             renderer->cleanup();
         }
@@ -140,6 +144,13 @@ namespace z0 {
             for (auto& renderer: renderers) {
                 renderer->recreateImagesResources();
             }
+            /*int width, height;
+            glfwGetFramebufferSize(window, &width, &height);
+            if (width > 0 && height > 0) {
+                ImGui_ImplVulkan_SetMinImageCount(g_MinImageCount);
+                ImGui_ImplVulkanH_CreateOrResizeWindow(g_Instance, g_PhysicalDevice, g_Device, &g_MainWindowData,
+                                                       g_QueueFamily, g_Allocator, width, height, g_MinImageCount);
+            }*/
             return;
         } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
             die("failed to acquire swap chain image!");
@@ -156,12 +167,21 @@ namespace z0 {
             if (vkBeginCommandBuffer(commandBuffers[currentFrame], &beginInfo) != VK_SUCCESS) {
                 die("failed to begin recording command buffer!");
             }
+            ImGui_ImplVulkan_NewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
+            ImGui::ShowDemoWindow();
+
             setInitialState(commandBuffers[currentFrame]);
             for (auto& renderer: renderers) {
                 renderer->beginRendering(commandBuffers[currentFrame]);
                 renderer->recordCommands(commandBuffers[currentFrame], currentFrame);
                 renderer->endRendering(commandBuffers[currentFrame], swapChainImages[imageIndex]);
             }
+
+            ImGui::Render();
+            ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffers[currentFrame]);
+
             if (vkEndCommandBuffer(commandBuffers[currentFrame]) != VK_SUCCESS) {
                 die("failed to record command buffer!");
             }
@@ -742,6 +762,34 @@ namespace z0 {
                               srcStageMask, dstStageMask,
                               aspectMask, mipLevels);
         endSingleTimeCommands(commandBuffer);
+    }
+
+    void VulkanDevice::initImGui(VkDescriptorPool descriptorPool) {
+        QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice, surface);
+        // After Vulkan and GLFW initialization
+        ImGui::CreateContext();
+        ImGui_ImplGlfw_InitForVulkan(window.getWindowHandle(), true);
+        ImGui_ImplVulkan_InitInfo init_info = {};
+        init_info.Instance = vulkanInstance.getInstance();
+        init_info.PhysicalDevice = physicalDevice;
+        init_info.Device = device;
+        init_info.QueueFamily = queueFamilyIndices.graphicsFamily.value();
+        init_info.Queue = graphicsQueue;
+        init_info.PipelineCache = VK_NULL_HANDLE;
+        init_info.DescriptorPool = descriptorPool;
+        init_info.Allocator = nullptr;
+        init_info.MinImageCount = MAX_FRAMES_IN_FLIGHT;
+        init_info.ImageCount = MAX_FRAMES_IN_FLIGHT;
+        init_info.MSAASamples = samples;
+        init_info.CheckVkResultFn = check_vk_result;
+        init_info.UseDynamicRendering = true;
+        ImGui_ImplVulkan_Init(&init_info);
+
+// Load Fonts
+        /*unsigned char* fontData;
+        int texWidth, texHeight;
+        io.Fonts->GetTexDataAsRGBA32(&fontData, &texWidth, &texHeight);*/
+// Upload Fonts
     }
 
 }

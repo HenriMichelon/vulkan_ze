@@ -7,6 +7,16 @@ namespace z0 {
 
     SceneRenderer::SceneRenderer(VulkanDevice &dev, std::string sDir) : BaseMeshesRenderer{dev, sDir} {
          createImagesResources();
+        globalPool = VulkanDescriptorPool::Builder(vulkanDevice)
+                .setMaxSets(MAX_FRAMES_IN_FLIGHT)
+                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // global UBO
+                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT) // textures
+                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // model UBO
+                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // surfaces UBO
+                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // pointlightarray UBO
+                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT) // shadow map
+                .build();
+        vulkanDevice.initImGui(globalPool->getPool());
      }
 
     void SceneRenderer::cleanup() {
@@ -285,15 +295,6 @@ namespace z0 {
 
     void SceneRenderer::createDescriptorSetLayout() {
         if (meshes.empty() || currentCamera == nullptr) return;
-        globalPool = VulkanDescriptorPool::Builder(vulkanDevice)
-                .setMaxSets(MAX_FRAMES_IN_FLIGHT)
-                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // global UBO
-                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT) // textures
-                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // model UBO
-                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // surfaces UBO
-                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // pointlightarray UBO
-                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT) // shadow map
-                .build();
 
         // Global UBO
         createUniformBuffers(globalBuffers, sizeof(GobalUniformBufferObject));

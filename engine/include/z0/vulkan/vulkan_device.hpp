@@ -73,6 +73,8 @@ namespace z0 {
         // Find a suitable IMAGE_TILING format (for the Depth buffering image)
         VkFormat findImageTilingSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
+        void initImGui(VkDescriptorPool descriptorPool);
+
 
     private:
         VulkanInstance& vulkanInstance;

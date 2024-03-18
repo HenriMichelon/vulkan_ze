@@ -69,12 +69,10 @@ namespace z0 {
         VulkanDescriptorPool(const VulkanDescriptorPool &) = delete;
         VulkanDescriptorPool &operator=(const VulkanDescriptorPool &) = delete;
 
-        bool allocateDescriptor(
-                const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet &descriptor) const;
-
+        bool allocateDescriptor(const VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet &descriptor) const;
         void freeDescriptors(std::vector<VkDescriptorSet> &descriptors) const;
-
         void resetPool();
+        VkDescriptorPool getPool() const { return descriptorPool; }
 
     private:
         VulkanDevice &vulkanDevice;

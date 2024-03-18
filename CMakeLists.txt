@@ -2,10 +2,12 @@ cmake_policy(SET CMP0002 NEW)
 set(Z0_ENGINE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/engine)
 set(Z0_SHADERS_DIR ${Z0_ENGINE_DIR}/shaders)
 set(Z0_SHADERS_BUILD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/shaders)
+set(Z0_LIBRARIES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libraries)
 make_directory(${Z0_SHADERS_BUILD_DIR})
 
 include(.env.cmake)
 include(cmake/shaders.cmake)
+include(cmake/imgui.cmake)
 include(FetchContent)
 
 cmake_minimum_required(VERSION 3.22)
@@ -22,6 +24,7 @@ file(GLOB_RECURSE Z0_GLSL_SOURCE_FILES
 add_shaders(${PROJECT_NAME}_shaders ${Z0_GLSL_SOURCE_FILES})
 
 add_executable(${PROJECT_NAME}
+		${IMGUI_SOURCES}
         example/main.cpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/window_helper.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_device.hpp
@@ -35,7 +38,11 @@ add_executable(${PROJECT_NAME}
 		${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/scene_renderer.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/shadowmap_renderer.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/shadow_map.hpp
-        ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_stats.hpp
+		${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/depth_prepass_renderer.hpp
+		${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/depth_buffer.hpp
+		${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/base_shared_image.hpp
+		${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/base_meshes_renderer.hpp
+		${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_stats.hpp
         ${Z0_ENGINE_DIR}/include/z0/nodes/node.hpp
         ${Z0_ENGINE_DIR}/include/z0/nodes/camera.hpp
         ${Z0_ENGINE_DIR}/include/z0/nodes/mesh_instance.hpp
@@ -73,6 +80,9 @@ add_executable(${PROJECT_NAME}
 		${Z0_ENGINE_DIR}/src/vulkan/renderers/scene_renderer.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/renderers/shadowmap_renderer.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/renderers/shadow_map.cpp
+		${Z0_ENGINE_DIR}/src/vulkan/renderers/depth_buffer.cpp
+		${Z0_ENGINE_DIR}/src/vulkan/renderers/depth_prepass_renderer.cpp
+		${Z0_ENGINE_DIR}/src/vulkan/renderers/base_meshes_renderer.cpp
         ${Z0_ENGINE_DIR}/src/nodes/node.cpp
         ${Z0_ENGINE_DIR}/src/nodes/camera.cpp
         ${Z0_ENGINE_DIR}/src/nodes/mesh_instance.cpp
@@ -89,13 +99,6 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/loader.cpp
 		engine/include/z0/vulkan/vulkan_cubemap.hpp
 		engine/src/vulkan/vulkan_cubemap.cpp
-		engine/include/z0/vulkan/renderers/depth_prepass_renderer.hpp
-		engine/include/z0/vulkan/renderers/depth_buffer.hpp
-		engine/include/z0/vulkan/renderers/base_shared_image.hpp
-		engine/src/vulkan/renderers/depth_buffer.cpp
-		engine/src/vulkan/renderers/depth_prepass_renderer.cpp
-		engine/include/z0/vulkan/renderers/base_meshes_renderer.hpp
-		engine/src/vulkan/renderers/base_meshes_renderer.cpp
 )
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_shaders)
 
