@@ -29,6 +29,21 @@ namespace z0 {
         globalPool.reset();
     }
 
+    void BaseRenderer::bindShaders(VkCommandBuffer commandBuffer) {
+        if (vertShader != nullptr) {
+            vkCmdBindShadersEXT(commandBuffer, 1, vertShader->getStage(), vertShader->getShader());
+        } else {
+            VkShaderStageFlagBits stageFlagBits{VK_SHADER_STAGE_VERTEX_BIT};
+            vkCmdBindShadersEXT(commandBuffer, 1, &stageFlagBits, VK_NULL_HANDLE);
+        }
+        if (fragShader != nullptr) {
+            vkCmdBindShadersEXT(commandBuffer, 1, fragShader->getStage(), fragShader->getShader());
+        } else {
+            VkShaderStageFlagBits stageFlagBits{VK_SHADER_STAGE_FRAGMENT_BIT};
+            vkCmdBindShadersEXT(commandBuffer, 1, &stageFlagBits, VK_NULL_HANDLE);
+        }
+    }
+
     void BaseRenderer::writeUniformBuffer(const std::vector<std::unique_ptr<VulkanBuffer>>& buffers, uint32_t currentFrame, void *data, uint32_t index) {
         uint32_t size = buffers[currentFrame]->getAlignmentSize();
         buffers[currentFrame]->writeToBuffer(data, size, size * index);
@@ -106,7 +121,7 @@ namespace z0 {
     }
 
     void BaseRenderer::bindShader(VkCommandBuffer commandBuffer, VulkanShader& shader) {
-        vkCmdBindShadersEXT(commandBuffer, 1, shader.getStage(), shader.getShader());
+        ;
     }
 
     void BaseRenderer::setViewport(VkCommandBuffer commandBuffer, uint32_t width, uint32_t height) {

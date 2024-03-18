@@ -1,13 +1,10 @@
 #pragma once
 
-#include "z0/vulkan/renderers/base_renderer.hpp"
-#include "z0/vulkan/renderers/depth_buffer.hpp"
-#include "z0/nodes/mesh_instance.hpp"
-#include "z0/nodes/camera.hpp"
+#include "z0/vulkan/renderers/base_meshes_renderer.hpp"
 
 namespace z0 {
 
-    class DepthPrepassRenderer: public BaseRenderer {
+    class DepthPrepassRenderer: public BaseMeshesRenderer {
     public:
         struct GlobalUniformBufferObject {
             glm::mat4 projection{1.0f};
@@ -29,17 +26,8 @@ namespace z0 {
                        std::vector<MeshInstance*>& meshes,
                        std::map<Resource::rid_t, int32_t>& imagesIndices,
                        std::unordered_set<std::shared_ptr<VulkanImage>>& images);
-        void cleanup() override;
 
     private:
-        Camera* camera;
-        std::shared_ptr<DepthBuffer> depthBuffer;
-        std::vector<MeshInstance*> meshes {};
-        std::map<Resource::rid_t, int32_t> imagesIndices {};
-        std::unordered_set<std::shared_ptr<VulkanImage>> images {};
-        std::vector<std::unique_ptr<VulkanBuffer>> modelsBuffers{MAX_FRAMES_IN_FLIGHT};
-        std::vector<std::unique_ptr<VulkanBuffer>> surfacesBuffers{MAX_FRAMES_IN_FLIGHT};
-
         void update(uint32_t currentFrame) override;
         void recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) override;
         void createDescriptorSetLayout() override;

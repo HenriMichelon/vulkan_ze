@@ -1,22 +1,12 @@
 #include "z0/vulkan/renderers/depth_prepass_renderer.hpp"
 #include "z0/log.hpp"
-#include "z0/nodes/camera.hpp"
+
 
 namespace z0 {
 
-    DepthPrepassRenderer::DepthPrepassRenderer(VulkanDevice &dev,
-                                         const std::string& sDir) :
-            BaseRenderer{dev, sDir}
-     {
-     }
-
-    void DepthPrepassRenderer::cleanup() {
-        depthBuffer.reset();
-        images.clear();
-        surfacesBuffers.clear();
-        modelsBuffers.clear();
-        BaseRenderer::cleanup();
+    DepthPrepassRenderer::DepthPrepassRenderer(VulkanDevice &dev, const std::string& sDir) : BaseMeshesRenderer{dev, sDir}{
     }
+
     void DepthPrepassRenderer::loadScene(std::shared_ptr<DepthBuffer>& _depthBuffer,
                                          Camera* _camera,
                                          std::vector<MeshInstance*>& _meshes,
@@ -24,7 +14,7 @@ namespace z0 {
                                          std::unordered_set<std::shared_ptr<VulkanImage>>& _images) {
         meshes = _meshes;
         depthBuffer = _depthBuffer;
-        camera = _camera;
+        currentCamera = _camera;
         imagesIndices = _imagesIndices;
         images = _images;
         createResources();
@@ -36,10 +26,10 @@ namespace z0 {
     }
 
     void DepthPrepassRenderer::update(uint32_t currentFrame) {
-        if (meshes.empty() || camera == nullptr) return;
+        if (meshes.empty() || currentCamera == nullptr) return;
         GlobalUniformBufferObject globalUbo {
-            .projection = camera->getProjection(),
-            .view = camera->getView()
+            .projection = currentCamera->getProjection(),
+            .view = currentCamera->getView()
         };
         writeUniformBuffer(globalBuffers, currentFrame, &globalUbo);
 
@@ -69,43 +59,8 @@ namespace z0 {
     }
 
     void DepthPrepassRenderer::recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) {
-        if (meshes.empty() || camera == nullptr) return;
-        bindShader(commandBuffer, *vertShader);
-        bindShader(commandBuffer, *fragShader);
-
-        vkCmdSetRasterizationSamplesEXT(commandBuffer, vulkanDevice.getSamples());
-        vkCmdSetDepthTestEnable(commandBuffer, VK_TRUE);
-        vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_LESS);
+        if (meshes.empty() || currentCamera == nullptr) return;
         vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
-        vkCmdSetStencilTestEnable(commandBuffer, VK_TRUE);
-        vkCmdSetStencilOp(
-                commandBuffer,
-                VK_STENCIL_FACE_FRONT_AND_BACK,  // Apply to front-facing polygons
-                VK_STENCIL_OP_KEEP,         // What to do when stencil test fails
-                VK_STENCIL_OP_REPLACE,      // What to do when stencil test passes but depth test fails
-                VK_STENCIL_OP_REPLACE,      // What to do when both stencil and depth test pass
-                VK_COMPARE_OP_ALWAYS       // Stencil test comparison operation
-        );
-        vkCmdSetStencilReference(commandBuffer, VK_STENCIL_FACE_FRONT_AND_BACK, 1);
-        vkCmdSetStencilWriteMask(
-                commandBuffer,
-                VK_STENCIL_FACE_FRONT_BIT | VK_STENCIL_FACE_BACK_BIT,
-                0xFF
-        );
-        vkCmdSetStencilCompareMask(
-                commandBuffer,
-                VK_STENCIL_FACE_FRONT_BIT | VK_STENCIL_FACE_BACK_BIT,
-                0xFF
-        );
-        setViewport(commandBuffer, vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height);
-
-        std::vector<VkVertexInputBindingDescription2EXT> vertexBinding = VulkanModel::getBindingDescription();
-        std::vector<VkVertexInputAttributeDescription2EXT> vertexAttribute = VulkanModel::getAttributeDescription();
-        vkCmdSetVertexInputEXT(commandBuffer,
-                               vertexBinding.size(),
-                               vertexBinding.data(),
-                               vertexAttribute.size(),
-                               vertexAttribute.data());
 
         uint32_t modelIndex = 0;
         int32_t surfaceIndex = 0;

@@ -40,7 +40,7 @@ namespace z0 {
         void writeUniformBuffer(const std::vector<std::unique_ptr<VulkanBuffer>>& buffers, uint32_t currentFrame, void *data, uint32_t index = 0);
         void createUniformBuffers(std::vector<std::unique_ptr<VulkanBuffer>>& buffers, VkDeviceSize size, uint32_t count = 1);
         void bindDescriptorSets(VkCommandBuffer commandBuffer, uint32_t currentFrame, uint32_t count = 0, uint32_t *offsets = nullptr);
-        void bindShader(VkCommandBuffer commandBuffer, VulkanShader& shader);
+        void bindShaders(VkCommandBuffer commandBuffer);
         std::unique_ptr<VulkanShader> createShader(const std::string& filename,
                                                    VkShaderStageFlagBits stage,
                                                    VkShaderStageFlags next_stage);
@@ -52,6 +52,7 @@ namespace z0 {
 
         virtual void loadShaders() = 0;
         virtual void createDescriptorSetLayout() = 0;
+        void bindShader(VkCommandBuffer commandBuffer, VulkanShader& shader);
 
     public:
         BaseRenderer(const BaseRenderer&) = delete;

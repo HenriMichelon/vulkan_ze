@@ -47,9 +47,7 @@ namespace z0 {
     }
 
     void ShadowMapRenderer::recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) {
-        bindShader(commandBuffer, *vertShader);
-        VkShaderStageFlagBits stageFlagBits{VK_SHADER_STAGE_FRAGMENT_BIT};
-        vkCmdBindShadersEXT(commandBuffer, 1, &stageFlagBits, VK_NULL_HANDLE);
+        bindShaders(commandBuffer);
 
         vkCmdSetRasterizationSamplesEXT(commandBuffer, VK_SAMPLE_COUNT_1_BIT);
         vkCmdSetDepthTestEnable(commandBuffer, VK_TRUE);

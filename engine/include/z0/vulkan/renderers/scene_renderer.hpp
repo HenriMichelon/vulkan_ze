@@ -9,7 +9,7 @@
 
 namespace z0 {
 
-    class SceneRenderer: public BaseRenderer {
+    class SceneRenderer: public BaseMeshesRenderer {
     public:
         struct DirectionalLightUniform {
             alignas(16) glm::vec3 direction = { 0.0f, 0.0f, 0.0f };
@@ -58,16 +58,9 @@ namespace z0 {
         void cleanup() override;
 
     private:
-        Camera* currentCamera{nullptr};
         DirectionalLight* directionalLight{nullptr};
         Environment* environement{nullptr};
         std::vector<OmniLight*> omniLights;
-        std::vector<MeshInstance*> meshes {};
-        std::map<Resource::rid_t, int32_t> imagesIndices {};
-        std::unordered_set<std::shared_ptr<VulkanImage>> images {};
-
-        std::vector<std::unique_ptr<VulkanBuffer>> modelsBuffers{MAX_FRAMES_IN_FLIGHT};
-        std::vector<std::unique_ptr<VulkanBuffer>> surfacesBuffers{MAX_FRAMES_IN_FLIGHT};
         std::vector<std::unique_ptr<VulkanBuffer>> pointLightBuffers{MAX_FRAMES_IN_FLIGHT};
 
         // Offscreen frame buffer for MSAA
@@ -78,7 +71,6 @@ namespace z0 {
         VkImageResolve colorImageResolve{};
 
         // Depth prepass buffer
-        std::shared_ptr<DepthBuffer> depthBuffer;
         std::shared_ptr<DepthPrepassRenderer> depthPrepassRenderer;
 
         // Shadow mapping

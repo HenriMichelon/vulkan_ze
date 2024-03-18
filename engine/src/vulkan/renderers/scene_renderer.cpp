@@ -5,10 +5,7 @@
 
 namespace z0 {
 
-    SceneRenderer::SceneRenderer(VulkanDevice &dev,
-                                 std::string sDir) :
-            BaseRenderer{dev, sDir}
-     {
+    SceneRenderer::SceneRenderer(VulkanDevice &dev, std::string sDir) : BaseMeshesRenderer{dev, sDir} {
          createImagesResources();
      }
 
@@ -19,12 +16,8 @@ namespace z0 {
             shadowMap.reset();
         }
         depthPrepassRenderer->cleanup();
-        depthBuffer.reset();
-        images.clear();
         pointLightBuffers.clear();
-        surfacesBuffers.clear();
-        modelsBuffers.clear();
-        BaseRenderer::cleanup();
+        BaseMeshesRenderer::cleanup();
     }
 
     void SceneRenderer::loadScene(std::shared_ptr<Node>& rootNode) {
@@ -34,10 +27,10 @@ namespace z0 {
         if (shadowMap != nullptr) {
             shadowMapRenderer = std::make_shared<ShadowMapRenderer>(vulkanDevice, shaderDirectory);
             shadowMapRenderer->loadScene(shadowMap, meshes);
-            vulkanDevice.registerRenderer(shadowMapRenderer);
+            //vulkanDevice.registerRenderer(shadowMapRenderer);
         }
         depthPrepassRenderer->loadScene(depthBuffer, currentCamera, meshes, imagesIndices, images);
-        vulkanDevice.registerRenderer(depthPrepassRenderer);
+        //vulkanDevice.registerRenderer(depthPrepassRenderer);
     }
 
     void SceneRenderer::loadNode(std::shared_ptr<Node>& parent) {
@@ -189,16 +182,12 @@ namespace z0 {
 
     void SceneRenderer::recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) {
         if (meshes.empty() || currentCamera == nullptr) return;
-        bindShader(commandBuffer, *vertShader);
-        bindShader(commandBuffer, *fragShader);
+        setInitialState(commandBuffer);
 
-        vkCmdSetRasterizationSamplesEXT(commandBuffer, vulkanDevice.getSamples());
-        vkCmdSetDepthTestEnable(commandBuffer, VK_TRUE);
-        vkCmdSetDepthWriteEnable(commandBuffer, VK_FALSE); // we have a depth prepass
-        vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_LESS_OR_EQUAL); // comparing with the depth prepass
+        vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE); // we have a depth prepass
+        //vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_EQUAL); // comparing with the depth prepass
         VkBool32 color_blend_enables[] = {VK_TRUE};
         vkCmdSetColorBlendEnableEXT(commandBuffer, 0, 1, color_blend_enables);
-        setViewport(commandBuffer, vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height);
 
         // quad renderer
 /*
@@ -214,14 +203,6 @@ namespace z0 {
         vkCmdDraw(commandBuffer, 3, 1, 0, 0);
         return;
 */
-        std::vector<VkVertexInputBindingDescription2EXT> vertexBinding = VulkanModel::getBindingDescription();
-        std::vector<VkVertexInputAttributeDescription2EXT> vertexAttribute = VulkanModel::getAttributeDescription();
-        vkCmdSetVertexInputEXT(commandBuffer,
-                               vertexBinding.size(),
-                               vertexBinding.data(),
-                               vertexAttribute.size(),
-                               vertexAttribute.data());
-
         uint32_t modelIndex = 0;
         uint32_t surfaceIndex = 0;
         for (const auto&meshInstance: meshes) {
@@ -417,7 +398,7 @@ namespace z0 {
                 .imageView = depthBuffer->getImageView(),
                 .imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                 .resolveMode = VK_RESOLVE_MODE_NONE,
-                .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
+                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
                 .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
                 .clearValue = depthClearValue,
         };
