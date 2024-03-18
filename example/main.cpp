@@ -21,7 +21,7 @@ public:
       */
 
         z0::Environment environment{};
-        environment.setAmbientColorAndIntensity({1.0f, 1.0f, 1.0f, 1.1f});
+        environment.setAmbientColorAndIntensity({1.0f, 1.0f, 1.0f, 0.1f});
         addChild(environment);
 
         z0::DirectionalLight directionalLight{glm::vec3{0.0f, .5f, 0.5f}};
@@ -34,9 +34,19 @@ public:
         spotLight1.setPosition({3.0, -6.0, -2.1});
         spotLight1.setColorAndIntensity({1.0f, 1.0f, 1.0f, 4.0f});
         addChild(spotLight1);
-        light = z0::Loader::loadModelFromFile("models/light.glb", false);
-        light->setPosition(spotLight1.getPosition());
-        addChild(light);
+        light1 = z0::Loader::loadModelFromFile("models/light.glb", false);
+        light1->setPosition(spotLight1.getPosition());
+        addChild(light1);
+
+        z0::SpotLight spotLight2{{0.75, .5, 0.1},
+                                 45.0, 55.0,
+                                 0.027, 0.0028};
+        spotLight2.setPosition({-3.0, -4.0, -2.1});
+        spotLight2.setColorAndIntensity({1.0f, 1.0f, 1.0f, 4.0f});
+        addChild(spotLight2);
+        light2 =  z0::Loader::loadModelFromFile("models/light.glb", false);
+        light2->setPosition(spotLight2.getPosition());
+        addChild(light2);
 
         model3 = z0::Loader::loadModelFromFile("models/window.glb", false);
         model3->setRotationDegrees({-90.0, 0.0, 0.0});
@@ -87,7 +97,8 @@ private:
     std::shared_ptr<z0::Node> model2;
     std::shared_ptr<z0::Node> model3;
     std::shared_ptr<z0::Node> model4;
-    std::shared_ptr<z0::Node> light;
+    std::shared_ptr<z0::Node> light1;
+    std::shared_ptr<z0::Node> light2;
     std::shared_ptr<z0::Node> floor;
 };
 

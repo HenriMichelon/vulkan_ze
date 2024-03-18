@@ -28,6 +28,10 @@ namespace z0 {
             alignas(4) float cutOff = { glm::cos(glm::radians(10.f)) };
             alignas(4) float outerCutOff = { glm::cos(glm::radians(15.f)) };
         };
+        struct ShadowMapUniform {
+            alignas(16) glm::mat4 lightSpace;
+            alignas(16) glm::vec3 lightPos;
+        };
         struct GobalUniformBufferObject {
             glm::mat4 projection{1.0f};
             glm::mat4 view{1.0f};
@@ -36,9 +40,7 @@ namespace z0 {
             alignas(16) DirectionalLightUniform directionalLight;
             alignas(4) bool haveDirectionalLight{false};
             alignas(4) uint32_t pointLightsCount{0};
-            alignas(4) bool haveShadowMap{false};
-            alignas(16) glm::mat4 lightSpace;
-            alignas(16) glm::vec3 lightPos;
+            alignas(4) uint32_t shadowMapsCount{0};
         };
         struct ModelUniformBufferObject {
             glm::mat4 matrix;
@@ -86,8 +88,9 @@ namespace z0 {
         std::shared_ptr<DepthPrepassRenderer> depthPrepassRenderer;
 
         // Shadow mapping
-        std::shared_ptr<ShadowMap> shadowMap;
-        std::shared_ptr<ShadowMapRenderer> shadowMapRenderer;
+        std::vector<std::shared_ptr<ShadowMap>> shadowMaps;
+        std::vector<std::shared_ptr<ShadowMapRenderer>> shadowMapRenderers;
+        std::vector<std::unique_ptr<VulkanBuffer>> shadowMapsBuffers{MAX_FRAMES_IN_FLIGHT};
 
         void update(uint32_t currentFrame) override;
         void recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) override;

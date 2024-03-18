@@ -17,6 +17,11 @@ struct PointLight {
     float outerCutOff;
 };
 
+struct ShadowMap {
+    mat4 lightSpace;
+    vec3 lightPos;
+};
+
 layout(set = 0, binding = 0) uniform GlobalUniformBufferObject  {
     mat4 projection;
     mat4 view;
@@ -25,12 +30,10 @@ layout(set = 0, binding = 0) uniform GlobalUniformBufferObject  {
     DirectionalLight directionalLight;
     bool haveDirectionalLight;
     int pointLightsCount;
-    bool haveShadowMap;
-    mat4 lightSpace;
-    vec3 lightPos;
+    int shadowMapsCount;
 } global;
 
-layout(binding = 1) uniform sampler2D texSampler[100]; // put a limit into the default renderer
+layout(set = 0, binding = 1) uniform sampler2D texSampler[100]; // put a limit into the default renderer
 
 layout(set = 0, binding = 2) uniform ModelUniformBufferObject  {
     mat4 matrix;
@@ -49,3 +52,9 @@ layout(set = 0, binding = 3) uniform SurfaceUniformBufferObject  {
 layout(set = 0, binding = 4) uniform PointLightArray {
     PointLight lights[1];
 } pointLights;
+
+layout(set = 0, binding = 5) uniform ShadowMapArray {
+    ShadowMap shadowMaps[1];
+} shadowMapsInfos;
+
+layout (set = 0, binding = 6) uniform sampler2D shadowMaps[1];

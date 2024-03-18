@@ -10,11 +10,11 @@ namespace z0 {
      }
 
     void SceneRenderer::cleanup() {
-        if (shadowMap != nullptr) {
+        for (auto &shadowMapRenderer : shadowMapRenderers) {
             shadowMapRenderer->cleanup();
-            shadowMapRenderer.reset();
-            shadowMap.reset();
         }
+        shadowMapRenderers.clear();
+        shadowMaps.clear();
         opaquesMeshes.clear();
         transparentsMeshes.clear();
         depthPrepassRenderer->cleanup();
@@ -27,6 +27,8 @@ namespace z0 {
     void SceneRenderer::loadScene(std::shared_ptr<Node>& rootNode) {
         loadNode(rootNode);
         createImagesIndex(rootNode);
+
+        // Building indices collections for uniform buffer to model & surfaces relation
         std::multiset<DistanceSortedNode> sortedTransparentNodes;
         uint32_t surfaceIndex = 0;
         uint32_t modelIndex = 0;
@@ -52,11 +54,13 @@ namespace z0 {
         for (const auto& node: sortedTransparentNodes) {
             transparentsMeshes.push_back(dynamic_cast<MeshInstance*>(&node.getNode()));
         }
+
         createResources();
-        if (shadowMap != nullptr) {
-            shadowMapRenderer = std::make_shared<ShadowMapRenderer>(vulkanDevice, shaderDirectory);
+        for (auto& shadowMap : shadowMaps) {
+            auto shadowMapRenderer = std::make_shared<ShadowMapRenderer>(vulkanDevice, shaderDirectory);
             shadowMapRenderer->loadScene(shadowMap, meshes);
-            //vulkanDevice.registerRenderer(shadowMapRenderer);
+            shadowMapRenderers.push_back(shadowMapRenderer);
+            vulkanDevice.registerRenderer(shadowMapRenderer);
         }
         depthPrepassRenderer->loadScene(depthBuffer, currentCamera, opaquesMeshes);
         vulkanDevice.registerRenderer(depthPrepassRenderer);
@@ -84,7 +88,7 @@ namespace z0 {
         if (auto omniLight = dynamic_cast<OmniLight*>(parent.get())) {
             omniLights.push_back(omniLight);
             if (auto spotLight = dynamic_cast<SpotLight*>(parent.get())) {
-                if (shadowMap == nullptr) shadowMap = std::make_shared<ShadowMap>(vulkanDevice, spotLight);
+                shadowMaps.push_back(std::make_shared<ShadowMap>(vulkanDevice, spotLight));
             }
         }
         createImagesList(parent);
@@ -142,14 +146,20 @@ namespace z0 {
             .projection = currentCamera->getProjection(),
             .view = currentCamera->getView(),
             .cameraPosition = currentCamera->getPosition(),
-            .haveShadowMap = false, // shadowMap != nullptr,
+            .shadowMapsCount = static_cast<uint32_t>(shadowMaps.size()),
         };
-        if (shadowMap != nullptr) {
+
+        // TODO if empty
+        auto shadowMapArray =  std::make_unique<ShadowMapUniform[]>(globalUbo.shadowMapsCount);
+        for(int i=0; i < globalUbo.shadowMapsCount; i++) {
+            const auto& shadowMap = shadowMaps[i];
             glm::mat4 lightProjection = glm::perspective(shadowMap->getLight()->getFov(), 1.0f, 0.1f, 100.0f);
             glm::mat4 lightView = glm::lookAt(shadowMap->getLight()->getPosition(), glm::vec3(0.0f), glm::vec3(0, 1, 0));
-            globalUbo.lightSpace = lightProjection * lightView;
-            globalUbo.lightPos = shadowMap->getLight()->getPosition();
-        };
+            shadowMapArray[i].lightSpace = lightProjection * lightView;
+            shadowMapArray[i].lightPos = shadowMap->getLight()->getPosition();
+        }
+        writeUniformBuffer(shadowMapsBuffers, currentFrame, shadowMapArray.get());
+
         if (directionalLight != nullptr) {
             globalUbo.directionalLight = {
                 .direction = directionalLight->getDirection(),
@@ -164,6 +174,7 @@ namespace z0 {
         globalUbo.pointLightsCount = omniLights.size();
         writeUniformBuffer(globalBuffers, currentFrame, &globalUbo);
 
+        // TODO if empty
         auto pointLightsArray =  std::make_unique<PointLightUniform[]>(globalUbo.pointLightsCount);
         for(int i=0; i < globalUbo.pointLightsCount; i++) {
             pointLightsArray[i].position = omniLights[i]->getPosition();
@@ -253,11 +264,12 @@ namespace z0 {
                         vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_NONE);
                     }
                     auto surfaceIndex = surfacesIndices[material->getId()];
-                    std::array<uint32_t, 4> offsets = {
+                    std::array<uint32_t, 5> offsets = {
                             0, // globalBuffers
                             static_cast<uint32_t>(modelsBuffers[currentFrame]->getAlignmentSize() * modelIndex),
                             static_cast<uint32_t>(surfacesBuffers[currentFrame]->getAlignmentSize() * surfaceIndex),
                             0, // pointLightBuffers
+                            0, // shadowMapsBuffers
                     };
                     bindDescriptorSets(commandBuffer, currentFrame, offsets.size(), offsets.data());
                     mesh->_getModel()->draw(commandBuffer, surface->firstVertexIndex, surface->indexCount);
@@ -300,6 +312,10 @@ namespace z0 {
         VkDeviceSize pointLightBufferSize = sizeof(PointLightUniform) * (omniLights.size()+ (omniLights.empty() ? 1 : 0));
         createUniformBuffers(pointLightBuffers, pointLightBufferSize);
 
+        // Shadow maps UBO
+        VkDeviceSize shadowMapBufferSize = sizeof(ShadowMapUniform) * (shadowMaps.size()+ (shadowMaps.empty() ? 1 : 0));
+        createUniformBuffers(shadowMapsBuffers, shadowMapBufferSize);
+
         globalSetLayout = VulkanDescriptorSetLayout::Builder(vulkanDevice)
             .addBinding(0, // global UBO
                     VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
@@ -317,9 +333,12 @@ namespace z0 {
             .addBinding(4, // PointLight array UBO
                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
                         VK_SHADER_STAGE_FRAGMENT_BIT)
-            .addBinding(5, // shadow map
-                   VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                   VK_SHADER_STAGE_FRAGMENT_BIT)
+            .addBinding(5, // shadow map infos
+                        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                        VK_SHADER_STAGE_FRAGMENT_BIT)
+            .addBinding(6, // shadow map
+                        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                        VK_SHADER_STAGE_FRAGMENT_BIT)
            .build();
 
         for (int i = 0; i < descriptorSets.size(); i++) {
@@ -327,6 +346,7 @@ namespace z0 {
             auto modelBufferInfo = modelsBuffers[i]->descriptorInfo(modelBufferSize);
             auto surfaceBufferInfo = surfacesBuffers[i]->descriptorInfo(surfaceBufferSize);
             auto pointLightBufferInfo = pointLightBuffers[i]->descriptorInfo(pointLightBufferSize);
+            auto shadowMapBufferInfo = shadowMapsBuffers[i]->descriptorInfo(shadowMapBufferSize);
             std::vector<VkDescriptorImageInfo> imagesInfo{};
             for(const auto& image : images) {
                 imagesInfo.push_back(image->imageInfo());
@@ -336,19 +356,21 @@ namespace z0 {
                 .writeImage(1, imagesInfo.data())
                 .writeBuffer(2, &modelBufferInfo)
                 .writeBuffer(3, &surfaceBufferInfo)
-                .writeBuffer(4, &pointLightBufferInfo);
-             if (shadowMap != nullptr) {
-                VkDescriptorImageInfo imageInfo {
+                .writeBuffer(4, &pointLightBufferInfo)
+                .writeBuffer(5, &shadowMapBufferInfo);
+            if (shadowMaps.empty()) {
+                VkDescriptorImageInfo imageInfo = imagesInfo[0]; // find a better solution (blank image ?)
+                writer.writeImage(6, &imageInfo);
+            } else {
+                for (const auto &shadowMap: shadowMaps) {
+                    VkDescriptorImageInfo imageInfo{
                         .sampler = shadowMap->getSampler(),
                         .imageView = shadowMap->getImageView(),
                         .imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
-                };
-                //VkDescriptorImageInfo imageInfo = imagesInfo[1];
-                writer.writeImage(5, &imageInfo);
-            } else {
-                 VkDescriptorImageInfo imageInfo = imagesInfo[0]; // find a better solution (blank image ?)
-                 writer.writeImage(5, &imageInfo);
-             }
+                    };
+                    writer.writeImage(6, &imageInfo);
+                }
+            }
             if (!writer.build(descriptorSets[i])) {
                 die("Cannot allocate descriptor set");
             }
