@@ -13,19 +13,12 @@ namespace z0 {
         struct ModelUniformBufferObject {
             glm::mat4 matrix;
         };
-        struct SurfaceUniformBufferObject {
-            alignas(4) bool transparency;
-            alignas(4) int32_t diffuseIndex{-1};
-            alignas(16) glm::vec4 albedoColor;
-        };
 
         DepthPrepassRenderer(VulkanDevice& device, const std::string& shaderDirectory);
 
         void loadScene(std::shared_ptr<DepthBuffer>& buffer,
                        Camera* camera,
-                       std::vector<MeshInstance*>& meshes,
-                       std::map<Resource::rid_t, int32_t>& imagesIndices,
-                       std::unordered_set<std::shared_ptr<VulkanImage>>& images);
+                       std::vector<MeshInstance*>& meshes);
 
     private:
         void update(uint32_t currentFrame) override;

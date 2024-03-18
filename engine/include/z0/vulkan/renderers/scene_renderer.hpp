@@ -60,8 +60,13 @@ namespace z0 {
     private:
         DirectionalLight* directionalLight{nullptr};
         Environment* environement{nullptr};
+
         std::vector<OmniLight*> omniLights;
         std::vector<std::unique_ptr<VulkanBuffer>> pointLightBuffers{MAX_FRAMES_IN_FLIGHT};
+
+        std::map<Resource::rid_t, int32_t> imagesIndices {};
+        std::unordered_set<std::shared_ptr<VulkanImage>> images {};
+        std::vector<std::unique_ptr<VulkanBuffer>> surfacesBuffers{MAX_FRAMES_IN_FLIGHT};
 
         // Offscreen frame buffer for MSAA
         VkImage colorImage;

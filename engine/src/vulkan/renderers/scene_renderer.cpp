@@ -16,6 +16,8 @@ namespace z0 {
             shadowMap.reset();
         }
         depthPrepassRenderer->cleanup();
+        images.clear();
+        surfacesBuffers.clear();
         pointLightBuffers.clear();
         BaseMeshesRenderer::cleanup();
     }
@@ -29,8 +31,8 @@ namespace z0 {
             shadowMapRenderer->loadScene(shadowMap, meshes);
             //vulkanDevice.registerRenderer(shadowMapRenderer);
         }
-        depthPrepassRenderer->loadScene(depthBuffer, currentCamera, meshes, imagesIndices, images);
-        //vulkanDevice.registerRenderer(depthPrepassRenderer);
+        depthPrepassRenderer->loadScene(depthBuffer, currentCamera, meshes);
+        vulkanDevice.registerRenderer(depthPrepassRenderer);
     }
 
     void SceneRenderer::loadNode(std::shared_ptr<Node>& parent) {
@@ -184,8 +186,8 @@ namespace z0 {
         if (meshes.empty() || currentCamera == nullptr) return;
         setInitialState(commandBuffer);
 
-        vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE); // we have a depth prepass
-        //vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_EQUAL); // comparing with the depth prepass
+        vkCmdSetDepthWriteEnable(commandBuffer, VK_FALSE); // we have a depth prepass
+        vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_EQUAL); // comparing with the depth prepass
         VkBool32 color_blend_enables[] = {VK_TRUE};
         vkCmdSetColorBlendEnableEXT(commandBuffer, 0, 1, color_blend_enables);
 
@@ -398,7 +400,7 @@ namespace z0 {
                 .imageView = depthBuffer->getImageView(),
                 .imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                 .resolveMode = VK_RESOLVE_MODE_NONE,
-                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
                 .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
                 .clearValue = depthClearValue,
         };

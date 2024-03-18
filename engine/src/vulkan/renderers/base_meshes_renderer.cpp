@@ -13,8 +13,6 @@ namespace z0 {
 
     void BaseMeshesRenderer::cleanup() {
         depthBuffer.reset();
-        images.clear();
-        surfacesBuffers.clear();
         modelsBuffers.clear();
         BaseRenderer::cleanup();
     }
