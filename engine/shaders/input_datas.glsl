@@ -38,7 +38,8 @@ layout(set = 0, binding = 2) uniform ModelUniformBufferObject  {
 } model;
 
 layout(set = 0, binding = 3) uniform SurfaceUniformBufferObject  {
-    bool transparency;
+    int transparency;
+    float alphaScissor;
     int diffuseIndex;
     int specularIndex;
     vec4 albedoColor;

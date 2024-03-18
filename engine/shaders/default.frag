@@ -101,7 +101,9 @@ void main() {
     if (material.diffuseIndex != -1) {
         color = texture(texSampler[material.diffuseIndex], UV);
     }
-    //if (color.a < 0.99) discard;
+    if (((material.transparency == 2) || (material.transparency == 3)) && (color.a < material.alphaScissor)) {
+        discard;
+    }
 
     vec3 ambient = global.ambient.w * global.ambient.rgb * color.rgb;
 
@@ -120,6 +122,6 @@ void main() {
         float shadow = shadowFactor();
         result = (ambient + shadow) * result;
     }
-    COLOR = vec4(result, color.a);
+    COLOR = vec4(result, material.transparency == 1 || material.transparency == 3 ? color.a : 1.0);
 
 }

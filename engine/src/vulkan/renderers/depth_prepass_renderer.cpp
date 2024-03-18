@@ -51,9 +51,6 @@ namespace z0 {
             if (mesh->isValid()) {
                 for (const auto& surface: mesh->getSurfaces()) {
                     if (auto standardMaterial = dynamic_cast<StandardMaterial*>(surface->material.get())) {
-                        if (standardMaterial->transparency != TRANSPARENCY_DISABLED) {
-                            break;
-                        }
                         vkCmdSetCullMode(commandBuffer,
                                          standardMaterial->cullMode == CULLMODE_DISABLED ? VK_CULL_MODE_NONE :
                                          standardMaterial->cullMode == CULLMODE_BACK ? VK_CULL_MODE_BACK_BIT

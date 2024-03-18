@@ -45,7 +45,8 @@ namespace z0 {
             glm::mat4 normalMatrix;
         };
         struct SurfaceUniformBufferObject {
-            alignas(4) bool transparency;
+            alignas(4) int transparency;
+            alignas(4) float alphaScissor;
             alignas(4) int32_t diffuseIndex{-1};
             alignas(4) int32_t specularIndex{-1};
             alignas(16) glm::vec4 albedoColor;
@@ -61,11 +62,17 @@ namespace z0 {
         DirectionalLight* directionalLight{nullptr};
         Environment* environement{nullptr};
 
+        std::map<Node::id_t, int32_t> modelIndices {};
+        std::vector<MeshInstance*> opaquesMeshes {};
+        std::vector<MeshInstance*> transparentsMeshes {};
+
         std::vector<OmniLight*> omniLights;
         std::vector<std::unique_ptr<VulkanBuffer>> pointLightBuffers{MAX_FRAMES_IN_FLIGHT};
 
         std::map<Resource::rid_t, int32_t> imagesIndices {};
         std::unordered_set<std::shared_ptr<VulkanImage>> images {};
+
+        std::map<Resource::rid_t, int32_t> surfacesIndices {};
         std::vector<std::unique_ptr<VulkanBuffer>> surfacesBuffers{MAX_FRAMES_IN_FLIGHT};
 
         // Offscreen frame buffer for MSAA
@@ -95,6 +102,7 @@ namespace z0 {
         void loadNode(std::shared_ptr<Node>& parent);
         void createImagesList(std::shared_ptr<Node>& node);
         void createImagesIndex(std::shared_ptr<Node>& node);
+        void drawMeshes(VkCommandBuffer commandBuffer, uint32_t currentFrame, const std::vector<MeshInstance*>& meshesToDraw);
 
     public:
         SceneRenderer(const SceneRenderer&) = delete;

@@ -12,10 +12,10 @@ namespace z0 {
     };
 
     enum Transparency {
-        TRANSPARENCY_DISABLED               = 0,
-        TRANSPARENCY_ALPHA                  = 1,
-        TRANSPARENCY_ALPHA_SCISSOR          = 2,
-        TRANSPARENCY_ALPHA_DEPTH_PRE_PASS   = 3,
+        TRANSPARENCY_DISABLED         = 0,
+        TRANSPARENCY_ALPHA            = 1, // alpha only
+        TRANSPARENCY_SCISSOR          = 2, // scissor onmy
+        TRANSPARENCY_SCISSOR_ALPHA    = 3, // scissor then alpha
     };
 
     class Material: public Resource {
@@ -30,6 +30,7 @@ namespace z0 {
         std::shared_ptr<Texture>    specularTexture;
         CullMode                    cullMode { CULLMODE_BACK };
         Transparency                transparency { TRANSPARENCY_DISABLED };
+        float                       alphaScissor { 0.1 };
 
         explicit StandardMaterial(std::string name = ""): Material(name) {}
         bool isValid() override { return true; }

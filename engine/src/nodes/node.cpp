@@ -100,6 +100,7 @@ namespace z0 {
         for(auto&child : children) {
             dup->addChild(child->duplicate());
         }
+        dup->id = currentId++;
         return dup;
     }
 
@@ -173,6 +174,10 @@ glm::mat3 Node::normalMatrix() const {
         }
         out << toString() << std::endl;
         for (auto child: children) child->printTree(out, tab+1);
+    }
+
+    DistanceSortedNode::DistanceSortedNode(Node &_node, const Node &origin):
+        node(_node), distance(glm::distance(origin.getGlobalPosition(), _node.getGlobalPosition())) {
     }
 
 }

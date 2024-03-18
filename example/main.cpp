@@ -44,6 +44,7 @@ public:
         z0::MeshInstance* mi = dynamic_cast<z0::MeshInstance*>(model3->getChildren().front().get());
         z0::StandardMaterial* mat = dynamic_cast<z0::StandardMaterial*>(mi->getMesh()->getSurfaceMaterial(0).get());
         mat->transparency = z0::TRANSPARENCY_ALPHA;
+        //mat->alphaScissor = 0.4;
 
         model4 = model3->duplicate();
         model4->setPosition({0.0, -0.0, -4.0});

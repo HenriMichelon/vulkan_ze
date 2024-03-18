@@ -15,6 +15,8 @@ namespace z0 {
             shadowMapRenderer.reset();
             shadowMap.reset();
         }
+        opaquesMeshes.clear();
+        transparentsMeshes.clear();
         depthPrepassRenderer->cleanup();
         images.clear();
         surfacesBuffers.clear();
@@ -25,13 +27,38 @@ namespace z0 {
     void SceneRenderer::loadScene(std::shared_ptr<Node>& rootNode) {
         loadNode(rootNode);
         createImagesIndex(rootNode);
+        std::multiset<DistanceSortedNode> sortedTransparentNodes;
+        uint32_t surfaceIndex = 0;
+        uint32_t modelIndex = 0;
+        for (const auto &meshInstance: meshes) {
+            modelIndices[meshInstance->getId()] = modelIndex;
+            auto transparent = false;
+            for (const auto &material: meshInstance->getMesh()->_getMaterials()) {
+                surfacesIndices[material->getId()] = surfaceIndex;
+                surfaceIndex += 1;
+                if (auto standardMaterial = dynamic_cast<StandardMaterial*>(material.get())) {
+                    if (standardMaterial->transparency != TRANSPARENCY_DISABLED) {
+                        transparent = true;
+                    }
+                }
+            }
+            if (transparent) {
+                sortedTransparentNodes.insert(DistanceSortedNode(*meshInstance, *currentCamera));
+            } else {
+                opaquesMeshes.push_back(meshInstance);
+            }
+            modelIndex += 1;
+        }
+        for (const auto& node: sortedTransparentNodes) {
+            transparentsMeshes.push_back(dynamic_cast<MeshInstance*>(&node.getNode()));
+        }
         createResources();
         if (shadowMap != nullptr) {
             shadowMapRenderer = std::make_shared<ShadowMapRenderer>(vulkanDevice, shaderDirectory);
             shadowMapRenderer->loadScene(shadowMap, meshes);
             //vulkanDevice.registerRenderer(shadowMapRenderer);
         }
-        depthPrepassRenderer->loadScene(depthBuffer, currentCamera, meshes);
+        depthPrepassRenderer->loadScene(depthBuffer, currentCamera, opaquesMeshes);
         vulkanDevice.registerRenderer(depthPrepassRenderer);
     }
 
@@ -54,9 +81,9 @@ namespace z0 {
                 log("Using environment", environement->toString());
             }
         }
-        if (auto omniLight = dynamic_cast<OmniLight *>(parent.get())) {
+        if (auto omniLight = dynamic_cast<OmniLight*>(parent.get())) {
             omniLights.push_back(omniLight);
-            if (auto spotLight = dynamic_cast<SpotLight *>(parent.get())) {
+            if (auto spotLight = dynamic_cast<SpotLight*>(parent.get())) {
                 if (shadowMap == nullptr) shadowMap = std::make_shared<ShadowMap>(vulkanDevice, spotLight);
             }
         }
@@ -81,17 +108,18 @@ namespace z0 {
             }
         }
     }
+
     void SceneRenderer::createImagesIndex(std::shared_ptr<Node>& node) {
         if (auto meshInstance = dynamic_cast<MeshInstance*>(node.get())) {
             for(const auto& material : meshInstance->getMesh()->_getMaterials()) {
                 if (auto standardMaterial = dynamic_cast<StandardMaterial*>(material.get())) {
                     if (standardMaterial->albedoTexture != nullptr) {
-                        auto& image = standardMaterial->albedoTexture->getImage();
+                        auto &image = standardMaterial->albedoTexture->getImage();
                         auto index = std::distance(std::begin(images), images.find(image._getImage()));
                         imagesIndices[image.getId()] = static_cast<int32_t>(index);
                     }
                     if (standardMaterial->specularTexture != nullptr) {
-                        auto& image = standardMaterial->specularTexture->getImage();
+                        auto &image = standardMaterial->specularTexture->getImage();
                         auto index = std::distance(std::begin(images), images.find(image._getImage()));
                         imagesIndices[image.getId()] = static_cast<int32_t>(index);
                     }
@@ -173,6 +201,7 @@ namespace z0 {
                             surfaceUbo.specularIndex = imagesIndices[standardMaterial->specularTexture->getImage().getId()];
                         }
                         surfaceUbo.transparency = standardMaterial->transparency;
+                        surfaceUbo.alphaScissor = standardMaterial->alphaScissor;
                     }
                     writeUniformBuffer(surfacesBuffers, currentFrame, &surfaceUbo, surfaceIndex);
                     surfaceIndex += 1;
@@ -185,14 +214,8 @@ namespace z0 {
     void SceneRenderer::recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) {
         if (meshes.empty() || currentCamera == nullptr) return;
         setInitialState(commandBuffer);
-
-        vkCmdSetDepthWriteEnable(commandBuffer, VK_FALSE); // we have a depth prepass
-        vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_EQUAL); // comparing with the depth prepass
-        VkBool32 color_blend_enables[] = {VK_TRUE};
-        vkCmdSetColorBlendEnableEXT(commandBuffer, 0, 1, color_blend_enables);
-
-        // quad renderer
 /*
+        // quad renderer
         vkCmdSetVertexInputEXT(commandBuffer, 0, nullptr, 0, nullptr);
         vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_NONE);
         std::array<uint32_t, 4> offsets = {
@@ -205,32 +228,44 @@ namespace z0 {
         vkCmdDraw(commandBuffer, 3, 1, 0, 0);
         return;
 */
-        uint32_t modelIndex = 0;
-        uint32_t surfaceIndex = 0;
-        for (const auto&meshInstance: meshes) {
+        vkCmdSetDepthWriteEnable(commandBuffer, VK_FALSE); // we have a depth prepass
+        vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_EQUAL); // comparing with the depth prepass
+        drawMeshes(commandBuffer, currentFrame, opaquesMeshes);
+
+        vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
+        vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_LESS_OR_EQUAL);
+        VkBool32 color_blend_enables[] = {VK_TRUE};
+        vkCmdSetColorBlendEnableEXT(commandBuffer, 0, 1, color_blend_enables);
+        drawMeshes(commandBuffer, currentFrame, transparentsMeshes);
+
+    }
+
+    void SceneRenderer::drawMeshes(VkCommandBuffer commandBuffer, uint32_t currentFrame, const std::vector<MeshInstance*>& meshesToDraw) {
+        for (const auto& meshInstance : meshesToDraw) {
+            auto modelIndex = modelIndices[meshInstance->getId()];
             auto mesh = meshInstance->getMesh();
             if (mesh->isValid()) {
                 for (const auto& surface: mesh->getSurfaces()) {
-                    if (auto standardMaterial = dynamic_cast<StandardMaterial*>(surface->material.get())) {
+                    const auto& material = surface->material.get();
+                    if (auto standardMaterial = dynamic_cast<StandardMaterial*>(material)) {
                         vkCmdSetCullMode(commandBuffer,
                                          standardMaterial->cullMode == CULLMODE_DISABLED ? VK_CULL_MODE_NONE :
                                          standardMaterial->cullMode == CULLMODE_BACK ? VK_CULL_MODE_BACK_BIT
-                                                                             : VK_CULL_MODE_FRONT_BIT);
+                                                                                     : VK_CULL_MODE_FRONT_BIT);
                     } else {
                         vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_NONE);
                     }
+                    auto surfaceIndex = surfacesIndices[material->getId()];
                     std::array<uint32_t, 4> offsets = {
-                        0, // globalBuffers
-                        static_cast<uint32_t>(modelsBuffers[currentFrame]->getAlignmentSize() * modelIndex),
-                        static_cast<uint32_t>(surfacesBuffers[currentFrame]->getAlignmentSize() * surfaceIndex),
-                        0, // pointLightBuffers
+                            0, // globalBuffers
+                            static_cast<uint32_t>(modelsBuffers[currentFrame]->getAlignmentSize() * modelIndex),
+                            static_cast<uint32_t>(surfacesBuffers[currentFrame]->getAlignmentSize() * surfaceIndex),
+                            0, // pointLightBuffers
                     };
                     bindDescriptorSets(commandBuffer, currentFrame, offsets.size(), offsets.data());
                     mesh->_getModel()->draw(commandBuffer, surface->firstVertexIndex, surface->indexCount);
-                    surfaceIndex += 1;
                 }
             }
-            modelIndex += 1;
         }
 
     }

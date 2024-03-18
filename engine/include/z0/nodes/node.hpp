@@ -18,6 +18,7 @@ namespace z0 {
         virtual void onReady() {}
         virtual void onProcess(float delta) {}
 
+        id_t getId() const { return id; }
         void removeChild(const std::shared_ptr<Node>& child);
         std::list<std::shared_ptr<Node>>& getChildren() { return children; }
         Node* getParent() { return parent; }
@@ -28,6 +29,7 @@ namespace z0 {
 
         void setPosition(glm::vec3 position);
         glm::vec3 getPosition() const { return _position; };
+        glm::vec3 getGlobalPosition() const { return glm::vec3(worldTransform[3]); }
 
         void setRotation(glm::vec3 orientation);
         void setRotationDegrees(glm::vec3 orient);
@@ -86,5 +88,21 @@ namespace z0 {
 
     public:
         glm::mat4 localTransform {};
+    };
+
+
+    class DistanceSortedNode {
+    public:
+        DistanceSortedNode(Node& node, const Node& origin);
+
+        Node& getNode() const { return node; }
+
+        bool operator<(const DistanceSortedNode& other) const {
+            return distance < other.distance;
+        }
+
+    private:
+        Node& node;
+        float distance;
     };
 }
