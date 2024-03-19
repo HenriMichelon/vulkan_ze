@@ -51,6 +51,7 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/include/z0/nodes/environment.hpp
         ${Z0_ENGINE_DIR}/include/z0/nodes/omni_light.hpp
         ${Z0_ENGINE_DIR}/include/z0/nodes/spot_light.hpp
+		${Z0_ENGINE_DIR}/include/z0/ui/debug_ui.hpp
         ${Z0_ENGINE_DIR}/include/z0/application_config.hpp
         ${Z0_ENGINE_DIR}/include/z0/mainloop.hpp
         ${Z0_ENGINE_DIR}/include/z0/log.hpp
@@ -83,6 +84,7 @@ add_executable(${PROJECT_NAME}
 		${Z0_ENGINE_DIR}/src/vulkan/renderers/depth_buffer.cpp
 		${Z0_ENGINE_DIR}/src/vulkan/renderers/depth_prepass_renderer.cpp
 		${Z0_ENGINE_DIR}/src/vulkan/renderers/base_meshes_renderer.cpp
+		${Z0_ENGINE_DIR}/src/ui/debug_ui.cpp
         ${Z0_ENGINE_DIR}/src/nodes/node.cpp
         ${Z0_ENGINE_DIR}/src/nodes/camera.cpp
         ${Z0_ENGINE_DIR}/src/nodes/mesh_instance.cpp

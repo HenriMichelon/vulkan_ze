@@ -56,7 +56,6 @@ namespace z0 {
     }
 
     void WindowHelper::close() {
-        glfwDestroyWindow(windowHandle);
-        glfwTerminate();
+        glfwSetWindowShouldClose(windowHandle, GL_TRUE);
     }
 }

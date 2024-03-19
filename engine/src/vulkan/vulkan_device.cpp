@@ -101,12 +101,11 @@ namespace z0 {
             }
         }
 
+        debugUi = std::make_unique<DebugUI>(*this, window);
     }
 
     VulkanDevice::~VulkanDevice() {
-        ImGui_ImplVulkan_Shutdown();
-        ImGui_ImplGlfw_Shutdown();
-        ImGui::DestroyContext();
+        debugUi->cleanup(*this);
         for (auto& renderer: renderers) {
             renderer->cleanup();
         }
@@ -133,7 +132,7 @@ namespace z0 {
     void VulkanDevice::drawFrame() {
         vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
         uint32_t imageIndex;
-        VkResult result = vkAcquireNextImageKHR(device,
+        auto result = vkAcquireNextImageKHR(device,
                                                 swapChain,
                                                 UINT64_MAX,
                                                 imageAvailableSemaphores[currentFrame],
@@ -156,7 +155,6 @@ namespace z0 {
             die("failed to acquire swap chain image!");
         }
         vkResetFences(device, 1, &inFlightFences[currentFrame]);
-
         {
             vkResetCommandBuffer(commandBuffers[currentFrame], 0);
             const VkCommandBufferBeginInfo beginInfo{
@@ -167,10 +165,6 @@ namespace z0 {
             if (vkBeginCommandBuffer(commandBuffers[currentFrame], &beginInfo) != VK_SUCCESS) {
                 die("failed to begin recording command buffer!");
             }
-            ImGui_ImplVulkan_NewFrame();
-            ImGui_ImplGlfw_NewFrame();
-            ImGui::NewFrame();
-            ImGui::ShowDemoWindow();
 
             setInitialState(commandBuffers[currentFrame]);
             for (auto& renderer: renderers) {
@@ -179,8 +173,7 @@ namespace z0 {
                 renderer->endRendering(commandBuffers[currentFrame], swapChainImages[imageIndex]);
             }
 
-            ImGui::Render();
-            ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffers[currentFrame]);
+            debugUi->drawFrame(commandBuffers[currentFrame], swapChainImageViews[imageIndex], swapChainExtent);
 
             if (vkEndCommandBuffer(commandBuffers[currentFrame]) != VK_SUCCESS) {
                 die("failed to record command buffer!");
@@ -220,7 +213,7 @@ namespace z0 {
                     .pImageIndices      = &imageIndex,
                     .pResults           = nullptr // Optional
             };
-            VkResult result = vkQueuePresentKHR(presentQueue, &presentInfo);
+            result = vkQueuePresentKHR(presentQueue, &presentInfo);
             if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || window.windowResized) {
                 recreateSwapChain();
                 for (auto& renderer: renderers) {
@@ -762,34 +755,6 @@ namespace z0 {
                               srcStageMask, dstStageMask,
                               aspectMask, mipLevels);
         endSingleTimeCommands(commandBuffer);
-    }
-
-    void VulkanDevice::initImGui(VkDescriptorPool descriptorPool) {
-        QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice, surface);
-        // After Vulkan and GLFW initialization
-        ImGui::CreateContext();
-        ImGui_ImplGlfw_InitForVulkan(window.getWindowHandle(), true);
-        ImGui_ImplVulkan_InitInfo init_info = {};
-        init_info.Instance = vulkanInstance.getInstance();
-        init_info.PhysicalDevice = physicalDevice;
-        init_info.Device = device;
-        init_info.QueueFamily = queueFamilyIndices.graphicsFamily.value();
-        init_info.Queue = graphicsQueue;
-        init_info.PipelineCache = VK_NULL_HANDLE;
-        init_info.DescriptorPool = descriptorPool;
-        init_info.Allocator = nullptr;
-        init_info.MinImageCount = MAX_FRAMES_IN_FLIGHT;
-        init_info.ImageCount = MAX_FRAMES_IN_FLIGHT;
-        init_info.MSAASamples = samples;
-        init_info.CheckVkResultFn = check_vk_result;
-        init_info.UseDynamicRendering = true;
-        ImGui_ImplVulkan_Init(&init_info);
-
-// Load Fonts
-        /*unsigned char* fontData;
-        int texWidth, texHeight;
-        io.Fonts->GetTexDataAsRGBA32(&fontData, &texWidth, &texHeight);*/
-// Upload Fonts
     }
 
 }

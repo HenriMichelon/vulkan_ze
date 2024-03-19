@@ -3,6 +3,7 @@
 #include "z0/vulkan/vulkan_instance.hpp"
 #include "z0/vulkan/window_helper.hpp"
 #include "z0/vulkan/vulkan_renderer.hpp"
+#include "z0/ui/debug_ui.hpp"
 
 #include <memory>
 #include <optional>
@@ -39,6 +40,9 @@ namespace z0 {
         const VkExtent2D& getSwapChainExtent() const { return swapChainExtent;}
         VkFormat getSwapChainImageFormat() const { return swapChainImageFormat; }
         VkPhysicalDeviceProperties getDeviceProperties() const { return deviceProperties; }
+        VkSurfaceKHR getSurface() const { return surface; };
+        VkQueue getGraphicsQueue() const { return graphicsQueue; }
+        VulkanInstance& getInstance() const { return vulkanInstance; }
         float getAspectRatio() const {return static_cast<float>(swapChainExtent.width) / static_cast<float>(swapChainExtent.height);}
 
         void drawFrame();
@@ -73,12 +77,10 @@ namespace z0 {
         // Find a suitable IMAGE_TILING format (for the Depth buffering image)
         VkFormat findImageTilingSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
-        void initImGui(VkDescriptorPool descriptorPool);
-
-
     private:
         VulkanInstance& vulkanInstance;
         std::vector<std::shared_ptr<VulkanRenderer>> renderers;
+        std::unique_ptr<DebugUI> debugUi;
 
         // Physical & logical device management
         WindowHelper &window;

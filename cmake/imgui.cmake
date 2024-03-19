@@ -1,4 +1,4 @@
-set(IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING)
+add_compile_definitions(IMGUI_IMPL_VULKAN_NO_PROTOTYPES)
 set(IMGUI_SOURCES
     ${Z0_LIBRARIES_DIR}/imgui/imgui.cpp
     ${Z0_LIBRARIES_DIR}/imgui/imgui_draw.cpp
