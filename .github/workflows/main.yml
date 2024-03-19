@@ -16,9 +16,10 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Create shader build directory
+    - name: Create directories
       run:
           mkdir shaders
+          mkdir libraries
 
     - name: Create .env file
       uses: SpicyPizza/create-envfile@v2.0.3
@@ -32,6 +33,13 @@ jobs:
       
     - name: Install Vulkan SDK
       uses: humbletim/install-vulkan-sdk@v1.1.1
+
+    - name: Git Clone ImGui
+      uses: sudosubin/git-clone-action@v1.0.1
+      with:
+        repository: https://github.com/ocornut/imgui
+        ref: v1.90.4
+        path: libraries
 
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -D GLFW_BUILD_WAYLAND=false
