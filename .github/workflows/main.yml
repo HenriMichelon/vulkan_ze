@@ -24,7 +24,7 @@ jobs:
     - name: Git Clone ImGui
       uses: actions/checkout@v4
       with:
-        repository: https://github.com/ocornut/imgui
+        repository: ocornut/imgui
         ref: v1.90.4
         path: libraries/imgui
         
