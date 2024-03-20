@@ -37,6 +37,9 @@ namespace z0 {
         void setRotationY(float angle);
         void setRotationZ(float angle);
         glm::vec3 getRotation() const { return _orientation; };
+        float getRotationX() const { return _orientation.x; }
+        float getRotationY() const { return _orientation.y; }
+        float getRotationZ() const { return _orientation.z; }
 
         void setScale(glm::vec3 scale);
         glm::vec3 getScale() const { return _scale; }

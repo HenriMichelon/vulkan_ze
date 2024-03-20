@@ -13,9 +13,13 @@ namespace z0 {
         void drawFrame(VkCommandBuffer commandBuffer, VkImageView targetImageView, VkExtent2D extent);
         void cleanup(VulkanDevice& device);
 
+        void updateFPS(float fps, float deltaTime);
+
     private:
         WindowHelper& windowHelper;
         VkDescriptorPool imguiPool;
+        float fps;
+        float deltaTime;
 
         const ImGuiWindowFlags transparentWindowFlags =
                 ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground |
@@ -24,6 +28,8 @@ namespace z0 {
 
         void defaultStyle();
         void drawUI();
+
         void quitButton();
+        void statsPanel();
     };
 }

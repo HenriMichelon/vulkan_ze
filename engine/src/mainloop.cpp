@@ -24,12 +24,25 @@ namespace z0 {
         std::shared_ptr<Node>& rootNode = currentScene->getRootNode();
         ready(rootNode);
         viewport->loadScene(rootNode);
+
+        uint32_t frameCount = 0;
+        auto lastFrameTime = std::chrono::high_resolution_clock::now();
+        float elapsedSeconds = 0.0;
         while (!viewport->shouldClose()) {
-            static auto startTime = std::chrono::high_resolution_clock::now();
-            auto currentTime = std::chrono::high_resolution_clock::now();
-            float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+            auto currentFrameTime = std::chrono::high_resolution_clock::now();
+            auto deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(currentFrameTime - lastFrameTime).count();
+
             process(rootNode, deltaTime);
             viewport->drawFrame();
+
+            elapsedSeconds += deltaTime;
+            frameCount++;
+            if (elapsedSeconds >= 1.0) {
+                viewport->getDebugUI().updateFPS(frameCount / elapsedSeconds, deltaTime);
+                frameCount = 0;
+                elapsedSeconds = 0;
+            }
+            lastFrameTime = currentFrameTime;
         }
         viewport->wait();
 #ifdef VULKAN_STATS

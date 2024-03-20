@@ -101,11 +101,11 @@ namespace z0 {
             }
         }
 
-        debugUi = std::make_unique<DebugUI>(*this, window);
+        debugUI = std::make_unique<DebugUI>(*this, window);
     }
 
     VulkanDevice::~VulkanDevice() {
-        debugUi->cleanup(*this);
+        debugUI->cleanup(*this);
         for (auto& renderer: renderers) {
             renderer->cleanup();
         }
@@ -173,7 +173,7 @@ namespace z0 {
                 renderer->endRendering(commandBuffers[currentFrame], swapChainImages[imageIndex]);
             }
 
-            debugUi->drawFrame(commandBuffers[currentFrame], swapChainImageViews[imageIndex], swapChainExtent);
+            debugUI->drawFrame(commandBuffers[currentFrame], swapChainImageViews[imageIndex], swapChainExtent);
 
             if (vkEndCommandBuffer(commandBuffers[currentFrame]) != VK_SUCCESS) {
                 die("failed to record command buffer!");

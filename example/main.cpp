@@ -29,7 +29,7 @@ public:
         directionalLight.setCastShadow(true);
         addChild(directionalLight);
 
-        z0::SpotLight spotLight1{{-0.75, .5, 0.1},
+        /*z0::SpotLight spotLight1{{-0.75, .5, 0.1},
                                  45.0, 55.0,
                                  0.027, 0.0028};
         spotLight1.setPosition({3.0, -6.0, -2.1});
@@ -49,10 +49,10 @@ public:
         //addChild(spotLight2);
         light2 =  z0::Loader::loadModelFromFile("models/light.glb", false);
         light2->setPosition(spotLight2.getPosition());
-        addChild(light2);
+        addChild(light2);*/
 
 
-        model3 = z0::Loader::loadModelFromFile("models/window.glb", false);
+        model3 = z0::Loader::loadModelFromFile("models/window.glb");
         model3->setRotationDegrees({-90.0, 0.0, 0.0});
         model3->setPosition({1.0, -0.0, -3.0});
         auto* mi = dynamic_cast<z0::MeshInstance*>(model3->getChildren().front().get());
@@ -66,7 +66,7 @@ public:
         addChild(model4);
         addChild(model3);
 
-        model1 = z0::Loader::loadModelFromFile("models/cube2.glb", false);
+        model1 = z0::Loader::loadModelFromFile("models/cube2.glb");
         //model1->setRotationDegrees({0.0, 30.0, 0.0});
 
         model2 = model1->duplicate();
@@ -77,7 +77,7 @@ public:
         model1->setPosition({2.0, 0.0, 0.0});
         model2->setPosition({0.0, -1.0, 0.0});
 
-        floor = z0::Loader::loadModelFromFile("models/floor.glb", false);
+        floor = z0::Loader::loadModelFromFile("models/floor.glb", true );
         floor->setPosition({0.0, 2.0, 0.0});
         addChild(floor);
 
@@ -93,8 +93,8 @@ public:
 
     void onProcess(float delta) override {
         float angle = delta * glm::radians(90.0f) / 2;
-        model2->setRotationX(angle);
-        model3->setRotationY(angle);
+        model2->setRotationX(angle + model2->getRotationX());
+        model3->setRotationY(angle + model3->getRotationY());
     }
 
 private:

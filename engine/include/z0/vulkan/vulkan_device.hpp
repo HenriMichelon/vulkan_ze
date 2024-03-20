@@ -44,6 +44,7 @@ namespace z0 {
         VkQueue getGraphicsQueue() const { return graphicsQueue; }
         VulkanInstance& getInstance() const { return vulkanInstance; }
         float getAspectRatio() const {return static_cast<float>(swapChainExtent.width) / static_cast<float>(swapChainExtent.height);}
+        DebugUI& getDebugUI() const { return *debugUI; }
 
         void drawFrame();
         void wait();
@@ -80,7 +81,7 @@ namespace z0 {
     private:
         VulkanInstance& vulkanInstance;
         std::vector<std::shared_ptr<VulkanRenderer>> renderers;
-        std::unique_ptr<DebugUI> debugUi;
+        std::unique_ptr<DebugUI> debugUI;
 
         // Physical & logical device management
         WindowHelper &window;

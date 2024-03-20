@@ -22,6 +22,7 @@ namespace z0 {
         void drawFrame();
         void wait();
         bool shouldClose() { return window.shouldClose(); }
+        DebugUI& getDebugUI() const { return vulkanDevice->getDebugUI(); }
 
         void loadScene(std::shared_ptr<Node>& rootNode);
 
