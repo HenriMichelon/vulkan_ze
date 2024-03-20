@@ -9,8 +9,8 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include <stb_image_write.h>
+//#define STB_IMAGE_WRITE_IMPLEMENTATION
+//#include <stb_image_write.h>
 
 namespace z0 {
 
@@ -89,7 +89,7 @@ namespace z0 {
         return image;
     }
 
-    void VulkanImage::saveToFile(VkCommandBuffer commandBuffer, VulkanDevice &device, VkImage image, VkFormat format, int width, int height, const std::string &filepath) {
+    /*void VulkanImage::saveToFile(VkCommandBuffer commandBuffer, VulkanDevice &device, VkImage image, VkFormat format, int width, int height, const std::string &filepath) {
         VulkanBuffer textureStagingBuffer{
                 device,
                 calculateImageSize(format, width, height),
@@ -142,8 +142,7 @@ namespace z0 {
                 die("Unsupported image format");
         }
         return width * height * bytesPerPixel;
-    }
-
+    }*/
 
     VulkanImage::~VulkanImage() {
         vkDestroySampler(vulkanDevice.getDevice(), textureSampler, nullptr);

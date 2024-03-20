@@ -12,8 +12,8 @@ namespace z0 {
         VkDescriptorImageInfo imageInfo();
 
         static std::shared_ptr<VulkanImage> createFromFile(VulkanDevice &device, const std::string &filepath);
-        static void saveToFile(VkCommandBuffer commandBuffer, VulkanDevice &device, VkImage image, VkFormat format, int width, int height, const std::string &filepath);
-        static VkDeviceSize calculateImageSize(VkFormat format, int width, int height);
+        //static void saveToFile(VkCommandBuffer commandBuffer, VulkanDevice &device, VkImage image, VkFormat format, int width, int height, const std::string &filepath);
+        //static VkDeviceSize calculateImageSize(VkFormat format, int width, int height);
 
         uint32_t getWidth() const { return width; }
         uint32_t getHeight() const { return height; }

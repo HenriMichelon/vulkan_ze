@@ -10,6 +10,8 @@ namespace z0 {
         ~VulkanCubemap();
 
         VkDescriptorImageInfo imageInfo();
+        VkImage& getImage() { return textureImage; }
+        VkImageView& getImageView() { return textureImageView; }
 
         static std::shared_ptr<VulkanCubemap> createFromFile(VulkanDevice &device, const std::string &filepath, const std::string &ext);
 

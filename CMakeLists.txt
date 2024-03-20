@@ -101,6 +101,8 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/loader.cpp
 		engine/include/z0/vulkan/vulkan_cubemap.hpp
 		engine/src/vulkan/vulkan_cubemap.cpp
+		engine/include/z0/vulkan/renderers/skybox_renderer.hpp
+		engine/src/vulkan/renderers/skybox_renderer.cpp
 )
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_shaders)
 
