@@ -15,14 +15,6 @@ namespace z0 {
     VulkanImage::VulkanImage(VulkanDevice& device, uint32_t w, uint32_t h, VkDeviceSize imageSize, void* data):
         vulkanDevice{device}, width{w}, height{h}
     {
-        const VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
-        mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
-        vulkanDevice.createImage(width, height, mipLevels, VK_SAMPLE_COUNT_1_BIT, format,
-                                 VK_IMAGE_TILING_OPTIMAL,
-                                 VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
-        textureImageView = vulkanDevice.createImageView(textureImage, format, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
-
         VulkanBuffer textureStagingBuffer{
                 vulkanDevice,
                 imageSize,
@@ -33,15 +25,46 @@ namespace z0 {
         textureStagingBuffer.map();
         textureStagingBuffer.writeToBuffer(data);
 
+        const VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
+        mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
+        vulkanDevice.createImage(width, height, mipLevels, VK_SAMPLE_COUNT_1_BIT, format,
+                                 VK_IMAGE_TILING_OPTIMAL,
+                                 VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
+
+        // https://vulkan-tutorial.com/Texture_mapping/Images#page_Copying-buffer-to-image
         vulkanDevice.transitionImageLayout(
                 textureImage,
                 VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 0, VK_ACCESS_TRANSFER_WRITE_BIT,
                 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
                 VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
-        copyBufferToImage(textureStagingBuffer.getBuffer(),
-                          textureImage);
+        VkBufferImageCopy region{};
+        region.bufferOffset = 0;
+        region.bufferRowLength = 0;
+        region.bufferImageHeight = 0;
+        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        region.imageSubresource.mipLevel = 0;
+        region.imageSubresource.baseArrayLayer = 0;
+        region.imageSubresource.layerCount = 1;
+        region.imageOffset = {0, 0, 0};
+        region.imageExtent = {
+                width,
+                height,
+                1
+        };
+        VkCommandBuffer commandBuffer = vulkanDevice.beginSingleTimeCommands();
+        vkCmdCopyBufferToImage(
+                commandBuffer,
+                textureStagingBuffer.getBuffer(),
+                textureImage,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                1,
+                &region
+        );
+        vulkanDevice.endSingleTimeCommands(commandBuffer);
         //transitioned to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL while generating mipmaps
+        textureImageView = vulkanDevice.createImageView(textureImage, format, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
 
         generateMipmaps(format);
         createTextureSampler();
@@ -69,36 +92,6 @@ namespace z0 {
         vkDestroyImageView(vulkanDevice.getDevice(), textureImageView, nullptr);
         vkDestroyImage(vulkanDevice.getDevice(), textureImage, nullptr);
         vkFreeMemory(vulkanDevice.getDevice(), textureImageMemory, nullptr);
-    }
-
-    // https://vulkan-tutorial.com/Texture_mapping/Images#page_Copying-buffer-to-image
-    void VulkanImage::copyBufferToImage(VkBuffer buffer, VkImage image) {
-        VkCommandBuffer commandBuffer = vulkanDevice.beginSingleTimeCommands();
-
-        VkBufferImageCopy region{};
-        region.bufferOffset = 0;
-        region.bufferRowLength = 0;
-        region.bufferImageHeight = 0;
-        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        region.imageSubresource.mipLevel = 0;
-        region.imageSubresource.baseArrayLayer = 0;
-        region.imageSubresource.layerCount = 1;
-        region.imageOffset = {0, 0, 0};
-        region.imageExtent = {
-                width,
-                height,
-                1
-        };
-        vkCmdCopyBufferToImage(
-                commandBuffer,
-                buffer,
-                image,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                1,
-                &region
-        );
-
-        vulkanDevice.endSingleTimeCommands(commandBuffer);
     }
 
     // https://vulkan-tutorial.com/Texture_mapping/Combined_image_sampler#page_Updating-the-descriptors

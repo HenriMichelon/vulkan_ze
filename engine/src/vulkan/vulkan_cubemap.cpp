@@ -13,42 +13,74 @@ namespace z0 {
     VulkanCubemap::VulkanCubemap(VulkanDevice& device, uint32_t w, uint32_t h, VkDeviceSize imageSize, std::vector<void*>& data):
         vulkanDevice{device}, width{w}, height{h}
     {
+        VulkanBuffer textureStagingBuffer{
+                vulkanDevice,
+                imageSize,
+                6,
+                VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                vulkanDevice.getDeviceProperties().limits.minUniformBufferOffsetAlignment
+        };
+        textureStagingBuffer.map();
+        for (int i = 0; i < 6; i++) {
+            textureStagingBuffer.writeToBuffer(data[i], imageSize, textureStagingBuffer.getAlignmentSize() * i);
+        }
+
         const VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
         vulkanDevice.createImage(width, height, 1, VK_SAMPLE_COUNT_1_BIT, format,
                                  VK_IMAGE_TILING_OPTIMAL,
                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory,
                                  VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT, 6);
-        textureImageView = vulkanDevice.createImageView(textureImage, format,
-                                                        VK_IMAGE_ASPECT_COLOR_BIT,
-                                                        1,
-                                                        VK_IMAGE_VIEW_TYPE_CUBE);
-        VulkanBuffer textureStagingBuffer{
-                vulkanDevice,
-                imageSize,
-                6,
-                VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-        };
-        textureStagingBuffer.map();
 
-        for (int i = 0; i < 6; i++) {
-            auto offset = imageSize * i;
-            textureStagingBuffer.writeToBuffer(data[i], offset);
-        }
         vulkanDevice.transitionImageLayout(
                 textureImage,
                 VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 0, VK_ACCESS_TRANSFER_WRITE_BIT,
                 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
                 VK_IMAGE_ASPECT_COLOR_BIT);
-        copyBufferToImage(textureStagingBuffer.getBuffer(), textureImage);
+
+        VkBufferImageCopy layerRegions[6];
+        memset(layerRegions, 0, sizeof(layerRegions));
+        for (uint32_t i = 0; i < 6; i++) {
+            layerRegions[i].bufferOffset = textureStagingBuffer.getAlignmentSize() * i;
+            layerRegions[i].bufferRowLength = 0;   // Tightly packed
+            layerRegions[i].bufferImageHeight = 0; // Tightly packed
+            layerRegions[i].imageSubresource = {
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .mipLevel = 0,
+                .baseArrayLayer = i,
+                .layerCount = 1,
+            };
+            layerRegions[i].imageOffset = {0, 0, 0};
+            layerRegions[i].imageExtent = {
+                width,
+                height,
+                1
+            };
+        }
+        VkCommandBuffer commandBuffer = vulkanDevice.beginSingleTimeCommands();
+        vkCmdCopyBufferToImage(
+                commandBuffer,
+                textureStagingBuffer.getBuffer(),
+                textureImage,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                6,
+                layerRegions
+        );
+        vulkanDevice.endSingleTimeCommands(commandBuffer);
+
         vulkanDevice.transitionImageLayout(
                 textureImage,
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
                 VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                 VK_IMAGE_ASPECT_COLOR_BIT);
+
+        textureImageView = vulkanDevice.createImageView(textureImage, format,
+                                                        VK_IMAGE_ASPECT_COLOR_BIT,
+                                                        1,
+                                                        VK_IMAGE_VIEW_TYPE_CUBE);
         createTextureSampler();
 
 #ifdef VULKAN_STATS
@@ -71,7 +103,7 @@ namespace z0 {
         VkDeviceSize imageSize = texWidth * texHeight * STBI_rgb_alpha;
         auto cubemap =  std::make_shared<VulkanCubemap>(device, texWidth, texHeight, imageSize, data);
         for (int i = 0; i < 6; i++) {
-            stbi_image_free(data[0]);
+            stbi_image_free(data[i]);
         }
         return cubemap;
     }
@@ -83,34 +115,6 @@ namespace z0 {
         vkFreeMemory(vulkanDevice.getDevice(), textureImageMemory, nullptr);
     }
 
-    void VulkanCubemap::copyBufferToImage(VkBuffer buffer, VkImage image) {
-        VkCommandBuffer commandBuffer = vulkanDevice.beginSingleTimeCommands();
-        VkBufferImageCopy region{};
-        region.bufferOffset = 0;
-        region.bufferRowLength = 0;
-        region.bufferImageHeight = 0;
-        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        region.imageSubresource.mipLevel = 0;
-        region.imageSubresource.baseArrayLayer = 0;
-        region.imageSubresource.layerCount = VK_REMAINING_ARRAY_LAYERS;
-        region.imageOffset = {0, 0, 0};
-        region.imageExtent = {
-                width,
-                height,
-                1
-        };
-        vkCmdCopyBufferToImage(
-                commandBuffer,
-                buffer,
-                image,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                1,
-                &region
-        );
-        vulkanDevice.endSingleTimeCommands(commandBuffer);
-    }
-
-    // https://vulkan-tutorial.com/Texture_mapping/Combined_image_sampler#page_Updating-the-descriptors
     VkDescriptorImageInfo VulkanCubemap::imageInfo() {
         return VkDescriptorImageInfo {
             .sampler = textureSampler,
@@ -119,7 +123,6 @@ namespace z0 {
         };
     }
 
-    // https://vulkan-tutorial.com/Texture_mapping/Image_view_and_sampler#page_Samplers
     void VulkanCubemap::createTextureSampler() {
         VkPhysicalDeviceProperties properties{};
         vkGetPhysicalDeviceProperties(vulkanDevice.getPhysicalDevice(), &properties);

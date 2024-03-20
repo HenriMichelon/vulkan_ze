@@ -14,11 +14,11 @@ public:
     RootNode(): z0::Node("Main") {}
 
     void onReady() override {
-        /*
+
          std::shared_ptr<z0::VulkanCubemap> cubemap = z0::VulkanCubemap::createFromFile(
                 z0::Application::getViewport()._getDevice(),
           "../textures/sky", ".jpg");
-      */
+
 
         z0::Environment environment{};
         environment.setAmbientColorAndIntensity({1.0f, 1.0f, 1.0f, 0.1f});
@@ -26,7 +26,7 @@ public:
 
         z0::DirectionalLight directionalLight{glm::vec3{0.0f, .5f, 0.1f}};
         directionalLight.setColorAndIntensity({1.0f, 1.0f, 1.0f, 1.0f});
-        directionalLight.setCastShadow(true);
+        directionalLight.setCastShadow(false);
         addChild(directionalLight);
 
         /*z0::SpotLight spotLight1{{-0.75, .5, 0.1},

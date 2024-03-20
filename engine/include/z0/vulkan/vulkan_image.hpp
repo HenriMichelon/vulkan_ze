@@ -28,8 +28,6 @@ namespace z0 {
 
         void createTextureSampler();
         void generateMipmaps(VkFormat imageFormat);
-        void copyBufferToImage(VkBuffer buffer, VkImage image);
-
     };
 
 }

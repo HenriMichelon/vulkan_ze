@@ -26,8 +26,6 @@ namespace z0 {
         VkSampler textureSampler;
 
         void createTextureSampler();
-        void copyBufferToImage(VkBuffer buffer, VkImage image);
-
     };
 
 }
