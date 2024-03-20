@@ -38,7 +38,7 @@ namespace z0 {
             elapsedSeconds += deltaTime;
             frameCount++;
             if (elapsedSeconds >= 1.0) {
-                viewport->getDebugUI().updateFPS(frameCount / elapsedSeconds, deltaTime);
+                viewport->_setFPS( frameCount / elapsedSeconds);
                 frameCount = 0;
                 elapsedSeconds = 0;
             }

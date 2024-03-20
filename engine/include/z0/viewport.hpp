@@ -22,19 +22,21 @@ namespace z0 {
         void drawFrame();
         void wait();
         bool shouldClose() { return window.shouldClose(); }
-        DebugUI& getDebugUI() const { return vulkanDevice->getDebugUI(); }
+        float getFPS() const { return fps; }
 
         void loadScene(std::shared_ptr<Node>& rootNode);
 
         static Viewport& get();
 
     private:
+        float fps;
         WindowHelper window;
         std::unique_ptr<VulkanDevice> vulkanDevice;
         std::shared_ptr<SceneRenderer> sceneRenderer;
 
     public:
         VulkanDevice& _getDevice() { return *vulkanDevice; }
+        void _setFPS(float _fps) { fps = _fps; }
     };
 
 }

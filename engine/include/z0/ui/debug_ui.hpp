@@ -13,18 +13,18 @@ namespace z0 {
         void drawFrame(VkCommandBuffer commandBuffer, VkImageView targetImageView, VkExtent2D extent);
         void cleanup(VulkanDevice& device);
 
-        void updateFPS(float fps, float deltaTime);
-
     private:
         WindowHelper& windowHelper;
         VkDescriptorPool imguiPool;
-        float fps;
-        float deltaTime;
 
-        const ImGuiWindowFlags transparentWindowFlags =
-                ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground |
-                ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing |
-                ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoResize;
+        const ImGuiWindowFlags invisibleWindowFlags =
+                ImGuiWindowFlags_NoTitleBar |
+                ImGuiWindowFlags_NoBackground |
+                ImGuiWindowFlags_NoFocusOnAppearing |
+                ImGuiWindowFlags_NoResize |
+                ImGuiWindowFlags_AlwaysAutoResize |
+                ImGuiWindowFlags_NoDecoration |
+                ImGuiWindowFlags_NoScrollbar ;
 
         void defaultStyle();
         void drawUI();

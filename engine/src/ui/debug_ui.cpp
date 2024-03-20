@@ -1,5 +1,6 @@
 #include "z0/vulkan/vulkan_device.hpp"
 #include "z0/log.hpp"
+#include "z0/mainloop.hpp"
 
 namespace z0 {
 
@@ -16,30 +17,19 @@ namespace z0 {
     }
 
     void DebugUI::statsPanel() {
-        ImGui::Begin("##FPS", nullptr, ImGuiWindowFlags_NoBackground);
-        char fpsText[32];
-        snprintf(fpsText, 32, "FPS : %.0f ", fps);
-        char deltaText[32];
-        snprintf(deltaText, 32, "Delta : %.6f ", deltaTime);
-        ImVec2 deltaSize = ImGui::CalcTextSize(deltaText);
-        ImGui::SetWindowPos(ImVec2(windowHelper.getWidth() - deltaSize.x, 0), ImGuiCond_Appearing);
-        ImGui::Text(fpsText);
-        ImGui::Text(deltaText);
+        ImGui::Begin("##FPS", nullptr, invisibleWindowFlags);
+        ImGui::Text("FPS %.0f", Application::getViewport().getFPS());
+        ImGui::SetWindowPos(ImVec2(windowHelper.getWidth() - ImGui::GetWindowWidth() , 0), ImGuiCond_Always);
         ImGui::End();
     }
 
     void DebugUI::quitButton() {
-        ImGui::Begin("##QUIT", nullptr, transparentWindowFlags);
+        ImGui::Begin("##QUIT", nullptr, invisibleWindowFlags);
         ImGui::SetWindowPos(ImVec2(0, 0), ImGuiCond_Always);
         if (ImGui::Button("Quit")) {
             windowHelper.close();
         }
         ImGui::End();
-    }
-
-    void DebugUI::updateFPS(float _fps, float _deltaTime) {
-        fps = _fps;
-        deltaTime = _deltaTime;
     }
 
     // https://vkguide.dev/docs/extra-chapter/implementing_imgui/
