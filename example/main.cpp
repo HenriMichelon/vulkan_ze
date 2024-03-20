@@ -89,7 +89,7 @@ public:
         //camera.setViewDirection(spotLight1.getDirection());
         addChild(camera);
 
-        printTree(std::cout);
+        //printTree(std::cout);
     }
 
     void onProcess(float delta) override {

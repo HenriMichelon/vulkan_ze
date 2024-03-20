@@ -9,6 +9,8 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image_write.h>
 
 namespace z0 {
 
@@ -33,12 +35,6 @@ namespace z0 {
                                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
 
         // https://vulkan-tutorial.com/Texture_mapping/Images#page_Copying-buffer-to-image
-        vulkanDevice.transitionImageLayout(
-                textureImage,
-                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                0, VK_ACCESS_TRANSFER_WRITE_BIT,
-                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
         VkBufferImageCopy region{};
         region.bufferOffset = 0;
         region.bufferRowLength = 0;
@@ -54,6 +50,12 @@ namespace z0 {
                 1
         };
         VkCommandBuffer commandBuffer = vulkanDevice.beginSingleTimeCommands();
+        vulkanDevice.transitionImageLayout(commandBuffer,
+                textureImage,
+                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                0, VK_ACCESS_TRANSFER_WRITE_BIT,
+                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
         vkCmdCopyBufferToImage(
                 commandBuffer,
                 textureStagingBuffer.getBuffer(),
@@ -86,6 +88,62 @@ namespace z0 {
         stbi_image_free(pixels);
         return image;
     }
+
+    void VulkanImage::saveToFile(VkCommandBuffer commandBuffer, VulkanDevice &device, VkImage image, VkFormat format, int width, int height, const std::string &filepath) {
+        VulkanBuffer textureStagingBuffer{
+                device,
+                calculateImageSize(format, width, height),
+                1,
+                VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+        };
+        VkBufferImageCopy region{};
+        region.bufferOffset = 0;
+        region.bufferRowLength = 0;
+        region.bufferImageHeight = 0;
+        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        region.imageSubresource.mipLevel = 0;
+        region.imageSubresource.baseArrayLayer = 0;
+        region.imageSubresource.layerCount = 1;
+        region.imageOffset = {0, 0, 0};
+        region.imageExtent = {
+                static_cast<uint32_t>(width),
+                static_cast<uint32_t>(height),
+                1
+        };
+        device.transitionImageLayout(commandBuffer,
+                                     image,
+                                     VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL ,
+                                     0, VK_ACCESS_TRANSFER_WRITE_BIT,
+                                     VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                     VK_IMAGE_ASPECT_COLOR_BIT);
+        vkCmdCopyImageToBuffer(
+                commandBuffer,
+                image,
+                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                textureStagingBuffer.getBuffer(),
+                1,
+                &region
+        );
+
+        textureStagingBuffer.map();
+        stbi_write_png(filepath.c_str(), width, height, 6, textureStagingBuffer.getMappedMemory(), width * 1);
+
+    }
+
+    VkDeviceSize VulkanImage::calculateImageSize(VkFormat format, int width, int height) {
+        uint32_t bytesPerPixel = 0;
+        switch (format) {
+            case VK_FORMAT_R8G8B8A8_SRGB:
+            case VK_FORMAT_B8G8R8A8_SRGB:
+                bytesPerPixel = 4;
+                break;
+            default:
+                die("Unsupported image format");
+        }
+        return width * height * bytesPerPixel;
+    }
+
 
     VulkanImage::~VulkanImage() {
         vkDestroySampler(vulkanDevice.getDevice(), textureSampler, nullptr);

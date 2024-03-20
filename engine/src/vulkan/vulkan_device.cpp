@@ -4,6 +4,7 @@
  */
 #include "z0/vulkan/vulkan_model.hpp"
 #include "z0/log.hpp"
+#include "z0/vulkan/vulkan_image.hpp"
 
 #include <map>
 #include <set>
@@ -17,6 +18,8 @@ namespace z0 {
         VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
         // https://docs.vulkan.org/samples/latest/samples/extensions/shader_object/README.html
         VK_EXT_SHADER_OBJECT_EXTENSION_NAME,
+        // https://qgu.io/blog/2020/08/13/vulkan-multiview/
+        VK_KHR_MULTIVIEW_EXTENSION_NAME,
     };
 
 
@@ -313,9 +316,15 @@ namespace z0 {
         // https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Logical_device_and_queues#page_Specifying-used-device-features
         // https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Logical_device_and_queues#page_Creating-the-logical-device
         {
+            // Enable Multiview for cubemaps
+            VkPhysicalDeviceMultiviewFeatures multiviewFeatures = {
+                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES,
+                .multiview = VK_TRUE
+            };
             // https://docs.vulkan.org/samples/latest/samples/extensions/shader_object/README.html
             VkPhysicalDeviceShaderObjectFeaturesEXT deviceShaderObjectFeatures{
                 .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT,
+                .pNext = &multiviewFeatures,
                 .shaderObject  = VK_TRUE,
             };
             // https://lesleylai.info/en/vk-khr-dynamic-rendering/
@@ -384,7 +393,7 @@ namespace z0 {
                 .imageExtent = extent,
                 .imageArrayLayers = 1,
                 // VK_IMAGE_USAGE_TRANSFER_DST_BIT for Blit or Revolve (see presentToSwapChain())
-                .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
                 .preTransform = swapChainSupport.capabilities.currentTransform,
                 .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
                 .presentMode = presentMode,
@@ -730,30 +739,30 @@ namespace z0 {
                                              VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
                                              VkImageAspectFlags aspectMask, uint32_t mipLevels) {
         VkImageMemoryBarrier barrier = {
-                .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-                .srcAccessMask = srcAccessMask,
-                .dstAccessMask = dstAccessMask,
-                .oldLayout = oldLayout,
-                .newLayout = newLayout,
-                .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-                .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-                .image =image,
-                .subresourceRange = {
-                        .aspectMask = aspectMask,
-                        .baseMipLevel = 0,
-                        .levelCount = mipLevels,
-                        .baseArrayLayer = 0,
-                        .layerCount = 1,
-                }
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+            .srcAccessMask = srcAccessMask,
+            .dstAccessMask = dstAccessMask,
+            .oldLayout = oldLayout,
+            .newLayout = newLayout,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image =image,
+            .subresourceRange = {
+                .aspectMask = aspectMask,
+                .baseMipLevel = 0,
+                .levelCount = mipLevels,
+                .baseArrayLayer = 0,
+                .layerCount = VK_REMAINING_ARRAY_LAYERS,
+            }
         };
         vkCmdPipelineBarrier(
-                commandBuffer,
-                srcStageMask ,
-                dstStageMask ,
-                0,
-                0, nullptr,
-                0, nullptr,
-                1, &barrier);
+            commandBuffer,
+            srcStageMask ,
+            dstStageMask ,
+            0,
+            0, nullptr,
+            0, nullptr,
+            1, &barrier);
     }
 
     void VulkanDevice::transitionImageLayout(VkImage image,

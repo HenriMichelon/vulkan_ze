@@ -4,8 +4,9 @@ ZeroZero is a 3D game engine based on the Vulkan 1.3 API
 
 This project uses the following Vulkan extensions :
 
-- Dynamic rendering (VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)
-- Shader object (VK_EXT_SHADER_OBJECT_EXTENSION_NAME)
+- Dynamic rendering (VK_KHR_dynamic_rendering)
+- Shader object (VK_EXT_shader_object)
+- Multiview for cube maps (VK_KHR_multiview)
 
 **Please note :**
 - This project was made for learning purpose

@@ -500,6 +500,31 @@ namespace z0 {
                            &colorImageBlit,
                            VK_FILTER_LINEAR );
         } else {
+            /*VkImage vkimage;
+            VkDeviceMemory vkimageMemory;
+            vulkanDevice.createImage( vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height,
+                               1, VK_SAMPLE_COUNT_1_BIT, vulkanDevice.getSwapChainImageFormat(),
+                               VK_IMAGE_TILING_LINEAR,
+                               VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                               vkimage, vkimageMemory);
+            vulkanDevice.transitionImageLayout(commandBuffer,
+                                         vkimage,
+                                         VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL ,
+                                         0, VK_ACCESS_TRANSFER_WRITE_BIT,
+                                         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                         VK_IMAGE_ASPECT_COLOR_BIT);
+            vkCmdResolveImage(commandBuffer,
+                              colorImage,
+                              VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                              vkimage,
+                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                              1,
+                              &colorImageResolve);
+            VulkanImage::saveToFile(commandBuffer, vulkanDevice, vkimage, vulkanDevice.getSwapChainImageFormat(),
+                                    vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height,
+                                    "../result.png");*/
+
             // Resolve multisample image to a non-multisample swap chain image if MSAA is enabled
             vkCmdResolveImage(commandBuffer,
                               colorImage,
@@ -508,6 +533,7 @@ namespace z0 {
                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                               1,
                               &colorImageResolve);
+
         }
         vulkanDevice.transitionImageLayout(
                 commandBuffer,swapChainImage,

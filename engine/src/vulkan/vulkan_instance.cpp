@@ -36,12 +36,15 @@ namespace z0 {
             }
         }
 
-        uint32_t extensionCount = 0;
-        const char **extensions = nullptr;
-        // Get the Vulkan extensions requested by GLFW
+        std::vector<const char*> instanceExtensions{};
 #ifdef GLFW_VERSION_MAJOR
-        extensions = glfwGetRequiredInstanceExtensions(&extensionCount);
+        uint32_t glfwExtensionCount = 0;
+        auto glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+        for (int i = 0; i < glfwExtensionCount; i++)  {
+            instanceExtensions.push_back(glfwExtensions[i]);
+        }
 #endif
+        instanceExtensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
         const VkApplicationInfo applicationInfo{
             .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
@@ -54,8 +57,8 @@ namespace z0 {
                 &applicationInfo,
                 static_cast<uint32_t>(requestedLayers.size()),
                 requestedLayers.data(),
-                extensionCount,
-                extensions
+                static_cast<uint32_t>(instanceExtensions.size()),
+                instanceExtensions.data()
         };
         if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
             die("Failed to create Vulkan instance");

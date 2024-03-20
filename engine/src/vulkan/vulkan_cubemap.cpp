@@ -29,16 +29,11 @@ namespace z0 {
         const VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
         vulkanDevice.createImage(width, height, 1, VK_SAMPLE_COUNT_1_BIT, format,
                                  VK_IMAGE_TILING_OPTIMAL,
-                                 VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                                 VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                                 VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT,
                                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory,
                                  VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT, 6);
 
-        vulkanDevice.transitionImageLayout(
-                textureImage,
-                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                0, VK_ACCESS_TRANSFER_WRITE_BIT,
-                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                VK_IMAGE_ASPECT_COLOR_BIT);
 
         VkBufferImageCopy layerRegions[6];
         memset(layerRegions, 0, sizeof(layerRegions));
@@ -60,6 +55,12 @@ namespace z0 {
             };
         }
         VkCommandBuffer commandBuffer = vulkanDevice.beginSingleTimeCommands();
+        vulkanDevice.transitionImageLayout(commandBuffer,
+                textureImage,
+                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                0, VK_ACCESS_TRANSFER_WRITE_BIT,
+                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                VK_IMAGE_ASPECT_COLOR_BIT);
         vkCmdCopyBufferToImage(
                 commandBuffer,
                 textureStagingBuffer.getBuffer(),
@@ -68,14 +69,13 @@ namespace z0 {
                 6,
                 layerRegions
         );
-        vulkanDevice.endSingleTimeCommands(commandBuffer);
-
-        vulkanDevice.transitionImageLayout(
+        vulkanDevice.transitionImageLayout(commandBuffer,
                 textureImage,
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
                 VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                 VK_IMAGE_ASPECT_COLOR_BIT);
+        vulkanDevice.endSingleTimeCommands(commandBuffer);
 
         textureImageView = vulkanDevice.createImageView(textureImage, format,
                                                         VK_IMAGE_ASPECT_COLOR_BIT,
