@@ -58,6 +58,7 @@ public:
         auto* mi = dynamic_cast<z0::MeshInstance*>(model3->getChildren().front().get());
         auto* mat = dynamic_cast<z0::StandardMaterial*>(mi->getMesh()->getSurfaceMaterial(0).get());
         mat->transparency = z0::TRANSPARENCY_ALPHA;
+        mat->cullMode = z0::CULLMODE_DISABLED;
         //mat->alphaScissor = 0.4;
 
         model4 = model3->duplicate();

@@ -63,11 +63,19 @@ namespace z0 {
                                vertexAttribute.data());
 
         uint32_t modelIndex = 0;
-        vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_FRONT_BIT); // to avoid Peter panning
         for (const auto&meshInstance: meshes) {
             auto mesh = meshInstance->getMesh();
             if (mesh->isValid()) {
                 for (const auto& surface: mesh->getSurfaces()) {
+                    if (auto standardMaterial = dynamic_cast<StandardMaterial*>(surface->material.get())) {
+                        vkCmdSetCullMode(commandBuffer,
+                                         standardMaterial->cullMode == CULLMODE_DISABLED ? VK_CULL_MODE_NONE :
+                                         standardMaterial->cullMode == CULLMODE_BACK ? VK_CULL_MODE_BACK_BIT
+                                                                                     : VK_CULL_MODE_FRONT_BIT);
+                    } else {
+                        //vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_FRONT_BIT); // default avoid Peter panning
+                        vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_NONE);
+                    }
                     std::array<uint32_t, 2> offsets = {
                         0, // globalBuffers
                         static_cast<uint32_t>(modelsBuffers[currentFrame]->getAlignmentSize() * modelIndex),
