@@ -214,11 +214,24 @@ namespace z0 {
                     .pResults           = nullptr // Optional
             };
             result = vkQueuePresentKHR(presentQueue, &presentInfo);
-            if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || window.windowResized) {
+            if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || window._windowResized) {
                 recreateSwapChain();
                 for (auto& renderer: renderers) {
                     renderer->recreateImagesResources();
                 }
+                /*int width, height;
+                glfwGetFramebufferSize(window.getWindowHandle(), &width, &height);
+                if (width > 0 && height > 0) {
+                    ImGui_ImplVulkanH_CreateOrResizeWindow(vulkanInstance.getInstance(),
+                                                           physicalDevice,
+                                                           device,
+                                                           window.getWindowHandle(),
+                                                           findQueueFamilies(physicalDevice, surface),
+                                                           nullptr,
+                                                           width,
+                                                           height,
+                                                           MAX_FRAMES_IN_FLIGHT);
+                }*/
             } else if (result != VK_SUCCESS) {
                 die("failed to present swap chain image!");
             }
@@ -410,7 +423,7 @@ namespace z0 {
 
     // https://vulkan-tutorial.com/Drawing_a_triangle/Swap_chain_recreation
     void VulkanDevice::recreateSwapChain() {
-        window.windowResized = false;
+        window._windowResized = false;
 #ifdef GLFW_VERSION_MAJOR
         int width = 0, height = 0;
         glfwGetFramebufferSize(window.getWindowHandle(), &width, &height);

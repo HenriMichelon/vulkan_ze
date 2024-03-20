@@ -30,28 +30,29 @@ namespace z0 {
 
     class WindowHelper {
     public:
-        WindowHelper(WindowMode mode, uint32_t w, uint32_t h, const std::string& windowName);
-
-        // accessed by static function framebufferResizeCallback()
-        bool windowResized = false;
+        WindowHelper(WindowMode mode, int w, int h, const std::string& windowName);
 
         bool shouldClose() { return glfwWindowShouldClose(windowHandle); };
         void process() { return glfwPollEvents(); };
         void close();
 
-        int getWidth() const { return width; }
-        int getHeight() const { return height; }
+        int getWidth() const { return _width; }
+        int getHeight() const { return _height; }
 
 #ifdef GLFW_VERSION_MAJOR
         GLFWwindow *getWindowHandle() { return windowHandle; }
 #endif
     private:
         WindowMode mode;
-        uint32_t width, height;
 
 #ifdef GLFW_VERSION_MAJOR
         GLFWwindow *windowHandle;
 #endif
+
+    public:
+        // accessed by static function framebufferResizeCallback()
+        bool _windowResized = false;
+        int _width, _height;
     };
 
 }

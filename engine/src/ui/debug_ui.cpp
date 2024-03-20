@@ -94,7 +94,7 @@ namespace z0 {
                 .colorAttachmentCount = 1,
                 .pColorAttachmentFormats = &colorFormat,
                 .depthAttachmentFormat = VK_FORMAT_D16_UNORM,
-                .stencilAttachmentFormat = VK_FORMAT_D16_UNORM,
+                .stencilAttachmentFormat = VK_FORMAT_UNDEFINED,
             },
             .Allocator = nullptr,
             .CheckVkResultFn = check_vk_result,

@@ -18,7 +18,7 @@ namespace z0 {
     };
 
     Viewport::Viewport(VulkanInstance& instance, const ApplicationConfig& cfg):
-        window{cfg.windowMode, cfg.windowWidth, cfg.windowHeight, cfg.appName}
+        window{cfg.windowMode, static_cast<int>(cfg.windowWidth), static_cast<int>(cfg.windowHeight), cfg.appName}
     {
         vulkanDevice = std::make_unique<VulkanDevice>(
                 instance,

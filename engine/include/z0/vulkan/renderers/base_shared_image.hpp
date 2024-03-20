@@ -6,10 +6,12 @@ namespace z0 {
 
     class BaseSharedImage {
     public:
-
         const VkFormat& getFormat() const { return format; }
         const VkImage& getImage() const { return image; }
         const VkImageView& getImageView() const { return imageView; }
+
+        virtual void createImagesResources() = 0;
+        virtual void cleanupImagesResources() = 0;
 
     protected:
         VulkanDevice& vulkanDevice;

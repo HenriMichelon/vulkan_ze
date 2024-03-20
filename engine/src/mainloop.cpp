@@ -37,7 +37,7 @@ namespace z0 {
 
             elapsedSeconds += deltaTime;
             frameCount++;
-            if (elapsedSeconds >= 1.0) {
+            if (elapsedSeconds >= 0.250) {
                 viewport->_setFPS( frameCount / elapsedSeconds);
                 frameCount = 0;
                 elapsedSeconds = 0;

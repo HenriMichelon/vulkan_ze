@@ -426,13 +426,16 @@ namespace z0 {
         colorImageBlit.dstSubresource.baseArrayLayer = 0;
         colorImageBlit.dstSubresource.layerCount = 1;
 
-        depthBuffer = std::make_shared<DepthBuffer>(vulkanDevice);
-        if (depthPrepassRenderer == nullptr) {
+        if (depthBuffer == nullptr) {
+            depthBuffer = std::make_shared<DepthBuffer>(vulkanDevice);
             depthPrepassRenderer = std::make_shared<DepthPrepassRenderer>(vulkanDevice, shaderDirectory);
+        } else {
+            depthBuffer->createImagesResources();
         }
     }
 
     void SceneRenderer::cleanupImagesResources() {
+        if (depthBuffer != nullptr) depthBuffer->cleanupImagesResources();
         vkDestroyImageView(device, colorImageView, nullptr);
         vkDestroyImage(device, colorImage, nullptr);
         vkFreeMemory(device, colorImageMemory, nullptr);
