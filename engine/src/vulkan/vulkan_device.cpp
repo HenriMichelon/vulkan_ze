@@ -18,8 +18,6 @@ namespace z0 {
         VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
         // https://docs.vulkan.org/samples/latest/samples/extensions/shader_object/README.html
         VK_EXT_SHADER_OBJECT_EXTENSION_NAME,
-        // https://qgu.io/blog/2020/08/13/vulkan-multiview/
-        VK_KHR_MULTIVIEW_EXTENSION_NAME,
     };
 
 
@@ -316,15 +314,10 @@ namespace z0 {
         // https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Logical_device_and_queues#page_Specifying-used-device-features
         // https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Logical_device_and_queues#page_Creating-the-logical-device
         {
-            // Enable Multiview for cubemaps
-            VkPhysicalDeviceMultiviewFeatures multiviewFeatures = {
-                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES,
-                .multiview = VK_TRUE
-            };
             // https://docs.vulkan.org/samples/latest/samples/extensions/shader_object/README.html
             VkPhysicalDeviceShaderObjectFeaturesEXT deviceShaderObjectFeatures{
                 .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT,
-                .pNext = &multiviewFeatures,
+                .pNext = VK_NULL_HANDLE,
                 .shaderObject  = VK_TRUE,
             };
             // https://lesleylai.info/en/vk-khr-dynamic-rendering/

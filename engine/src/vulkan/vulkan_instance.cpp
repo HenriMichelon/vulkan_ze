@@ -44,7 +44,6 @@ namespace z0 {
             instanceExtensions.push_back(glfwExtensions[i]);
         }
 #endif
-        instanceExtensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
         const VkApplicationInfo applicationInfo{
             .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,

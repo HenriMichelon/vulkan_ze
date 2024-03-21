@@ -6,7 +6,14 @@ This project uses the following Vulkan extensions :
 
 - Dynamic rendering (VK_KHR_dynamic_rendering)
 - Shader object (VK_EXT_shader_object)
-- Multiview for cube maps (VK_KHR_multiview)
+
+Current state :
+- Scene tree & nodes using classical OO approch
+- Depth pre-pass
+- glTF scene loading
+- Directionals, omnidirectionals & spots lights
+- Simple shadows for directionals & spots ligths
+- Skybox using cubemap
 
 **Please note :**
 - This project was made for learning purpose
