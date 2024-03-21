@@ -2,13 +2,9 @@
 
 #include "z0/transform.hpp"
 #include "z0/object.hpp"
-#include "z0/input_event.hpp"
+#include "z0/input.hpp"
 
 namespace z0 {
-
-    const glm::vec3 VECTOR_AXIS_X = glm::vec3{1.0f, 0.0f, 0.0f};
-    const glm::vec3 VECTOR_AXIS_Y = glm::vec3{0.0f, 1.0f, 0.0f};
-    const glm::vec3 VECTOR_AXIS_Z = glm::vec3{0.0f, 0.0f, 1.0f};
 
     class Node: public Object {
     public:
@@ -29,27 +25,32 @@ namespace z0 {
         std::string toString() const override { return name.empty() ? Object::toString() : name; };
         std::shared_ptr<Node> duplicate();
 
-        void setPosition(glm::vec3 position);
+        virtual void setPosition(glm::vec3 position);
         glm::vec3 getPosition() const { return _position; };
-        glm::vec3 getGlobalPosition() const { return glm::vec3(worldTransform[3]); }
+        glm::vec3 getPositionGlobal() const { return glm::vec3(worldTransform[3]); }
 
-        void setRotation(glm::vec3 orientation);
         void setRotationDegrees(glm::vec3 orient);
-        void setRotationX(float angle);
-        void setRotationY(float angle);
-        void setRotationZ(float angle);
+        virtual void setRotation(glm::vec3 orientation);
+        virtual void setRotationX(float angle);
+        virtual void setRotationY(float angle);
+        virtual void setRotationZ(float angle);
+        virtual void setRotationGlobalX(float angle);
+        virtual void setRotationGlobalY(float angle);
+        virtual void setRotationGlobalZ(float angle);
         glm::vec3 getRotation() const { return _orientation; };
         float getRotationX() const { return _orientation.x; }
         float getRotationY() const { return _orientation.y; }
         float getRotationZ() const { return _orientation.z; }
 
-        void setScale(glm::vec3 scale);
-        glm::vec3 getScale() const { return _scale; }
+        virtual void rotateX(float angle);
+        virtual void rotateY(float angle);
+        virtual void rotateZ(float angle);
 
-        // rotation around the position
-        void rotateX(float angle);
-        void rotateY(float angle);
-        void rotateZ(float angle);
+        virtual void translate(glm::vec3 localOffset);
+        virtual void translateGlobal(glm::vec3 globalOffset);
+
+        virtual void setScale(glm::vec3 scale);
+        glm::vec3 getScale() const { return _scale; }
 
         glm::mat4 getGlobalTransform() const { return worldTransform; }
         glm::mat4 getGlobalNormalTransform() const { return normalWorldTransform; }
@@ -89,7 +90,6 @@ namespace z0 {
         // https://en.wikipedia.org/wiki/Euler_angles#Rotation_matrix
         glm::mat4 mat4() const;
         glm::mat3 normalMatrix() const;
-        void decomposeLocalMatrix();
 
     public:
         glm::mat4 localTransform {};

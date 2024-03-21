@@ -36,12 +36,4 @@ namespace z0 {
         MainLoop &&operator=(const MainLoop&&) = delete;
     };
 
-    class Application {
-    public:
-        static Scene& getCurrentScene() { return *MainLoop::get().currentScene; }
-        static Viewport& getViewport() { return *MainLoop::get().viewport; }
-        static const std::filesystem::path getDirectory() { return MainLoop::get().applicationConfig.appDir; }
-    };
-
-
 }

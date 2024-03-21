@@ -1,5 +1,5 @@
 #include "z0/nodes/camera.hpp"
-#include "z0/mainloop.hpp"
+#include "z0/application.hpp"
 
 #include <cassert>
 #include <limits>

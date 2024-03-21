@@ -127,6 +127,11 @@ namespace z0 {
          KEY_MENU           = 348
     };
 
+    class Input {
+    public:
+        static bool isKeyPressed(Key key);
+    };
+
     class InputEvent: public Object {
     public:
         InputEventType getType() const { return type; }

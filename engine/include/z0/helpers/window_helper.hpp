@@ -24,7 +24,7 @@ static void check_vk_result(VkResult err)
 }
 
 #include "z0/window.hpp"
-#include "z0/input_event.hpp"
+#include "z0/input.hpp"
 #include <string>
 
 namespace z0 {
@@ -43,11 +43,10 @@ namespace z0 {
         int getHeight() const { return _height; }
 
 #ifdef GLFW_VERSION_MAJOR
-        GLFWwindow *getWindowHandle() { return windowHandle; }
+        GLFWwindow* getWindowHandle() const { return windowHandle; }
 #endif
     private:
         WindowMode mode;
-
 #ifdef GLFW_VERSION_MAJOR
         GLFWwindow *windowHandle;
 #endif

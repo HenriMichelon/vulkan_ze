@@ -53,4 +53,10 @@ namespace z0 {
     void Viewport::loadScene(std::shared_ptr<Node>& rootNode) {
         sceneRenderer->loadScene(rootNode);
     }
+
+#ifdef GLFW_VERSION_MAJOR
+    bool Viewport::isKeyPressed(Key key) const {
+        return glfwGetKey(window.getWindowHandle(), key) == GLFW_PRESS;
+    }
+#endif
 }

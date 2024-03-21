@@ -1,4 +1,4 @@
-#include "z0/mainloop.hpp"
+#include "z0/application.hpp"
 #include "z0/image.hpp"
 
 namespace z0 {

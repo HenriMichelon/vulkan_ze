@@ -19,6 +19,16 @@ namespace z0 {
         }
     }
 
+    void Node::translateGlobal(glm::vec3 globalOffset) {
+        setPosition(_position + globalOffset);
+    }
+
+    void Node::translate(glm::vec3 localOffset) {
+        glm::quat currentOrientation = glm::quat(_orientation);
+        glm::vec3 worldTranslation = currentOrientation * localOffset;
+        setPosition(_position + worldTranslation);
+    }
+
     void Node::setPosition(glm::vec3 pos) {
         _position = pos;
         localTransform = mat4();
@@ -49,6 +59,18 @@ namespace z0 {
         updateTransform(glm::mat4{1.0f});
     }
 
+    void Node::rotateX(float angle) {
+        setRotationX(_orientation.x + angle);
+    }
+
+    void Node::rotateY(float angle) {
+        setRotationY(_orientation.y + angle);
+    }
+
+    void Node::rotateZ(float angle) {
+        setRotationZ(_orientation.z + angle);
+    }
+
     void Node::setScale(glm::vec3 s) {
         _scale = s;
         localTransform = mat4();
@@ -62,17 +84,17 @@ namespace z0 {
                             glm::radians(orient.z)});
     }
 
-    void Node::rotateX(float angle) {
+    void Node::setRotationGlobalX(float angle) {
         localTransform = glm::rotate(glm::mat4{1.0f}, angle, glm::vec3{ 1.0, .0, .0 } ) * mat4();
         updateTransform(glm::mat4{1.0f});
     }
 
-    void Node::rotateY(float angle) {
+    void Node::setRotationGlobalY(float angle) {
         localTransform = glm::rotate(glm::mat4{1.0f}, angle, glm::vec3{ .0, 1.0, .0 } ) * mat4();
         updateTransform(glm::mat4{1.0f});
     }
 
-    void Node::rotateZ(float angle) {
+    void Node::setRotationGlobalZ(float angle) {
         localTransform = glm::rotate(glm::mat4{1.0f}, angle, glm::vec3{ .0, 0.0, 1.0 } ) * mat4();
         updateTransform(glm::mat4{1.0f});
     }
@@ -106,9 +128,6 @@ namespace z0 {
 
     std::shared_ptr<Node> Node::duplicateInstance() {
         return std::make_shared<Node>(*this);
-    }
-
-    void Node::decomposeLocalMatrix() {
     }
 
     glm::mat4 Node::mat4() const {
@@ -177,7 +196,7 @@ glm::mat3 Node::normalMatrix() const {
     }
 
     DistanceSortedNode::DistanceSortedNode(Node &_node, const Node &origin):
-        node(_node), distance(glm::distance(origin.getGlobalPosition(), _node.getGlobalPosition())) {
+        node(_node), distance(glm::distance(origin.getPositionGlobal(), _node.getPositionGlobal())) {
     }
 
 }

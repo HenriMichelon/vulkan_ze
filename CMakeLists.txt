@@ -71,8 +71,9 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/include/z0/vertex.hpp
         ${Z0_ENGINE_DIR}/include/z0/scene.hpp
         ${Z0_ENGINE_DIR}/include/z0/loader.hpp
-		${Z0_ENGINE_DIR}/include/z0/input_event.hpp
+		${Z0_ENGINE_DIR}/include/z0/input.hpp
 		${Z0_ENGINE_DIR}/include/z0/cubemap.hpp
+		${Z0_ENGINE_DIR}/include/z0/application.hpp
         ${Z0_ENGINE_DIR}/src/helpers/window_helper_glfw.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_device.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_buffer.cpp
@@ -108,7 +109,7 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/resource.cpp
         ${Z0_ENGINE_DIR}/src/loader.cpp
 		${Z0_ENGINE_DIR}/src/cubemap.cpp
-		${Z0_ENGINE_DIR}/src/input_event.cpp
+		${Z0_ENGINE_DIR}/src/input.cpp
 )
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_shaders)
 
