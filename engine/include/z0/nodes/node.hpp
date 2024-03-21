@@ -66,11 +66,11 @@ namespace z0 {
     protected:
         std::string name;
         glm::vec3 _position {};
+        glm::vec3 _orientation {};
         std::list<std::shared_ptr<Node>> children;
         virtual std::shared_ptr<Node> duplicateInstance();
 
     private:
-        glm::vec3 _orientation {};
         glm::vec3 _scale {1.0f, 1.0f, 1.0f };
         glm::mat4 normalLocalTransform {};
         glm::mat4 worldTransform {};

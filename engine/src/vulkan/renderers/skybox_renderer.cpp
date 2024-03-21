@@ -77,8 +77,7 @@ namespace z0 {
         BaseRenderer::cleanup();
     }
 
-    void SkyboxRenderer::loadScene(std::shared_ptr<VulkanCubemap>& _cubemap, Camera* camera) {
-        currentCamera = camera;
+    void SkyboxRenderer::loadScene(std::shared_ptr<VulkanCubemap>& _cubemap) {
         cubemap = _cubemap;
         createResources();
     }
@@ -88,16 +87,17 @@ namespace z0 {
         fragShader = createShader("skybox.frag", VK_SHADER_STAGE_FRAGMENT_BIT, 0);
     }
 
-    void SkyboxRenderer::update(uint32_t currentFrame) {
+    void SkyboxRenderer::update(Camera* currentCamera, uint32_t currentFrame) {
         GobalUniformBufferObject globalUbo{
                 .projection = currentCamera->getProjection(),
-                .view = currentCamera->getView(),
+                .view = glm::mat4(glm::mat3(currentCamera->getView()))
         };
         writeUniformBuffer(globalBuffers, currentFrame, &globalUbo);
     }
 
     void SkyboxRenderer::recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) {
         bindShaders(commandBuffer);
+        setViewport(commandBuffer, vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height);
         vkCmdSetDepthTestEnable(commandBuffer, VK_FALSE);
         vkCmdSetDepthWriteEnable(commandBuffer, VK_FALSE);
         VkVertexInputBindingDescription2EXT bindingDescription {

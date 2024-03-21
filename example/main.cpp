@@ -8,6 +8,7 @@
 #include "z0/nodes/spot_light.hpp"
 #include "z0/vulkan/vulkan_cubemap.hpp"
 #include "z0/nodes/mesh_instance.hpp"
+#include "z0/nodes/skybox.hpp"
 
 class RootNode: public z0::Node {
 public:
@@ -17,6 +18,9 @@ public:
         z0::Environment environment{};
         environment.setAmbientColorAndIntensity({1.0f, 1.0f, 1.0f, 0.1f});
         addChild(environment);
+
+        z0::Skybox skybox("textures/sky", ".jpg");
+        addChild(skybox);
 
         z0::DirectionalLight directionalLight{glm::vec3{0.0f, .5f, 0.1f}};
         directionalLight.setColorAndIntensity({1.0f, 1.0f, 1.0f, 1.0f});
@@ -72,17 +76,16 @@ public:
         model1->setPosition({2.0, 0.0, 0.0});
         model2->setPosition({0.0, -1.0, 0.0});
 
-        floor = z0::Loader::loadModelFromFile("models/floor.glb", true );
+        /*floor = z0::Loader::loadModelFromFile("models/floor.glb", true );
         floor->setPosition({0.0, 2.0, 0.0});
-        addChild(floor);
+        addChild(floor);*/
 
-        z0::Camera camera{};
-        camera.setPosition({ -2.0f, -1.0f, -10.0f});
-        camera.setViewTarget({ 0.0f, 0.0f, 0.0f});
-        //camera.setPosition(spotLight1.getPosition());
-        //camera.setViewDirection(spotLight1.getDirection());
-        addChild(camera);
-
+        camera = std::make_shared<z0::Camera>();
+        camera->setPosition({ 0.0f, -1.0f, -10.0f});
+        //camera->setViewTarget({ 0.0f, 0.0f, 0.0f});
+        //camera->setViewDirection({1.0, 0.0, 1.0});
+        addChild(static_cast<std::shared_ptr<z0::Node>>(camera));
+        //camera->setRotationY(glm::radians(-45.0));
         //printTree(std::cout);
     }
 
@@ -90,9 +93,13 @@ public:
         float angle = delta * glm::radians(90.0f) / 2;
         model2->setRotationX(angle + model2->getRotationX());
         model3->setRotationY(angle + model3->getRotationY());
+        //float step = delta * 1.0;
+        //camera->setPosition(camera->getPosition() + glm::vec3{0.0,0.0, step});
+        camera->setRotationY(angle + camera->getRotationY());
     }
 
 private:
+    std::shared_ptr<z0::Camera> camera;
     std::shared_ptr<z0::Node> model1;
     std::shared_ptr<z0::Node> model2;
     std::shared_ptr<z0::Node> model3;

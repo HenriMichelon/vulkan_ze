@@ -25,12 +25,12 @@ namespace z0 {
 
     class StandardMaterial: public Material {
     public:
-        Color                       albedoColor {0.8f, 0.3f, 0.5f, 1.0f };
-        std::shared_ptr<Texture>    albedoTexture;
-        std::shared_ptr<Texture>    specularTexture;
-        CullMode                    cullMode { CULLMODE_BACK };
-        Transparency                transparency { TRANSPARENCY_DISABLED };
-        float                       alphaScissor { 0.1 };
+        Color                           albedoColor {0.8f, 0.3f, 0.5f, 1.0f };
+        std::shared_ptr<ImageTexture>   albedoTexture;
+        std::shared_ptr<ImageTexture>   specularTexture;
+        CullMode                        cullMode { CULLMODE_BACK };
+        Transparency                    transparency { TRANSPARENCY_DISABLED };
+        float                           alphaScissor { 0.1 };
 
         explicit StandardMaterial(std::string name = ""): Material(name) {}
         bool isValid() override { return true; }

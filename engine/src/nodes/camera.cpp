@@ -6,6 +6,11 @@
 
 namespace z0 {
 
+    Camera::Camera(const std::string nodeName): Node{nodeName} {
+        setPerspectiveProjection(glm::radians(75.0f), 0.1f, 1000.0f);
+        setViewDirection();
+    }
+
     void Camera::setOrthographicProjection(float left, float right, float top, float bottom, float _near, float _far) {
         projectionMatrix = glm::mat4{1.0f};
         projectionMatrix[0][0] = 2.f / (right - left);
@@ -39,8 +44,39 @@ namespace z0 {
         return projectionMatrix;
     }
 
-    void Camera::setViewDirection(glm::vec3 direction, glm::vec3 up) {
-        const glm::vec3 w{glm::normalize(direction)};
+    void Camera::setPosition(glm::vec3 position) {
+        Node::setPosition(position);
+        setViewDirection();
+    }
+
+    void Camera::setRotation(glm::vec3 orientation) {
+        Node::setRotation(orientation);
+        setViewDirection();
+    }
+
+    void Camera::setRotationX(float angle) {
+        Node::setRotationX(angle);
+        setViewDirection();
+    }
+
+    void Camera::setRotationY(float angle) {
+        Node::setRotationY(angle);
+        setViewDirection();
+    }
+
+    void Camera::setRotationZ(float angle) {
+        Node::setRotationZ(angle);
+        setViewDirection();
+    }
+
+    void Camera::setViewDirection() {
+
+        // Convert rotation vector (Euler angles) into a quaternion
+        auto rotationQuat = glm::quat(_orientation);
+        // Rotate the direction vector using the quaternion
+        auto newDirection = rotationQuat * direction;
+
+        const glm::vec3 w{glm::normalize(newDirection)};
         const glm::vec3 u{glm::normalize(glm::cross(w, up))};
         const glm::vec3 v{glm::cross(w, u)};
 
@@ -74,9 +110,9 @@ namespace z0 {
 
     }
 
-    void Camera::setViewTarget(glm::vec3 target, glm::vec3 up) {
-        setViewDirection(target - _position, up);
-    }
+    /*void Camera::setViewTarget(glm::vec3 target) {
+        setRotation(target - _position);
+    }*/
 
     /*void Camera::setViewYXZ() {
         const float c3 = glm::cos(rotation.z);

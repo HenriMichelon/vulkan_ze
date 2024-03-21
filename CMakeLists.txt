@@ -103,6 +103,10 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/texture.cpp
         ${Z0_ENGINE_DIR}/src/resource.cpp
         ${Z0_ENGINE_DIR}/src/loader.cpp
+		engine/include/z0/cubemap.hpp
+		engine/src/cubemap.cpp
+		engine/include/z0/nodes/skybox.hpp
+		engine/src/nodes/skybox.cpp
 )
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_shaders)
 

@@ -50,7 +50,6 @@ namespace z0 {
         void createPipelineLayout();
         std::vector<char> readFile(const std::string& fileName);
 
-        virtual void update(uint32_t currentFrame) = 0;
         virtual void loadShaders() = 0;
         virtual void createDescriptorSetLayout() = 0;
         virtual void recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) = 0;

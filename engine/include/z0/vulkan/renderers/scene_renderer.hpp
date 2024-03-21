@@ -94,7 +94,7 @@ namespace z0 {
         std::vector<std::unique_ptr<VulkanBuffer>> shadowMapsBuffers{MAX_FRAMES_IN_FLIGHT};
 
         // Skybox
-        std::unique_ptr<SkyboxRenderer> skyboxRenderer;
+        std::unique_ptr<SkyboxRenderer> skyboxRenderer {nullptr};
 
         void update(uint32_t currentFrame) override;
         void recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) override;

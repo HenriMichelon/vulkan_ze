@@ -91,7 +91,7 @@ namespace z0 {
     std::shared_ptr<VulkanCubemap> VulkanCubemap::createFromFile(VulkanDevice &device, const std::string &filepath, const std::string &ext) {
         int texWidth, texHeight, texChannels;
         std::vector<void*> data;
-        const std::array<std::string, 6> names { "front", "back", "top", "bottom", "right", "left" };
+        const std::array<std::string, 6> names { "right", "left", "top", "bottom", "front", "back" };
         for (int i = 0; i < 6; i++) {
             std::string path = filepath + "_" + names[i] + ext;
             stbi_uc *pixels = stbi_load(path.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);

@@ -2,19 +2,19 @@
 // https://docs.vulkan.org/samples/latest/samples/performance/descriptor_management/README.html
 #include "z0/vulkan/renderers/scene_renderer.hpp"
 #include "z0/log.hpp"
+#include "z0/nodes/skybox.hpp"
 
 namespace z0 {
 
     SceneRenderer::SceneRenderer(VulkanDevice &dev, std::string sDir) : BaseMeshesRenderer{dev, sDir} {
          createImagesResources();
-        skyboxRenderer = std::make_unique<SkyboxRenderer>(dev, sDir);
      }
 
     void SceneRenderer::cleanup() {
         for (const auto& shadowMapRenderer : shadowMapRenderers) {
             shadowMapRenderer->cleanup();
         }
-        skyboxRenderer->cleanup();
+        if (skyboxRenderer != nullptr) skyboxRenderer->cleanup();
         shadowMapRenderers.clear();
         shadowMaps.clear();
         opaquesMeshes.clear();
@@ -28,7 +28,6 @@ namespace z0 {
     }
 
     void SceneRenderer::loadScene(std::shared_ptr<Node>& rootNode) {
-        std::shared_ptr<z0::VulkanCubemap> cubemap = z0::VulkanCubemap::createFromFile(vulkanDevice, "../textures/sky", ".jpg");
         loadNode(rootNode);
         createImagesIndex(rootNode);
 
@@ -60,7 +59,6 @@ namespace z0 {
             transparentsMeshes.push_back(dynamic_cast<MeshInstance*>(&node.getNode()));
         }
 
-        skyboxRenderer->loadScene(cubemap, currentCamera);
         createResources();
 
         for (auto& shadowMap : shadowMaps) {
@@ -78,6 +76,13 @@ namespace z0 {
             if (auto* camera = dynamic_cast<Camera*>(parent.get())) {
                 currentCamera = camera;
                 log("Using camera", currentCamera->toString());
+            }
+        }
+        if (skyboxRenderer == nullptr) {
+            if (auto* skybox = dynamic_cast<Skybox*>(parent.get())) {
+                skyboxRenderer = std::make_unique<SkyboxRenderer>(vulkanDevice, shaderDirectory);
+                skyboxRenderer->loadScene(skybox->getCubemap()->_getCubemap());
+                log("Using skybox", skybox->toString());
             }
         }
         if (directionalLight == nullptr) {
@@ -148,14 +153,15 @@ namespace z0 {
     }
 
     void SceneRenderer::loadShaders() {
-        skyboxRenderer->loadShaders();
+        if (skyboxRenderer != nullptr) skyboxRenderer->loadShaders();
         vertShader = createShader("default.vert", VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
         fragShader = createShader("default.frag", VK_SHADER_STAGE_FRAGMENT_BIT, 0);
     }
 
     void SceneRenderer::update(uint32_t currentFrame) {
-        skyboxRenderer->update(currentFrame);
-        if (meshes.empty() || currentCamera == nullptr) return;
+        if (currentCamera == nullptr) return;
+        if (skyboxRenderer != nullptr) skyboxRenderer->update(currentCamera, currentFrame);
+        if (meshes.empty() ) return;
 
         GobalUniformBufferObject globalUbo{
             .projection = currentCamera->getProjection(),
@@ -235,8 +241,9 @@ namespace z0 {
     }
 
     void SceneRenderer::recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) {
-        if (meshes.empty() || currentCamera == nullptr) return;
-        setInitialState(commandBuffer);
+        if (currentCamera == nullptr) return;
+        if (skyboxRenderer != nullptr) skyboxRenderer->recordCommands(commandBuffer, currentFrame);
+        if (meshes.empty()) return;
 /*
         // quad renderer
         vkCmdSetVertexInputEXT(commandBuffer, 0, nullptr, 0, nullptr);
@@ -252,16 +259,15 @@ namespace z0 {
         vkCmdDraw(commandBuffer, 3, 1, 0, 0);
         return;
 */
+        setInitialState(commandBuffer);
 
-        skyboxRenderer->recordCommands(commandBuffer, currentFrame);
-
-        /*vkCmdSetDepthWriteEnable(commandBuffer, VK_FALSE); // we have a depth prepass
+        vkCmdSetDepthWriteEnable(commandBuffer, VK_FALSE); // we have a depth prepass
         vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_EQUAL); // comparing with the depth prepass
         drawMeshes(commandBuffer, currentFrame, opaquesMeshes);
 
         vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
         vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_LESS_OR_EQUAL);
-        drawMeshes(commandBuffer, currentFrame, transparentsMeshes);*/
+        drawMeshes(commandBuffer, currentFrame, transparentsMeshes);
     }
 
     void SceneRenderer::drawMeshes(VkCommandBuffer commandBuffer, uint32_t currentFrame, const std::vector<MeshInstance*>& meshesToDraw) {
@@ -295,8 +301,9 @@ namespace z0 {
     }
 
     void SceneRenderer::createDescriptorSetLayout() {
-        skyboxRenderer->createDescriptorSetLayout();
-        if (meshes.empty() || currentCamera == nullptr) return;
+        if (currentCamera == nullptr) return;
+        if (skyboxRenderer != nullptr) skyboxRenderer->createDescriptorSetLayout();
+        if (meshes.empty()) return;
         globalPool = VulkanDescriptorPool::Builder(vulkanDevice)
                 .setMaxSets(MAX_FRAMES_IN_FLIGHT)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // global UBO
