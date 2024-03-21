@@ -9,9 +9,9 @@
 namespace z0 {
 
 
-    class BaseRenderer: public VulkanRenderer {
+    class BaseRenderer {
     public:
-        void cleanup() override;
+        virtual void cleanup();
 
     protected:
         VkDevice device;
@@ -50,8 +50,10 @@ namespace z0 {
         void createPipelineLayout();
         std::vector<char> readFile(const std::string& fileName);
 
+        virtual void update(uint32_t currentFrame) = 0;
         virtual void loadShaders() = 0;
         virtual void createDescriptorSetLayout() = 0;
+        virtual void recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) = 0;
         void bindShader(VkCommandBuffer commandBuffer, VulkanShader& shader);
 
     public:

@@ -14,12 +14,6 @@ public:
     RootNode(): z0::Node("Main") {}
 
     void onReady() override {
-
-         std::shared_ptr<z0::VulkanCubemap> cubemap = z0::VulkanCubemap::createFromFile(
-                z0::Application::getViewport()._getDevice(),
-          "../textures/sky", ".jpg");
-
-
         z0::Environment environment{};
         environment.setAmbientColorAndIntensity({1.0f, 1.0f, 1.0f, 0.1f});
         addChild(environment);

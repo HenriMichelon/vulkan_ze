@@ -6,7 +6,7 @@
 
 namespace z0 {
 
-    class ShadowMapRenderer: public BaseRenderer {
+    class ShadowMapRenderer: public BaseRenderer, public VulkanRenderer {
     public:
         struct GlobalUniformBufferObject {
             glm::mat4 lightSpace;

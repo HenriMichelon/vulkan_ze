@@ -2,32 +2,32 @@
 
 #include "z0/vulkan/renderers/base_renderer.hpp"
 #include "z0/vulkan/vulkan_cubemap.hpp"
+#include "z0/vulkan/vulkan_buffer.hpp"
+#include "z0/nodes/camera.hpp"
 
 namespace z0 {
 
     class SkyboxRenderer: public BaseRenderer {
     public:
-        SkyboxRenderer(VulkanDevice& device, const std::string& shaderDirectory);
-        void loadScene(std::shared_ptr<VulkanCubemap>& cubemap);
+        struct GobalUniformBufferObject {
+            glm::mat4 projection{1.0f};
+            glm::mat4 view{1.0f};
+        };
+
+        SkyboxRenderer(VulkanDevice& device, std::string shaderDirectory);
+
+        void cleanup();
+        void loadScene(std::shared_ptr<VulkanCubemap>& cubemap, Camera* camera);
+        void update(uint32_t currentFrame);
+        void loadShaders();
+        void createDescriptorSetLayout() ;
+        void recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame);
 
     private:
-        std::shared_ptr<VulkanCubemap> cubemap;
-        VkImage image;
-        VkImageView imageView;
-        VkDeviceMemory imageMemory;
-        std::unique_ptr<VulkanBuffer> vertexBuffer;
         uint32_t vertexCount;
-
-        void update(uint32_t currentFrame) override;
-        void recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) override;
-        void createDescriptorSetLayout() override;
-        void loadShaders() override;
-        void createImagesResources() override;
-        void cleanupImagesResources() override;
-        void recreateImagesResources() override;
-        void beginRendering(VkCommandBuffer commandBuffer) override;
-        void endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage) override;
-
+        Camera* currentCamera {nullptr};
+        std::shared_ptr<VulkanCubemap> cubemap;
+        std::unique_ptr<VulkanBuffer> vertexBuffer;
     };
 
 }

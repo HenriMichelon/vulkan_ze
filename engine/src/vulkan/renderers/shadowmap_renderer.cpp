@@ -14,6 +14,7 @@ namespace z0 {
      }
 
     void ShadowMapRenderer::cleanup() {
+        cleanupImagesResources();
         shadowMap.reset();
         modelsBuffers.clear();
         BaseRenderer::cleanup();

@@ -1,9 +1,10 @@
 #include "z0/vulkan/renderers/skybox_renderer.hpp"
 #include "z0/log.hpp"
+#include "z0/vulkan/vulkan_descriptors.hpp"
 
 namespace z0 {
 
-    SkyboxRenderer::SkyboxRenderer(VulkanDevice &dev, const std::string& sDir) : BaseRenderer{dev, sDir}{
+    SkyboxRenderer::SkyboxRenderer(VulkanDevice &dev, std::string shaderDirectory): BaseRenderer{dev, shaderDirectory} {
         float skyboxVertices[] = {
                 // positions
                 -1.0f,  1.0f, -1.0f,
@@ -70,7 +71,14 @@ namespace z0 {
         stagingBuffer.copyTo(*vertexBuffer, bufferSize);
     }
 
-    void SkyboxRenderer::loadScene(std::shared_ptr<VulkanCubemap>& _cubemap) {
+    void SkyboxRenderer::cleanup() {
+        vertexBuffer.reset();
+        cubemap.reset();
+        BaseRenderer::cleanup();
+    }
+
+    void SkyboxRenderer::loadScene(std::shared_ptr<VulkanCubemap>& _cubemap, Camera* camera) {
+        currentCamera = camera;
         cubemap = _cubemap;
         createResources();
     }
@@ -81,13 +89,17 @@ namespace z0 {
     }
 
     void SkyboxRenderer::update(uint32_t currentFrame) {
+        GobalUniformBufferObject globalUbo{
+                .projection = currentCamera->getProjection(),
+                .view = currentCamera->getView(),
+        };
+        writeUniformBuffer(globalBuffers, currentFrame, &globalUbo);
     }
 
     void SkyboxRenderer::recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) {
         bindShaders(commandBuffer);
-        vkCmdSetRasterizationSamplesEXT(commandBuffer, VK_SAMPLE_COUNT_1_BIT);
+        vkCmdSetDepthTestEnable(commandBuffer, VK_FALSE);
         vkCmdSetDepthWriteEnable(commandBuffer, VK_FALSE);
-        setViewport(commandBuffer, vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height);
         VkVertexInputBindingDescription2EXT bindingDescription {
             .sType = VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT,
             .binding = 0,
@@ -118,107 +130,31 @@ namespace z0 {
     void SkyboxRenderer::createDescriptorSetLayout() {
         globalPool = VulkanDescriptorPool::Builder(vulkanDevice)
                 .setMaxSets(MAX_FRAMES_IN_FLIGHT)
+                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, MAX_FRAMES_IN_FLIGHT)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT)
                 .build();
+
+        createUniformBuffers(globalBuffers, sizeof(GobalUniformBufferObject));
+
         globalSetLayout = VulkanDescriptorSetLayout::Builder(vulkanDevice)
-            .addBinding(1,
-                        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                        VK_SHADER_STAGE_FRAGMENT_BIT,
-                        1)
+                .addBinding(0,
+                            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                            VK_SHADER_STAGE_VERTEX_BIT)
+                .addBinding(1,
+                            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                            VK_SHADER_STAGE_FRAGMENT_BIT,
+                            1)
             .build();
-        for (auto & descriptorSet : descriptorSets) {
+        for (int i = 0; i < descriptorSets.size(); i++) {
+            auto globalBufferInfo = globalBuffers[i]->descriptorInfo(sizeof(GobalUniformBufferObject));
             auto imageInfo = cubemap->imageInfo();
             auto writer = VulkanDescriptorWriter(*globalSetLayout, *globalPool)
-                .writeImage(0, &imageInfo);
-            if (!writer.build(descriptorSet)) {
+                    .writeBuffer(0, &globalBufferInfo)
+                    .writeImage(1, &imageInfo);
+            if (!writer.build(descriptorSets[i])) {
                 die("Cannot allocate descriptor set");
             }
         }
-    }
-
-    void SkyboxRenderer::beginRendering(VkCommandBuffer commandBuffer) {
-        vulkanDevice.transitionImageLayout(
-            commandBuffer,
-            image,
-            VK_IMAGE_LAYOUT_UNDEFINED,
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            0,
-            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-            VK_IMAGE_ASPECT_COLOR_BIT);
-
-        const VkRenderingAttachmentInfo colorAttachmentInfo{
-            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
-            .imageView = imageView,
-            .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            .resolveMode = VK_RESOLVE_MODE_NONE,
-            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-            .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-            .clearValue = clearColor,
-        };
-        const VkRenderingInfo renderingInfo{
-            .sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR,
-            .pNext = nullptr,
-            .renderArea = {{0, 0},
-                           {vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height}},
-            .layerCount = 1,
-            .viewMask = 0b00111111,
-            .colorAttachmentCount = 1,
-            .pColorAttachments = &colorAttachmentInfo,
-            .pDepthAttachment = nullptr,
-            .pStencilAttachment = nullptr,
-        };
-        vkCmdBeginRendering(commandBuffer, &renderingInfo);
-    }
-
-    void SkyboxRenderer::endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage) {
-        vkCmdEndRendering(commandBuffer);
-        vulkanDevice.transitionImageLayout(
-                commandBuffer,swapChainImage,
-                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                0, VK_ACCESS_TRANSFER_WRITE_BIT,
-                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                VK_IMAGE_ASPECT_COLOR_BIT);
-        vulkanDevice.transitionImageLayout(
-                commandBuffer,
-                image,
-                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                VK_ACCESS_COLOR_ATTACHMENT_READ_BIT,
-                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                VK_PIPELINE_STAGE_TRANSFER_BIT,
-                VK_IMAGE_ASPECT_COLOR_BIT);
-
-    }
-
-    void SkyboxRenderer::createImagesResources() {
-        vulkanDevice.createImage(vulkanDevice.getSwapChainExtent().width,
-                                 vulkanDevice.getSwapChainExtent().height,
-                                 1,
-                                 VK_SAMPLE_COUNT_1_BIT,
-                                 vulkanDevice.getSwapChainImageFormat(),
-                                 VK_IMAGE_TILING_OPTIMAL,
-                                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                 image, imageMemory,
-                                 VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT,
-                                 6);
-        vulkanDevice.createImageView(image,
-                                     vulkanDevice.getSwapChainImageFormat(),
-                                     VK_IMAGE_ASPECT_COLOR_BIT);
-    }
-
-    void SkyboxRenderer::cleanupImagesResources() {
-        vkDestroyImageView(device, imageView, nullptr);
-        vkDestroyImage(device, image, nullptr);
-        vkFreeMemory(device, imageMemory, nullptr);
-    }
-
-    void SkyboxRenderer::recreateImagesResources() {
-        cleanupImagesResources();
-        createImagesResources();
     }
 
 }

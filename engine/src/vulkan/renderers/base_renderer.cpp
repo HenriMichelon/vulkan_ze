@@ -17,7 +17,7 @@ namespace z0 {
     }
 
     void BaseRenderer::cleanup() {
-        cleanupImagesResources();
+
         globalBuffers.clear();
         if (vertShader != nullptr) vertShader.reset();
         if (fragShader != nullptr) fragShader.reset();
@@ -118,10 +118,6 @@ namespace z0 {
             die("vkCreateShadersEXT failed");
         }
         shader.setShader(shaderEXT);
-    }
-
-    void BaseRenderer::bindShader(VkCommandBuffer commandBuffer, VulkanShader& shader) {
-        ;
     }
 
     void BaseRenderer::setViewport(VkCommandBuffer commandBuffer, uint32_t width, uint32_t height) {

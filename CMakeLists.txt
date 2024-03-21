@@ -34,6 +34,7 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_shader.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_descriptors.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_instance.hpp
+		${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_cubemap.hpp
 		${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/base_renderer.hpp
 		${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/scene_renderer.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/shadowmap_renderer.hpp
@@ -42,6 +43,7 @@ add_executable(${PROJECT_NAME}
 		${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/depth_buffer.hpp
 		${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/base_shared_image.hpp
 		${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/base_meshes_renderer.hpp
+		${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/skybox_renderer.hpp
 		${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_stats.hpp
         ${Z0_ENGINE_DIR}/include/z0/nodes/node.hpp
         ${Z0_ENGINE_DIR}/include/z0/nodes/camera.hpp
@@ -77,6 +79,7 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_instance.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_image.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_stats.cpp
+		${Z0_ENGINE_DIR}/src/vulkan/vulkan_cubemap.cpp
 		${Z0_ENGINE_DIR}/src/vulkan/renderers/base_renderer.cpp
 		${Z0_ENGINE_DIR}/src/vulkan/renderers/scene_renderer.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/renderers/shadowmap_renderer.cpp
@@ -84,6 +87,7 @@ add_executable(${PROJECT_NAME}
 		${Z0_ENGINE_DIR}/src/vulkan/renderers/depth_buffer.cpp
 		${Z0_ENGINE_DIR}/src/vulkan/renderers/depth_prepass_renderer.cpp
 		${Z0_ENGINE_DIR}/src/vulkan/renderers/base_meshes_renderer.cpp
+		${Z0_ENGINE_DIR}/src/vulkan/renderers/skybox_renderer.cpp
 		${Z0_ENGINE_DIR}/src/ui/debug_ui.cpp
         ${Z0_ENGINE_DIR}/src/nodes/node.cpp
         ${Z0_ENGINE_DIR}/src/nodes/camera.cpp
@@ -99,10 +103,6 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/texture.cpp
         ${Z0_ENGINE_DIR}/src/resource.cpp
         ${Z0_ENGINE_DIR}/src/loader.cpp
-		engine/include/z0/vulkan/vulkan_cubemap.hpp
-		engine/src/vulkan/vulkan_cubemap.cpp
-		engine/include/z0/vulkan/renderers/skybox_renderer.hpp
-		engine/src/vulkan/renderers/skybox_renderer.cpp
 )
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_shaders)
 

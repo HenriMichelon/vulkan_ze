@@ -6,6 +6,7 @@
 #include "z0/nodes/directional_light.hpp"
 #include "z0/nodes/environment.hpp"
 #include "z0/nodes/omni_light.hpp"
+#include "skybox_renderer.hpp"
 
 namespace z0 {
 
@@ -92,6 +93,9 @@ namespace z0 {
         std::vector<std::shared_ptr<ShadowMapRenderer>> shadowMapRenderers;
         std::vector<std::unique_ptr<VulkanBuffer>> shadowMapsBuffers{MAX_FRAMES_IN_FLIGHT};
 
+        // Skybox
+        std::unique_ptr<SkyboxRenderer> skyboxRenderer;
+
         void update(uint32_t currentFrame) override;
         void recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) override;
         void createDescriptorSetLayout() override;
@@ -106,6 +110,7 @@ namespace z0 {
         void createImagesList(std::shared_ptr<Node>& node);
         void createImagesIndex(std::shared_ptr<Node>& node);
         void drawMeshes(VkCommandBuffer commandBuffer, uint32_t currentFrame, const std::vector<MeshInstance*>& meshesToDraw);
+        void drawSkybox(VkCommandBuffer commandBuffer);
 
     public:
         SceneRenderer(const SceneRenderer&) = delete;

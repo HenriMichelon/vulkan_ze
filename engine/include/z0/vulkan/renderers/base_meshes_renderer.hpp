@@ -8,7 +8,7 @@
 namespace z0 {
 
 
-    class BaseMeshesRenderer: public BaseRenderer {
+    class BaseMeshesRenderer: public BaseRenderer, public VulkanRenderer {
     public:
         void cleanup() override;
 

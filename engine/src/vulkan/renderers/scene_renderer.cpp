@@ -7,21 +7,14 @@ namespace z0 {
 
     SceneRenderer::SceneRenderer(VulkanDevice &dev, std::string sDir) : BaseMeshesRenderer{dev, sDir} {
          createImagesResources();
-        globalPool = VulkanDescriptorPool::Builder(vulkanDevice)
-                .setMaxSets(MAX_FRAMES_IN_FLIGHT)
-                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // global UBO
-                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT) // textures
-                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // model UBO
-                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // surfaces UBO
-                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // pointlightarray UBO
-                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT) // shadow map
-                .build();
+        skyboxRenderer = std::make_unique<SkyboxRenderer>(dev, sDir);
      }
 
     void SceneRenderer::cleanup() {
         for (const auto& shadowMapRenderer : shadowMapRenderers) {
             shadowMapRenderer->cleanup();
         }
+        skyboxRenderer->cleanup();
         shadowMapRenderers.clear();
         shadowMaps.clear();
         opaquesMeshes.clear();
@@ -35,6 +28,7 @@ namespace z0 {
     }
 
     void SceneRenderer::loadScene(std::shared_ptr<Node>& rootNode) {
+        std::shared_ptr<z0::VulkanCubemap> cubemap = z0::VulkanCubemap::createFromFile(vulkanDevice, "../textures/sky", ".jpg");
         loadNode(rootNode);
         createImagesIndex(rootNode);
 
@@ -66,7 +60,9 @@ namespace z0 {
             transparentsMeshes.push_back(dynamic_cast<MeshInstance*>(&node.getNode()));
         }
 
+        skyboxRenderer->loadScene(cubemap, currentCamera);
         createResources();
+
         for (auto& shadowMap : shadowMaps) {
             auto shadowMapRenderer = std::make_shared<ShadowMapRenderer>(vulkanDevice, shaderDirectory);
             shadowMapRenderer->loadScene(shadowMap, meshes);
@@ -152,12 +148,15 @@ namespace z0 {
     }
 
     void SceneRenderer::loadShaders() {
+        skyboxRenderer->loadShaders();
         vertShader = createShader("default.vert", VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
         fragShader = createShader("default.frag", VK_SHADER_STAGE_FRAGMENT_BIT, 0);
     }
 
     void SceneRenderer::update(uint32_t currentFrame) {
+        skyboxRenderer->update(currentFrame);
         if (meshes.empty() || currentCamera == nullptr) return;
+
         GobalUniformBufferObject globalUbo{
             .projection = currentCamera->getProjection(),
             .view = currentCamera->getView(),
@@ -253,13 +252,16 @@ namespace z0 {
         vkCmdDraw(commandBuffer, 3, 1, 0, 0);
         return;
 */
-        vkCmdSetDepthWriteEnable(commandBuffer, VK_FALSE); // we have a depth prepass
+
+        skyboxRenderer->recordCommands(commandBuffer, currentFrame);
+
+        /*vkCmdSetDepthWriteEnable(commandBuffer, VK_FALSE); // we have a depth prepass
         vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_EQUAL); // comparing with the depth prepass
         drawMeshes(commandBuffer, currentFrame, opaquesMeshes);
 
         vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
         vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_LESS_OR_EQUAL);
-        drawMeshes(commandBuffer, currentFrame, transparentsMeshes);
+        drawMeshes(commandBuffer, currentFrame, transparentsMeshes);*/
     }
 
     void SceneRenderer::drawMeshes(VkCommandBuffer commandBuffer, uint32_t currentFrame, const std::vector<MeshInstance*>& meshesToDraw) {
@@ -293,7 +295,17 @@ namespace z0 {
     }
 
     void SceneRenderer::createDescriptorSetLayout() {
+        skyboxRenderer->createDescriptorSetLayout();
         if (meshes.empty() || currentCamera == nullptr) return;
+        globalPool = VulkanDescriptorPool::Builder(vulkanDevice)
+                .setMaxSets(MAX_FRAMES_IN_FLIGHT)
+                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // global UBO
+                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT) // textures
+                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // model UBO
+                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // surfaces UBO
+                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // pointlightarray UBO
+                .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT) // shadow map
+                .build();
 
         // Global UBO
         createUniformBuffers(globalBuffers, sizeof(GobalUniformBufferObject));
@@ -393,13 +405,19 @@ namespace z0 {
         // https://vulkan-tutorial.com/Multisampling#page_Setting-up-a-render-target
         VkFormat colorFormat = vulkanDevice.getSwapChainImageFormat();
         vulkanDevice.createImage(vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height,
-                                 1, vulkanDevice.getSamples(), colorFormat,
+                                 1,
+                                 vulkanDevice.getSamples(),
+                                 colorFormat,
                                  VK_IMAGE_TILING_OPTIMAL,
                                  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
                                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                                  colorImage, colorImageMemory);
-        colorImageView = vulkanDevice.createImageView(colorImage, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+        colorImageView = vulkanDevice.createImageView(colorImage,
+                                                      colorFormat,
+                                                      VK_IMAGE_ASPECT_COLOR_BIT,
+                                                      1);
 
+        // For resolving multisampling image to swapchain
         colorImageResolve.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
         colorImageResolve.srcOffset = {0, 0, 0};
         colorImageResolve.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -409,6 +427,7 @@ namespace z0 {
                 vulkanDevice.getSwapChainExtent().height,
                 1};
 
+        // For bliting image to swapchain
         colorImageBlit.srcOffsets[0] = {0, 0, 0 };
         colorImageBlit.srcOffsets[1] = {
                 static_cast<int32_t>(vulkanDevice.getSwapChainExtent().width),
@@ -500,31 +519,6 @@ namespace z0 {
                            &colorImageBlit,
                            VK_FILTER_LINEAR );
         } else {
-            /*VkImage vkimage;
-            VkDeviceMemory vkimageMemory;
-            vulkanDevice.createImage( vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height,
-                               1, VK_SAMPLE_COUNT_1_BIT, vulkanDevice.getSwapChainImageFormat(),
-                               VK_IMAGE_TILING_LINEAR,
-                               VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                               vkimage, vkimageMemory);
-            vulkanDevice.transitionImageLayout(commandBuffer,
-                                         vkimage,
-                                         VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL ,
-                                         0, VK_ACCESS_TRANSFER_WRITE_BIT,
-                                         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                                         VK_IMAGE_ASPECT_COLOR_BIT);
-            vkCmdResolveImage(commandBuffer,
-                              colorImage,
-                              VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                              vkimage,
-                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                              1,
-                              &colorImageResolve);
-            VulkanImage::saveToFile(commandBuffer, vulkanDevice, vkimage, vulkanDevice.getSwapChainImageFormat(),
-                                    vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height,
-                                    "../result.png");*/
-
             // Resolve multisample image to a non-multisample swap chain image if MSAA is enabled
             vkCmdResolveImage(commandBuffer,
                               colorImage,
