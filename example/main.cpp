@@ -49,7 +49,6 @@ public:
         light2->setPosition(spotLight2.getPosition());
         addChild(light2);*/
 
-
         model3 = z0::Loader::loadModelFromFile("models/window.glb");
         model3->setRotationDegrees({-90.0, 0.0, 0.0});
         model3->setPosition({1.0, -0.0, -3.0});

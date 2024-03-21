@@ -120,6 +120,7 @@ namespace z0 {
                                &bindingDescription,
                                1,
                                &attributeDescription);
+        vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_BACK_BIT);
         bindDescriptorSets(commandBuffer, currentFrame);
         VkBuffer buffers[] = { vertexBuffer->getBuffer() };
         VkDeviceSize offsets[] = { 0 };

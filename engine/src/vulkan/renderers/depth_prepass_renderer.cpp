@@ -71,6 +71,7 @@ namespace z0 {
     }
 
     void DepthPrepassRenderer::createDescriptorSetLayout() {
+        if (meshes.empty() || currentCamera == nullptr) return;
         globalPool = VulkanDescriptorPool::Builder(vulkanDevice)
                 .setMaxSets(MAX_FRAMES_IN_FLIGHT)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // global UBO
