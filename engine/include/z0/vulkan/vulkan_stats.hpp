@@ -8,9 +8,10 @@ namespace z0 {
 #ifdef VULKAN_STATS
     class VulkanStats {
     public:
-        uint32_t buffersCount;
-        uint32_t descriptorSetsCount;
-        uint32_t imagesCount;
+        uint32_t buffersCount{0};
+        uint32_t descriptorSetsCount{0};
+        uint32_t imagesCount{0};
+        uint32_t averageFps{0};
 
         void display() const;
 

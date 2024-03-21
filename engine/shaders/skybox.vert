@@ -10,6 +10,7 @@ layout(location = 0) in vec3 position;
 layout(location = 0) out vec3 UV;
 
 void main() {
-    gl_Position = global.projection * global.view * vec4(position, 1.0);
+    vec4 pos = global.projection * global.view * vec4(position, 1.0);
+    gl_Position = pos.xyww;
     UV = position;
 }

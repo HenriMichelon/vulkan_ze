@@ -12,6 +12,7 @@ namespace z0 {
         std::cout << buffersCount << " buffers" << std::endl;
         std::cout << descriptorSetsCount << " descriptor sets" << std::endl;
         std::cout << imagesCount << " images" << std::endl;
+        std::cout << averageFps << " avg FPS" << std::endl;
     }
 #endif
 

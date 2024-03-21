@@ -97,9 +97,6 @@ namespace z0 {
 
     void SkyboxRenderer::recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) {
         bindShaders(commandBuffer);
-        vkCmdSetRasterizationSamplesEXT(commandBuffer, vulkanDevice.getSamples());
-        setViewport(commandBuffer, vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height);
-        vkCmdSetDepthTestEnable(commandBuffer, VK_FALSE);
         vkCmdSetDepthWriteEnable(commandBuffer, VK_FALSE);
         VkVertexInputBindingDescription2EXT bindingDescription {
             .sType = VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT,

@@ -242,32 +242,17 @@ namespace z0 {
 
     void SceneRenderer::recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) {
         if (currentCamera == nullptr) return;
+        if (!meshes.empty()) {
+            setInitialState(commandBuffer);
+            vkCmdSetDepthWriteEnable(commandBuffer, VK_FALSE); // we have a depth prepass
+            vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_EQUAL); // comparing with the depth prepass
+            drawMeshes(commandBuffer, currentFrame, opaquesMeshes);
+
+            vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
+            vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_LESS_OR_EQUAL);
+            drawMeshes(commandBuffer, currentFrame, transparentsMeshes);
+        }
         if (skyboxRenderer != nullptr) skyboxRenderer->recordCommands(commandBuffer, currentFrame);
-        if (meshes.empty()) return;
-/*
-        // quad renderer
-        vkCmdSetVertexInputEXT(commandBuffer, 0, nullptr, 0, nullptr);
-        vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_NONE);
-        std::array<uint32_t, 4> offsets = {
-                0, // globalBuffers
-                0,
-                0,
-                0, // pointLightBuffers
-                0
-        };
-        bindDescriptorSets(commandBuffer, currentFrame, offsets.size(), offsets.data());
-        vkCmdDraw(commandBuffer, 3, 1, 0, 0);
-        return;
-*/
-        setInitialState(commandBuffer);
-
-        vkCmdSetDepthWriteEnable(commandBuffer, VK_FALSE); // we have a depth prepass
-        vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_EQUAL); // comparing with the depth prepass
-        drawMeshes(commandBuffer, currentFrame, opaquesMeshes);
-
-        vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
-        vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_LESS_OR_EQUAL);
-        drawMeshes(commandBuffer, currentFrame, transparentsMeshes);
     }
 
     void SceneRenderer::drawMeshes(VkCommandBuffer commandBuffer, uint32_t currentFrame, const std::vector<MeshInstance*>& meshesToDraw) {

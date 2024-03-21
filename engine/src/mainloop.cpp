@@ -38,7 +38,11 @@ namespace z0 {
             elapsedSeconds += deltaTime;
             frameCount++;
             if (elapsedSeconds >= 0.250) {
-                viewport->_setFPS( frameCount / elapsedSeconds);
+                auto fps = frameCount / elapsedSeconds;
+#ifdef VULKAN_STATS
+                VulkanStats::get().averageFps = (VulkanStats::get().averageFps + fps) / 2;
+#endif
+                viewport->_setFPS( fps);
                 frameCount = 0;
                 elapsedSeconds = 0;
             }
