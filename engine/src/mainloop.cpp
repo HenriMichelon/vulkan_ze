@@ -29,6 +29,11 @@ namespace z0 {
         auto lastFrameTime = std::chrono::high_resolution_clock::now();
         float elapsedSeconds = 0.0;
         while (!viewport->shouldClose()) {
+            while(viewport->haveInputEvent()) {
+                auto event = viewport->consumeInputEvent();
+                input(rootNode, *event);
+            }
+
             auto currentFrameTime = std::chrono::high_resolution_clock::now();
             auto deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(currentFrameTime - lastFrameTime).count();
 
@@ -52,6 +57,14 @@ namespace z0 {
 #ifdef VULKAN_STATS
         VulkanStats::get().display();
 #endif
+    }
+
+    void MainLoop::input(const std::shared_ptr<Node>& node, InputEvent& event) {
+        node->onInput(event);
+        for(auto child: node->getChildren()) {
+            input(child, event);
+        }
+
     }
 
     void MainLoop::ready(const std::shared_ptr<Node>& node) {

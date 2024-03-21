@@ -2,6 +2,7 @@
 
 #include "z0/transform.hpp"
 #include "z0/object.hpp"
+#include "z0/input_event.hpp"
 
 namespace z0 {
 
@@ -17,6 +18,7 @@ namespace z0 {
 
         virtual void onReady() {}
         virtual void onProcess(float delta) {}
+        virtual void onInput(InputEvent& inputEvent) {}
 
         id_t getId() const { return id; }
         void removeChild(const std::shared_ptr<Node>& child);

@@ -1,5 +1,5 @@
 #include "z0/vulkan/vulkan_instance.hpp"
-#include "z0/vulkan/window_helper.hpp" // needed for GLFW support
+#include "z0/helpers/window_helper.hpp" // needed for GLFW support
 #include "z0/log.hpp"
 
 #include <cstring>

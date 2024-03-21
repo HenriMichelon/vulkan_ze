@@ -1,6 +1,6 @@
 #pragma once
 
-#include "z0/vulkan/window_helper.hpp"
+#include "z0/helpers/window_helper.hpp"
 
 namespace z0 {
 

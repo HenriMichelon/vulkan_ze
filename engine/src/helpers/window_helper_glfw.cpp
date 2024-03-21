@@ -1,15 +1,40 @@
-#include "z0/vulkan/window_helper.hpp"
+#include "z0/helpers/window_helper.hpp"
 
 #include <stdexcept>
 
 namespace z0 {
 
     // Called by GLFW when the window is resized/minimized
-    static void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
-        auto device = reinterpret_cast<WindowHelper*>(glfwGetWindowUserPointer(window));
-        device->_windowResized = true;
-        device->_width = width;
-        device->_height = height;
+    static void glfwFramebufferResizeCallback(GLFWwindow* window, int width, int height) {
+        auto windowHelper = reinterpret_cast<WindowHelper*>(glfwGetWindowUserPointer(window));
+        windowHelper->_windowResized = true;
+        windowHelper->_width = width;
+        windowHelper->_height = height;
+    }
+
+    static void glfwKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+        auto windowHelper = reinterpret_cast<WindowHelper*>(glfwGetWindowUserPointer(window));
+        windowHelper->_inputQueue.push_back(std::make_shared<InputEventKey>(
+                (Key)key,
+                (action == GLFW_PRESS) || (action == GLFW_REPEAT),
+                action == GLFW_REPEAT,
+                mods
+                ));
+    }
+
+
+    void WindowHelper::process() {
+        glfwPollEvents();
+    };
+
+    bool WindowHelper::shouldClose() {
+        return glfwWindowShouldClose(windowHandle);
+    };
+
+    std::shared_ptr<InputEvent> WindowHelper::consumeEvent() {
+        auto event = _inputQueue.front();
+        _inputQueue.pop_front();
+        return event;
     }
 
     WindowHelper::WindowHelper(WindowMode _mode, int w, int h, const std::string& windowName):
@@ -55,7 +80,8 @@ namespace z0 {
 
         // Set callback for window resize/minimize
         glfwSetWindowUserPointer(windowHandle, this);
-        glfwSetFramebufferSizeCallback(windowHandle, framebufferResizeCallback);
+        glfwSetFramebufferSizeCallback(windowHandle, glfwFramebufferResizeCallback);
+        glfwSetKeyCallback(windowHandle, glfwKeyCallback);
     }
 
     void WindowHelper::close() {

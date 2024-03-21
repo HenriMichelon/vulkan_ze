@@ -3,7 +3,7 @@
 #include "z0/application_config.hpp"
 #include "z0/object.hpp"
 #include "z0/nodes/node.hpp"
-#include "z0/vulkan/window_helper.hpp"
+#include "z0/helpers/window_helper.hpp"
 #include "z0/vulkan/vulkan_device.hpp"
 
 namespace z0 {
@@ -23,6 +23,9 @@ namespace z0 {
         void wait();
         bool shouldClose() { return window.shouldClose(); }
         float getFPS() const { return fps; }
+
+        bool haveInputEvent() const { return window.haveInputEvent(); }
+        std::shared_ptr<InputEvent> consumeInputEvent() { return window.consumeEvent(); }
 
         void loadScene(std::shared_ptr<Node>& rootNode);
 

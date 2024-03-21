@@ -1,18 +1,18 @@
 #pragma once
 
-#include <volk.h>
+#include "volk.h"
 #include <iostream>
+
+#include "imgui.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include "GLFW/glfw3.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_vulkan.h"
 #ifdef _WIN64
   #define GLFW_EXPOSE_NATIVE_WIN32
   #include "GLFW/glfw3native.h"
 #endif
-
-#include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_vulkan.h"
 
 static void check_vk_result(VkResult err)
 {
@@ -24,6 +24,7 @@ static void check_vk_result(VkResult err)
 }
 
 #include "z0/window.hpp"
+#include "z0/input_event.hpp"
 #include <string>
 
 namespace z0 {
@@ -32,9 +33,11 @@ namespace z0 {
     public:
         WindowHelper(WindowMode mode, int w, int h, const std::string& windowName);
 
-        bool shouldClose() { return glfwWindowShouldClose(windowHandle); };
-        void process() { return glfwPollEvents(); };
+        bool shouldClose();
+        void process();
         void close();
+        bool haveInputEvent() const { return !_inputQueue.empty(); }
+        std::shared_ptr<InputEvent> consumeEvent();
 
         int getWidth() const { return _width; }
         int getHeight() const { return _height; }
@@ -50,7 +53,8 @@ namespace z0 {
 #endif
 
     public:
-        // accessed by static function framebufferResizeCallback()
+        // accessed by static functions
+        std::list<std::shared_ptr<InputEvent>> _inputQueue;
         bool _windowResized = false;
         int _width, _height;
     };

@@ -13,6 +13,22 @@ class RootNode: public z0::Node {
 public:
     RootNode(): z0::Node("Main") {}
 
+    void onInput(z0::InputEvent& event) {
+        if (event.getType() == z0::INPUT_EVENT_KEY) {
+            auto& eventKey = dynamic_cast<z0::InputEventKey&>(event);
+            //std::cout << "Input event key " << eventKey.getKeyCode() << std::endl;
+            if ((eventKey.getKeyCode() == z0::KEY_W) && (eventKey.isRepeat() || eventKey.isPressed())) {
+                camera->setPosition(camera->getPosition() + glm::vec3{0.0,0.0,0.1});
+            } else if ((eventKey.getKeyCode() == z0::KEY_S) && (eventKey.isRepeat() || eventKey.isPressed())) {
+                camera->setPosition(camera->getPosition() + glm::vec3{0.0,0.0,-0.1});
+            } else if ((eventKey.getKeyCode() == z0::KEY_A) && (eventKey.isRepeat() || eventKey.isPressed())) {
+                camera->setRotationY(camera->getRotationY() + glm::radians(-1.0));
+            } else if ((eventKey.getKeyCode() == z0::KEY_D) && (eventKey.isRepeat() || eventKey.isPressed())) {
+                camera->setRotationY(camera->getRotationY() + glm::radians(1.0));
+            }
+        }
+    }
+
     void onReady() override {
         z0::Environment environment{};
         environment.setAmbientColorAndIntensity({1.0f, 1.0f, 1.0f, 0.2f});

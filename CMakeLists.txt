@@ -26,7 +26,7 @@ add_shaders(${PROJECT_NAME}_shaders ${Z0_GLSL_SOURCE_FILES})
 add_executable(${PROJECT_NAME}
 		${IMGUI_SOURCES}
         example/main.cpp
-        ${Z0_ENGINE_DIR}/include/z0/vulkan/window_helper.hpp
+        ${Z0_ENGINE_DIR}/include/z0/helpers/window_helper.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_device.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_buffer.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_model.hpp
@@ -53,6 +53,7 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/include/z0/nodes/environment.hpp
         ${Z0_ENGINE_DIR}/include/z0/nodes/omni_light.hpp
         ${Z0_ENGINE_DIR}/include/z0/nodes/spot_light.hpp
+		${Z0_ENGINE_DIR}/include/z0/nodes/skybox.hpp
 		${Z0_ENGINE_DIR}/include/z0/ui/debug_ui.hpp
         ${Z0_ENGINE_DIR}/include/z0/application_config.hpp
         ${Z0_ENGINE_DIR}/include/z0/mainloop.hpp
@@ -70,7 +71,9 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/include/z0/vertex.hpp
         ${Z0_ENGINE_DIR}/include/z0/scene.hpp
         ${Z0_ENGINE_DIR}/include/z0/loader.hpp
-        ${Z0_ENGINE_DIR}/src/vulkan/window_helper.cpp
+		${Z0_ENGINE_DIR}/include/z0/input_event.hpp
+		${Z0_ENGINE_DIR}/include/z0/cubemap.hpp
+        ${Z0_ENGINE_DIR}/src/helpers/window_helper_glfw.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_device.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_buffer.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_model.cpp
@@ -94,6 +97,7 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/nodes/mesh_instance.cpp
         ${Z0_ENGINE_DIR}/src/nodes/omni_light.cpp
         ${Z0_ENGINE_DIR}/src/nodes/spot_light.cpp
+		${Z0_ENGINE_DIR}/src/nodes/skybox.cpp
         ${Z0_ENGINE_DIR}/src/mainloop.cpp
         ${Z0_ENGINE_DIR}/src/object.cpp
         ${Z0_ENGINE_DIR}/src/viewport.cpp
@@ -103,10 +107,8 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/texture.cpp
         ${Z0_ENGINE_DIR}/src/resource.cpp
         ${Z0_ENGINE_DIR}/src/loader.cpp
-		engine/include/z0/cubemap.hpp
-		engine/src/cubemap.cpp
-		engine/include/z0/nodes/skybox.hpp
-		engine/src/nodes/skybox.cpp
+		${Z0_ENGINE_DIR}/src/cubemap.cpp
+		${Z0_ENGINE_DIR}/src/input_event.cpp
 )
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_shaders)
 
