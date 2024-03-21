@@ -19,6 +19,7 @@ namespace z0 {
         modelsBuffers.clear();
         BaseRenderer::cleanup();
     }
+
     void ShadowMapRenderer::loadScene(std::shared_ptr<ShadowMap>& _shadowMap, std::vector<MeshInstance*>& _meshes) {
         meshes = _meshes;
         shadowMap = _shadowMap;

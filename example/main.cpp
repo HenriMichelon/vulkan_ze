@@ -6,7 +6,6 @@
 #include "z0/nodes/environment.hpp"
 #include "z0/nodes/omni_light.hpp"
 #include "z0/nodes/spot_light.hpp"
-#include "z0/vulkan/vulkan_cubemap.hpp"
 #include "z0/nodes/mesh_instance.hpp"
 #include "z0/nodes/skybox.hpp"
 
@@ -16,7 +15,7 @@ public:
 
     void onReady() override {
         z0::Environment environment{};
-        environment.setAmbientColorAndIntensity({1.0f, 1.0f, 1.0f, 0.1f});
+        environment.setAmbientColorAndIntensity({1.0f, 1.0f, 1.0f, 0.2f});
         addChild(environment);
 
         z0::Skybox skybox("textures/sky", ".jpg");
@@ -24,10 +23,10 @@ public:
 
         z0::DirectionalLight directionalLight{glm::vec3{0.0f, .5f, 0.1f}};
         directionalLight.setColorAndIntensity({1.0f, 1.0f, 1.0f, 1.0f});
-        directionalLight.setCastShadow(false);
+        directionalLight.setCastShadow(true);
         addChild(directionalLight);
 
-        /*z0::SpotLight spotLight1{{-0.75, .5, 0.1},
+       /* z0::SpotLight spotLight1{{-0.75, .5, 0.1},
                                  45.0, 55.0,
                                  0.027, 0.0028};
         spotLight1.setPosition({3.0, -6.0, -2.1});
@@ -65,7 +64,6 @@ public:
         addChild(model3);
 
         model1 = z0::Loader::loadModelFromFile("models/cube2.glb");
-        //model1->setRotationDegrees({0.0, 30.0, 0.0});
 
         model2 = model1->duplicate();
         addChild(model2);
@@ -94,7 +92,7 @@ public:
         model3->setRotationY(angle + model3->getRotationY());
         //float step = delta * 1.0;
         //camera->setPosition(camera->getPosition() + glm::vec3{0.0,0.0, step});
-        camera->setRotationY(angle + camera->getRotationY());
+        //camera->setRotationY(angle + camera->getRotationY());
     }
 
 private:
