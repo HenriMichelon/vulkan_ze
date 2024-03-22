@@ -32,7 +32,7 @@ namespace z0 {
         for (const auto&meshInstance: meshes) {
             if (meshInstance->getMesh()->isValid()) {
                 ModelUniformBufferObject modelUbo{
-                    .matrix = meshInstance->getGlobalTransform(),
+                    .matrix = meshInstance->getTransformGlobal(),
                 };
                 writeUniformBuffer(modelsBuffers, currentFrame, &modelUbo, modelIndex);
             }

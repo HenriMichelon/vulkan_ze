@@ -27,6 +27,7 @@ namespace z0 {
         bool haveInputEvent() const { return window.haveInputEvent(); }
         std::shared_ptr<InputEvent> consumeInputEvent() { return window.consumeEvent(); }
         bool isKeyPressed(Key key) const;
+        void setMouseMode(MouseMode mode) const;
 
         void loadScene(std::shared_ptr<Node>& rootNode);
 

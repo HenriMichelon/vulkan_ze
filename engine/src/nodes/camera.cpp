@@ -7,7 +7,7 @@
 namespace z0 {
 
     Camera::Camera(const std::string nodeName): Node{nodeName} {
-        setPerspectiveProjection(glm::radians(75.0f), 0.1f, 1000.0f);
+        setPerspectiveProjection(fov, nearDistance, farDistance);
         setViewDirection();
     }
 
@@ -28,7 +28,7 @@ namespace z0 {
         usePerspectiveProjection = true;
         float aspect = z0::Application::getViewport().getAspectRatio();
         assert(glm::abs(aspect - std::numeric_limits<float>::epsilon()) > 0.0f);
-        const float tanHalfFovy = tan(fov / 2.f);
+        const float tanHalfFovy = tan(glm::radians(fov) / 2.f);
         projectionMatrix = glm::mat4{0.0f};
         projectionMatrix[0][0] = 1.f / (aspect * tanHalfFovy);
         projectionMatrix[1][1] = 1.f / (tanHalfFovy);
@@ -44,37 +44,20 @@ namespace z0 {
         return projectionMatrix;
     }
 
-    void Camera::setPosition(glm::vec3 position) {
-        Node::setPosition(position);
+    void Camera::updateTransform(const glm::mat4& parentMatrix) {
+        Node::updateTransform(parentMatrix);
         setViewDirection();
     }
 
-    void Camera::setRotation(glm::vec3 orientation) {
-        Node::setRotation(orientation);
-        setViewDirection();
-    }
-
-    void Camera::setRotationX(float angle) {
-        Node::setRotationX(angle);
-        setViewDirection();
-    }
-
-    void Camera::setRotationY(float angle) {
-        Node::setRotationY(angle);
-        setViewDirection();
-    }
-
-    void Camera::setRotationZ(float angle) {
-        Node::setRotationZ(angle);
+    void Camera::updateTransform() {
+        Node::updateTransform();
         setViewDirection();
     }
 
     void Camera::setViewDirection() {
-
-        // Convert rotation vector (Euler angles) into a quaternion
-        auto rotationQuat = glm::quat(_orientation);
-        // Rotate the direction vector using the quaternion
+        auto rotationQuat = glm::toQuat(glm::mat3(worldTransform));
         auto newDirection = rotationQuat * direction;
+        auto position = getPositionGlobal();
 
         const glm::vec3 w{glm::normalize(newDirection)};
         const glm::vec3 u{glm::normalize(glm::cross(w, up))};
@@ -90,68 +73,10 @@ namespace z0 {
         viewMatrix[0][2] = w.x;
         viewMatrix[1][2] = w.y;
         viewMatrix[2][2] = w.z;
-        viewMatrix[3][0] = -glm::dot(u, _position);
-        viewMatrix[3][1] = -glm::dot(v, _position);
-        viewMatrix[3][2] = -glm::dot(w, _position);
-
-        inverseViewMatrix = glm::mat4{1.f};
-        inverseViewMatrix[0][0] = u.x;
-        inverseViewMatrix[0][1] = u.y;
-        inverseViewMatrix[0][2] = u.z;
-        inverseViewMatrix[1][0] = v.x;
-        inverseViewMatrix[1][1] = v.y;
-        inverseViewMatrix[1][2] = v.z;
-        inverseViewMatrix[2][0] = w.x;
-        inverseViewMatrix[2][1] = w.y;
-        inverseViewMatrix[2][2] = w.z;
-        inverseViewMatrix[3][0] = _position.x;
-        inverseViewMatrix[3][1] = _position.y;
-        inverseViewMatrix[3][2] = _position.z;
-
-    }
-
-    /*void Camera::setViewTarget(glm::vec3 target) {
-        setRotation(target - _position);
-    }*/
-
-    /*void Camera::setViewYXZ() {
-        const float c3 = glm::cos(rotation.z);
-        const float s3 = glm::sin(rotation.z);
-        const float c2 = glm::cos(rotation.x);
-        const float s2 = glm::sin(rotation.x);
-        const float c1 = glm::cos(rotation.y);
-        const float s1 = glm::sin(rotation.y);
-        const glm::vec3 u{(c1 * c3 + s1 * s2 * s3), (c2 * s3), (c1 * s2 * s3 - c3 * s1)};
-        const glm::vec3 v{(c3 * s1 * s2 - c1 * s3), (c2 * c3), (c1 * c3 * s2 + s1 * s3)};
-        const glm::vec3 w{(c2 * s1), (-s2), (c1 * c2)};
-        viewMatrix = glm::mat4{1.f};
-        viewMatrix[0][0] = u.x;
-        viewMatrix[1][0] = u.y;
-        viewMatrix[2][0] = u.z;
-        viewMatrix[0][1] = v.x;
-        viewMatrix[1][1] = v.y;
-        viewMatrix[2][1] = v.z;
-        viewMatrix[0][2] = w.x;
-        viewMatrix[1][2] = w.y;
-        viewMatrix[2][2] = w.z;
         viewMatrix[3][0] = -glm::dot(u, position);
         viewMatrix[3][1] = -glm::dot(v, position);
         viewMatrix[3][2] = -glm::dot(w, position);
-
-        inverseViewMatrix = glm::mat4{1.f};
-        inverseViewMatrix[0][0] = u.x;
-        inverseViewMatrix[0][1] = u.y;
-        inverseViewMatrix[0][2] = u.z;
-        inverseViewMatrix[1][0] = v.x;
-        inverseViewMatrix[1][1] = v.y;
-        inverseViewMatrix[1][2] = v.z;
-        inverseViewMatrix[2][0] = w.x;
-        inverseViewMatrix[2][1] = w.y;
-        inverseViewMatrix[2][2] = w.z;
-        inverseViewMatrix[3][0] = position.x;
-        inverseViewMatrix[3][1] = position.y;
-        inverseViewMatrix[3][2] = position.z;
-    }*/
+    }
 
 
 }
