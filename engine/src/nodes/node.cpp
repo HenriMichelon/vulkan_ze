@@ -5,98 +5,139 @@ namespace z0 {
     Node::id_t Node::currentId = 0;
 
     Node::Node(const std::string _name): id{currentId++}, name{_name}   {
-        localTransform = mat4();
-        normalLocalTransform = normalMatrix();
+        localTransform = glm::mat4 {1.0};
         updateTransform(glm::mat4{1.0f});
     }
 
-    void Node::updateTransform(const glm::mat4& parentMatrix) {
-        normalLocalTransform = normalMatrix();
+    void Node::updateTransform() {
+        auto parentMatrix = parent == nullptr ? glm::mat4{1.0f} : parent->worldTransform;
         worldTransform = parentMatrix * localTransform;
-        normalWorldTransform = parentMatrix * normalLocalTransform;
+        for (const auto& child : children) {
+            child->updateTransform(worldTransform);
+        }
+    }
+
+    void Node::updateTransform(const glm::mat4& parentMatrix) {
+        worldTransform = parentMatrix * localTransform;
         for (const auto& child : children) {
             child->updateTransform(worldTransform);
         }
     }
 
     void Node::translateGlobal(glm::vec3 globalOffset) {
-        setPosition(_position + globalOffset);
+        setPosition(getPositionGlobal() + globalOffset);
     }
 
     void Node::translate(glm::vec3 localOffset) {
-        glm::quat currentOrientation = glm::quat(_orientation);
+        glm::quat currentOrientation = glm::toQuat(glm::mat3(localTransform));
         glm::vec3 worldTranslation = currentOrientation * localOffset;
-        setPosition(_position + worldTranslation);
+        setPosition(getPosition() + worldTranslation);
     }
 
     void Node::setPosition(glm::vec3 pos) {
-        _position = pos;
-        localTransform = mat4();
+        localTransform[3] = glm::vec4(pos, 1.0f);
         updateTransform(glm::mat4{1.0f});
     }
 
-    void Node::setRotation(glm::vec3 orient) {
-        _orientation = orient;
-        localTransform = mat4();
+    void Node::setPositionGlobal(glm::vec3 pos) {
+        if (parent == nullptr) {
+            setPosition(pos);
+            return;
+        }
+        auto inverseParentTransform = glm::inverse(parent->worldTransform);
+        auto newLocalPositionHomogeneous = inverseParentTransform * glm::vec4(pos, 1.0);
+        auto newLocalPosition = glm::vec3(newLocalPositionHomogeneous);
+        localTransform[3] = glm::vec4(newLocalPosition, 1.0f);
         updateTransform(glm::mat4{1.0f});
     }
+
+    glm::vec3 Node::getRotation() const {
+        return glm::eulerAngles(glm::toQuat(glm::mat3(localTransform)));
+    };
+
+    glm::vec3 Node::getRotationGlobal() const {
+        return glm::eulerAngles(glm::toQuat(glm::mat3(worldTransform)));
+    };
 
     void Node::setRotationX(float angle) {
-        _orientation.x = angle;
-        localTransform = mat4();
-        updateTransform(glm::mat4{1.0f});
+        rotateX(angle - getRotationX());
     }
 
     void Node::setRotationY(float angle) {
-        _orientation.y = angle;
-        localTransform = mat4();
-        updateTransform(glm::mat4{1.0f});
+        rotateX(angle - getRotationY());
     }
 
     void Node::setRotationZ(float angle) {
-        _orientation.z = angle;
-        localTransform = mat4();
-        updateTransform(glm::mat4{1.0f});
+        rotateX(angle - getRotationZ());
+    }
+
+    void Node::rotate(glm::vec3 orientation) {
+        localTransform = glm::rotate(localTransform, orientation.x, AXIS_X);
+        localTransform = glm::rotate(localTransform, orientation.y, AXIS_Y);
+        localTransform = glm::rotate(localTransform, orientation.z, AXIS_Z);
+        updateTransform();
     }
 
     void Node::rotateX(float angle) {
-        setRotationX(_orientation.x + angle);
+        localTransform = glm::rotate(localTransform, angle, AXIS_X);
+        updateTransform();
     }
 
     void Node::rotateY(float angle) {
-        setRotationY(_orientation.y + angle);
+        localTransform = glm::rotate(localTransform, angle, AXIS_Y);
+        updateTransform();
     }
 
     void Node::rotateZ(float angle) {
-        setRotationZ(_orientation.z + angle);
+        localTransform = glm::rotate(localTransform, angle, AXIS_Z);
+        updateTransform();
     }
 
-    void Node::setScale(glm::vec3 s) {
-        _scale = s;
-        localTransform = mat4();
+    /*void Node::rotateGlobal(glm::vec3 orient) {
+        localTransform = glm::rotate(localTransform, orient.z, glm::vec3(0.0f, 0.0f, 1.0f)); // Rotate around Z axis
+        localTransform = glm::rotate(localTransform, orient.y, glm::vec3(0.0f, 1.0f, 0.0f)); // Rotate around Y axis
+        localTransform = glm::rotate(localTransform, orient.x, glm::vec3(1.0f, 0.0f, 0.0f)); // Rotate around X axis
         updateTransform(glm::mat4{1.0f});
+    }*/
+
+    void Node::rotateGlobalX(float angle) {
+        glm::mat4 rotation = glm::rotate(glm::mat4{1.0f}, angle, AXIS_X);
+        localTransform = rotation * localTransform;
+        updateTransform();
     }
 
-    void Node::setRotationDegrees(glm::vec3 orient) {
-        setRotation({
+    void Node::rotateGlobalY(float angle) {
+        glm::mat4 rotation = glm::rotate(glm::mat4{1.0f}, angle, AXIS_Y);
+        localTransform = rotation * localTransform;
+        updateTransform();
+    }
+
+    void Node::rotateGlobalZ(float angle) {
+        glm::mat4 rotation = glm::rotate(glm::mat4{1.0f}, angle, AXIS_Z);
+        localTransform = rotation * localTransform;
+        updateTransform();
+    }
+
+    void Node::setScale(glm::vec3 scale) {
+        localTransform = glm::scale(localTransform, scale);
+        updateTransform();
+    }
+
+    glm::vec3 Node::getScale() const {
+        glm::vec3 scale;
+        glm::quat rotation;
+        glm::vec3 translation;
+        glm::vec3 skew;
+        glm::vec4 perspective;
+        glm::decompose(localTransform, scale, rotation, translation, skew, perspective);
+        return scale;
+    }
+
+    void Node::rotateDegrees(glm::vec3 orient) {
+        rotate({
                             glm::radians(orient.x),
                             glm::radians(orient.y),
                             glm::radians(orient.z)});
-    }
-
-    void Node::setRotationGlobalX(float angle) {
-        localTransform = glm::rotate(glm::mat4{1.0f}, angle, glm::vec3{ 1.0, .0, .0 } ) * mat4();
-        updateTransform(glm::mat4{1.0f});
-    }
-
-    void Node::setRotationGlobalY(float angle) {
-        localTransform = glm::rotate(glm::mat4{1.0f}, angle, glm::vec3{ .0, 1.0, .0 } ) * mat4();
-        updateTransform(glm::mat4{1.0f});
-    }
-
-    void Node::setRotationGlobalZ(float angle) {
-        localTransform = glm::rotate(glm::mat4{1.0f}, angle, glm::vec3{ .0, 0.0, 1.0 } ) * mat4();
-        updateTransform(glm::mat4{1.0f});
     }
 
     void Node::addChild(const std::shared_ptr<Node> child) {
@@ -104,12 +145,6 @@ namespace z0 {
         child->parent = this;
         child->updateTransform(worldTransform);
     }
-
-    /*void Node::addChildPtr(std::shared_ptr<Node> child) {
-        children.push_back(child);
-        child->parent = this;
-        child->updateTransform(worldTransform);
-    }*/
 
     void Node::removeChild(const std::shared_ptr<Node>& node) {
         children.remove(node);
@@ -128,63 +163,6 @@ namespace z0 {
 
     std::shared_ptr<Node> Node::duplicateInstance() {
         return std::make_shared<Node>(*this);
-    }
-
-    glm::mat4 Node::mat4() const {
-        const float c3 = glm::cos(_orientation.z);
-        const float s3 = glm::sin(_orientation.z);
-        const float c2 = glm::cos(_orientation.x);
-        const float s2 = glm::sin(_orientation.x);
-        const float c1 = glm::cos(_orientation.y);
-        const float s1 = glm::sin(_orientation.y);
-        return glm::mat4{
-                {
-                        _scale.x * (c1 * c3 + s1 * s2 * s3),
-                        _scale.x * (c2 * s3),
-                        _scale.x * (c1 * s2 * s3 - c3 * s1),
-                                                     0.0f,
-                },
-                {
-                        _scale.y * (c3 * s1 * s2 - c1 * s3),
-                        _scale.y * (c2 * c3),
-                        _scale.y * (c1 * c3 * s2 + s1 * s3),
-                                                     0.0f,
-                },
-                {
-                        _scale.z * (c2 * s1),
-                        _scale.z * (-s2),
-                        _scale.z * (c1 * c2),
-                                                     0.0f,
-                },
-                {_position.x, _position.y, _position.z, 1.0f}};
-    };
-
-
-glm::mat3 Node::normalMatrix() const {
-        const float c3 = glm::cos(_orientation.z);
-        const float s3 = glm::sin(_orientation.z);
-        const float c2 = glm::cos(_orientation.x);
-        const float s2 = glm::sin(_orientation.x);
-        const float c1 = glm::cos(_orientation.y);
-        const float s1 = glm::sin(_orientation.y);
-        const glm::vec3 invScale = 1.0f / _scale;
-        return glm::mat3{
-                {
-                        invScale.x * (c1 * c3 + s1 * s2 * s3),
-                        invScale.x * (c2 * s3),
-                        invScale.x * (c1 * s2 * s3 - c3 * s1),
-                },
-                {
-                        invScale.y * (c3 * s1 * s2 - c1 * s3),
-                        invScale.y * (c2 * c3),
-                        invScale.y * (c1 * c3 * s2 + s1 * s3),
-                },
-                {
-                        invScale.z * (c2 * s1),
-                        invScale.z * (-s2),
-                        invScale.z * (c1 * c2),
-                }
-        };
     }
 
     void Node::printTree(std::ostream& out, int tab) {

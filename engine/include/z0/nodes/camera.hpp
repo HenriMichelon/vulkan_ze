@@ -13,32 +13,24 @@ namespace z0 {
         void setPerspectiveProjection(float fov,
                                       float near, float far);
 
-        void setPosition(glm::vec3 position);
-        void setRotation(glm::vec3 orientation);
-        void setRotationX(float angle);
-        void setRotationY(float angle);
-        void setRotationZ(float angle);
-
         const glm::mat4& getProjection();
         const glm::mat4& getView() const { return viewMatrix; }
-        const glm::mat4& getInverseView() const { return inverseViewMatrix; }
-        const glm::vec3 getPosition() const { return glm::vec3(inverseViewMatrix[3]); }
+
+        void updateTransform(const glm::mat4& parentMatrix);
+        void updateTransform();
 
     private:
-        float fov;
-        float nearDistance;
-        float farDistance;
+        float fov{75.0};
+        float nearDistance{0.1f};
+        float farDistance{100.1f};
         bool usePerspectiveProjection{false};
         glm::mat4 projectionMatrix{1.0f};
         glm::mat4 viewMatrix{1.0f};
-        glm::mat4 inverseViewMatrix{1.0f};
 
         const glm::vec3 direction{0.0f, 0.0f, 1.0f };
         const glm::vec3 up{0.0f, -1.0f, 0.0f};
 
         void setViewDirection();
-        //void setViewYXZ();
-        //void setViewTarget(glm::vec3 target);
 
     };
 }
