@@ -20,6 +20,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <filesystem>
+#include <algorithm>
 
 namespace z0 {
 

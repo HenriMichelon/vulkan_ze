@@ -22,6 +22,17 @@ namespace z0 {
                 ));
     }
 
+    static void glfwMouseMoveCallback(GLFWwindow* window, double xpos, double ypos) {
+        auto windowHelper = reinterpret_cast<WindowHelper*>(glfwGetWindowUserPointer(window));
+        windowHelper->_inputQueue.push_back(std::make_shared<InputEventMouseMotion>(
+                static_cast<float>(xpos),
+                static_cast<float>(ypos),
+                static_cast<float>(xpos - windowHelper->_mouseLastX),
+                static_cast<float>(ypos - windowHelper->_mouseLastY)
+                ));
+        windowHelper->_mouseLastX = xpos;
+        windowHelper->_mouseLastY = ypos;
+    }
 
     void WindowHelper::process() {
         glfwPollEvents();
@@ -82,6 +93,8 @@ namespace z0 {
         glfwSetWindowUserPointer(windowHandle, this);
         glfwSetFramebufferSizeCallback(windowHandle, glfwFramebufferResizeCallback);
         glfwSetKeyCallback(windowHandle, glfwKeyCallback);
+        glfwGetCursorPos(windowHandle, &_mouseLastX, &_mouseLastY);
+        glfwSetCursorPosCallback(windowHandle, glfwMouseMoveCallback);
     }
 
     void WindowHelper::close() {

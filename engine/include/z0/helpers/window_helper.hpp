@@ -56,6 +56,7 @@ namespace z0 {
         std::list<std::shared_ptr<InputEvent>> _inputQueue;
         bool _windowResized = false;
         int _width, _height;
+        double _mouseLastX, _mouseLastY;
     };
 
 }

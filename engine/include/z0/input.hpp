@@ -6,8 +6,8 @@ namespace z0 {
 
     enum InputEventType {
         INPUT_EVENT_KEY             = 0,
-        //INPUT_EVENT_MOUSE_BUTTON    = 1,
-        //INPUT_EVENT_MOUSE_MOTION    = 1,
+        INPUT_EVENT_MOUSE_MOTION    = 1,
+        //INPUT_EVENT_MOUSE_BUTTON    = 2,
     };
 
     enum KeyModifier {
@@ -127,9 +127,17 @@ namespace z0 {
          KEY_MENU           = 348
     };
 
+    enum MouseMode {
+        MOUSE_MODE_VISIBLE          = 0,
+        MOUSE_MODE_VISIBLE_CAPTURED = 1,
+        MOUSE_MODE_HIDDEN           = 2,
+        MOUSE_MODE_HIDDEN_CAPTURED  = 3,
+    };
+
     class Input {
     public:
         static bool isKeyPressed(Key key);
+        static void setMouseMode(MouseMode mode);
     };
 
     class InputEvent: public Object {
@@ -157,6 +165,21 @@ namespace z0 {
         bool repeat;
         bool pressed;
         int modifiers;
+    };
+
+    class InputEventMouseMotion: public InputEvent {
+    public:
+        InputEventMouseMotion(float posX, float posY, float relativeX, float relativeY);
+
+        glm::vec2 getPosition() const { return glm::vec2{x, y}; }
+        float getX() const { return x; }
+        float getY() const { return y; }
+        float getRelativeX() const { return relativeX; }
+        float getRelativeY() const { return relativeY; }
+
+    private:
+        float x, y;
+        float relativeX, relativeY;
     };
 
 }

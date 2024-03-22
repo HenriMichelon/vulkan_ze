@@ -12,27 +12,52 @@
 class RootNode: public z0::Node {
 public:
     const float translationSpeed = 2.0;
-    const float rotationSpeed = 25.0;
+    const float mouseSensitivity = 0.002;
+    const float maxCameraAngleUp = glm::radians(60.0);
+    const float maxCameraAngleDown = -glm::radians(45.0);
 
     RootNode(): z0::Node("Main") {}
 
     void onInput(z0::InputEvent& event) {
-        /*if (event.getType() == z0::INPUT_EVENT_KEY) {
+        if ((event.getType() == z0::INPUT_EVENT_MOUSE_MOTION) && mouseCaptured) {
+            auto& eventMouseMotion = dynamic_cast<z0::InputEventMouseMotion&>(event);
+            camera->rotateY(eventMouseMotion.getRelativeX() * mouseSensitivity);
+            camera->rotateX(eventMouseMotion.getRelativeY() * mouseSensitivity * mouseInvertedAxisY);
+            camera->setRotationX(std::clamp(camera->getRotationX(), maxCameraAngleDown, maxCameraAngleUp));
+        } else if (event.getType() == z0::INPUT_EVENT_KEY) {
             auto& eventKey = dynamic_cast<z0::InputEventKey&>(event);
-            //std::cout << "Input event key " << eventKey.getKeyCode() << std::endl;
-            if ((eventKey.getKeyCode() == z0::KEY_W) && (eventKey.isRepeat() || eventKey.isPressed())) {
-                camera->translate({0.0,0.0,1.0});
-            } else if ((eventKey.getKeyCode() == z0::KEY_S) && (eventKey.isRepeat() || eventKey.isPressed())) {
-                camera->translate({0.0,0.0,-1.0});
-            } else if ((eventKey.getKeyCode() == z0::KEY_A) && (eventKey.isRepeat() || eventKey.isPressed())) {
-                camera->rotateY(glm::radians(-1.0));
-            } else if ((eventKey.getKeyCode() == z0::KEY_D) && (eventKey.isRepeat() || eventKey.isPressed())) {
-                camera->rotateY(glm::radians(1.0));
+            if ((eventKey.getKeyCode() == z0::KEY_ESCAPE) && eventKey.isPressed()) {
+                releaseMouse();
             }
-        }*/
+        }
+    }
+
+    void onProcess(float delta) override {
+        if (z0::Input::isKeyPressed(z0::KEY_W)) {
+            camera->translate({0.0,0.0,delta * translationSpeed});
+            captureMouse();
+        } else if (z0::Input::isKeyPressed(z0::KEY_S)) {
+            camera->translate({0.0,0.0,delta * -translationSpeed});
+            captureMouse();
+        }
+        if (z0::Input::isKeyPressed(z0::KEY_A)) {
+            camera->translate({delta * -translationSpeed,0.0,0.0});
+            captureMouse();
+        } else if (z0::Input::isKeyPressed(z0::KEY_D)) {
+            camera->translate({delta * translationSpeed,0.0,0.0});
+            captureMouse();
+        }
+
+        float angle = delta * glm::radians(90.0f) / 2;
+        rot += angle;
+        model1->setRotationGlobalZ(rot);
+        model2->setRotationX(rot);
+        model3->rotateY(angle);
     }
 
     void onReady() override {
+        captureMouse();
+
         z0::Environment environment{};
         environment.setAmbientColorAndIntensity({1.0f, 1.0f, 1.0f, 0.2f});
         addChild(environment);
@@ -82,14 +107,14 @@ public:
         addChild(model4);
         addChild(model3);
 
-        model1 = z0::Loader::loadModelFromFile("models/cube2.glb");
+        model1 = z0::Loader::loadModelFromFile("models/cube2.glb", true);
 
         model2 = model1->duplicate();
         addChild(model2);
         addChild(model1);
 
         model1->setScale(glm::vec3{.5});
-        model1->setPosition({2.0, 0.0, 0.0});
+        model1->setPosition({4.0, 0.0, 0.0});
         model2->setPosition({0.0, -2.0, 0.0});
 
         /*floor = z0::Loader::loadModelFromFile("models/floor.glb", true );
@@ -105,27 +130,11 @@ public:
         //printTree(std::cout);
     }
 
-    void onProcess(float delta) override {
-        if (z0::Input::isKeyPressed(z0::KEY_W)) {
-            camera->translate({0.0,0.0,delta * translationSpeed});
-        } else if (z0::Input::isKeyPressed(z0::KEY_S)) {
-            camera->translate({0.0,0.0,delta * -translationSpeed});
-        }
-        if (z0::Input::isKeyPressed(z0::KEY_A)) {
-            camera->rotateY(glm::radians(delta * -rotationSpeed));
-        } else if (z0::Input::isKeyPressed(z0::KEY_D)) {
-            camera->rotateY(glm::radians(delta * rotationSpeed));
-        }
-
-        float angle = delta * glm::radians(90.0f) / 2;
-        rot += angle;
-        model1->setRotationGlobalZ(rot);
-        model2->setRotationX(rot);
-        model3->rotateY(angle);
-    }
-
 private:
     float rot = 0.0;
+    bool mouseCaptured{false};
+    int mouseInvertedAxisY{-1};
+
     std::shared_ptr<z0::Camera> camera;
     std::shared_ptr<z0::Node> model1;
     std::shared_ptr<z0::Node> model2;
@@ -134,6 +143,16 @@ private:
     std::shared_ptr<z0::Node> light1;
     std::shared_ptr<z0::Node> light2;
     std::shared_ptr<z0::Node> floor;
+
+    void captureMouse() {
+        z0::Input::setMouseMode(z0::MOUSE_MODE_HIDDEN_CAPTURED);
+        mouseCaptured = true;
+    }
+
+    void releaseMouse() {
+        z0::Input::setMouseMode(z0::MOUSE_MODE_VISIBLE);
+        mouseCaptured = false;
+    }
 };
 
 int main() {
