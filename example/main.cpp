@@ -1,6 +1,7 @@
 #include "z0/mainloop.hpp"
 #include "z0/scene.hpp"
 #include "z0/loader.hpp"
+#include "z0/input.hpp"
 #include "z0/nodes/directional_light.hpp"
 #include "z0/nodes/camera.hpp"
 #include "z0/nodes/environment.hpp"
