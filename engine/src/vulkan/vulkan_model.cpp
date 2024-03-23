@@ -5,6 +5,7 @@
  * https://vulkan-tutorial.com/Loading_models
 */
 #include "z0/vulkan/vulkan_model.hpp"
+#include "z0/log.hpp"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>

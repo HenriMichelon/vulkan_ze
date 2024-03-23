@@ -4,6 +4,8 @@
 #include "z0/object.hpp"
 #include "z0/input.hpp"
 
+#include <list>
+
 namespace z0 {
 
     const glm::vec3 AXIS_X { 1.0, 0.0f, 0.0f };

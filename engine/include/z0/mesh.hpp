@@ -3,6 +3,8 @@
 #include "z0/vulkan/vulkan_model.hpp"
 #include "z0/material.hpp"
 
+#include <unordered_set>
+
 namespace z0 {
 
     struct MeshSurface {

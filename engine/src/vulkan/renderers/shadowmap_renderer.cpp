@@ -1,17 +1,18 @@
-// https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
-// https://github.com/SaschaWillems/Vulkan/tree/master/examples/shadowmapping
+/*
+ * https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
+ * https://github.com/SaschaWillems/Vulkan/tree/master/examples/shadowmapping
+ */
 #include "z0/vulkan/renderers/shadowmap_renderer.hpp"
-#include "z0/log.hpp"
 #include "z0/nodes/spot_light.hpp"
 #include "z0/nodes/camera.hpp"
+#include "z0/log.hpp"
+
+#include <array>
 
 namespace z0 {
 
     ShadowMapRenderer::ShadowMapRenderer(VulkanDevice &dev,
-                                         const std::string& sDir) :
-            BaseRenderer{dev, sDir}
-     {
-     }
+                                         const std::string& sDir) : BaseRenderer{dev, sDir} {}
 
     void ShadowMapRenderer::cleanup() {
         cleanupImagesResources();

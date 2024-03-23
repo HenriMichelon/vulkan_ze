@@ -1,5 +1,9 @@
 #include "z0/nodes/node.hpp"
 
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
+
 namespace z0 {
 
     Node::id_t Node::currentId = 0;
