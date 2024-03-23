@@ -1,6 +1,7 @@
 #include "z0/mainloop.hpp"
 #include "z0/scene.hpp"
 #include "z0/loader.hpp"
+#include "z0/input.hpp"
 #include "z0/nodes/directional_light.hpp"
 #include "z0/nodes/camera.hpp"
 #include "z0/nodes/environment.hpp"
@@ -8,6 +9,7 @@
 #include "z0/nodes/spot_light.hpp"
 #include "z0/nodes/mesh_instance.hpp"
 #include "z0/nodes/skybox.hpp"
+#include "z0/log.hpp"
 
 #include <algorithm>
 
@@ -20,7 +22,7 @@ void printPosition(z0::Node node) {
 
 class Player: public z0::Node {
 public:
-    const float translationSpeed = 2.0;
+    const float translationSpeed = 4.0;
     const float mouseSensitivity = 0.002;
     const float maxCameraAngleUp = glm::radians(60.0);
     const float maxCameraAngleDown = -glm::radians(45.0);
@@ -42,22 +44,37 @@ public:
     }
 
     void onProcess(float delta) override {
-        if (z0::Input::isKeyPressed(z0::KEY_W)) {
-            translate({0.0, 0.0, delta * translationSpeed});
-            captureMouse();
-        } else if (z0::Input::isKeyPressed(z0::KEY_S)) {
-            translate({0.0, 0.0, delta * -translationSpeed});
-            captureMouse();
+        glm::vec2 input;
+        if (gamepad != -1) {
+            input = z0::Input::getGamepadVector(gamepad, z0::GAMEPAD_AXIS_LEFT);
+            if (input == vec2Zero) input = z0::Input::getKeyboardVector(z0::KEY_A, z0::KEY_D, z0::KEY_W, z0::KEY_S);
+        } else {
+            input = z0::Input::getKeyboardVector(z0::KEY_A, z0::KEY_D, z0::KEY_W, z0::KEY_S);
         }
-        if (z0::Input::isKeyPressed(z0::KEY_A)) {
-            translate({delta * -translationSpeed, 0.0, 0.0});
-            captureMouse();
-        } else if (z0::Input::isKeyPressed(z0::KEY_D)) {
-            translate({delta * translationSpeed, 0.0, 0.0});
-            captureMouse();
+        if (input != vec2Zero) {
+            auto direction = transformBasis * glm::vec3{input.x, 0, -input.y};
+            glm::vec3 velocity{direction.x * translationSpeed, 0.0, direction.z * translationSpeed};
+            velocity = velocity * delta;
+            if (velocity != vec3Zero) {
+                captureMouse();
+                translate(velocity);
+            }
         }
-        float angle = delta * glm::radians(90.0f) / 2;
-        //markup2->rotateY(angle);
+        if (mouseCaptured) {
+            glm::vec2 inputDir;
+            if (gamepad != -1) {
+                inputDir = z0::Input::getGamepadVector(gamepad, z0::GAMEPAD_AXIS_RIGHT);
+                if (inputDir == vec2Zero) inputDir = z0::Input::getKeyboardVector(z0::KEY_LEFT, z0::KEY_RIGHT, z0::KEY_UP, z0::KEY_DOWN);
+            } else {
+                inputDir = z0::Input::getKeyboardVector(z0::KEY_LEFT, z0::KEY_RIGHT, z0::KEY_UP, z0::KEY_DOWN);
+            }
+            if (inputDir != vec2Zero) {
+                auto look_dir = inputDir * delta;
+                rotateY(look_dir.x * 2.0);
+                camera->rotateX(-look_dir.y * mouseInvertedAxisY);
+                camera->setRotationX(std::clamp(camera->getRotationX() , maxCameraAngleDown, maxCameraAngleUp));
+            }
+        }
     }
 
     void onReady() override {
@@ -67,22 +84,24 @@ public:
         auto markup = z0::Loader::loadModelFromFile("models/light.glb", true);
         markup->setScale(glm::vec3{0.25});
         addChild(markup);
-        markup2 = z0::Loader::loadModelFromFile("models/crate.glb", true);
-        markup2->setScale(glm::vec3{0.1});
-        markup2->setPosition({-0.2, -0.2, 0.2});
-        markup2->rotateDegrees({45.0, 0.0, 0.0});
-        addChild(markup2);
 
         camera = std::make_shared<z0::Camera>();
         camera->setPosition({ 0.0f, 0.0f, -0.5f});
         addChild(static_cast<std::shared_ptr<z0::Node>>(camera));
 
-        camera->setRotationX(glm::radians(20.0));
-        //camera->rotateY(glm::radians(20.));
-        //printPosition(*camera);
+        for (int i = 0; i < z0::Input::getConnectedJoypads(); i++) {
+            if (z0::Input::isGamepad(i)) {
+                gamepad = i;
+                break;
+            }
+        }
+        if (gamepad != -1) {
+            std::cout << "Using Gamepad " << z0::Input::getGamepadName(gamepad) << std::endl;
+        }
     }
 
 private:
+    int gamepad{-1};
     bool mouseCaptured{false};
     int mouseInvertedAxisY{-1};
     std::shared_ptr<z0::Camera> camera;

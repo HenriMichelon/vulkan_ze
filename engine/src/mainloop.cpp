@@ -2,6 +2,7 @@
 #include "z0/mainloop.hpp"
 #include "z0/viewport.hpp"
 #include "z0/log.hpp"
+#include "z0/input.hpp"
 
 #include <chrono>
 
@@ -30,8 +31,8 @@ namespace z0 {
         auto lastFrameTime = std::chrono::high_resolution_clock::now();
         float elapsedSeconds = 0.0;
         while (!viewport->shouldClose()) {
-            while(viewport->haveInputEvent()) {
-                auto event = viewport->consumeInputEvent();
+            while(Input::haveInputEvent()) {
+                auto event = Input::consumeInputEvent();
                 input(rootNode, *event);
             }
 

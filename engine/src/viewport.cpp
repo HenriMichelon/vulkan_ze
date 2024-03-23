@@ -55,28 +55,4 @@ namespace z0 {
         sceneRenderer->loadScene(rootNode);
     }
 
-#ifdef GLFW_VERSION_MAJOR
-    bool Viewport::isKeyPressed(Key key) const {
-        return glfwGetKey(window.getWindowHandle(), key) == GLFW_PRESS;
-    }
-
-    void Viewport::setMouseMode(MouseMode mode) const {
-        int value = 0;
-        switch (mode) {
-            case MOUSE_MODE_VISIBLE:
-                value = GLFW_CURSOR_NORMAL;
-                break;
-            case MOUSE_MODE_VISIBLE_CAPTURED:
-                value = GLFW_CURSOR_CAPTURED;
-                break;
-            case MOUSE_MODE_HIDDEN:
-                value = GLFW_CURSOR_HIDDEN;
-                break;
-            case MOUSE_MODE_HIDDEN_CAPTURED:
-                value = GLFW_CURSOR_DISABLED;
-                break;
-        }
-        glfwSetInputMode(window.getWindowHandle(), GLFW_CURSOR, value);
-    }
-#endif
 }

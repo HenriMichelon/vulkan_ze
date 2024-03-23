@@ -1,4 +1,5 @@
 #include "z0/helpers/window_helper.hpp"
+#include "z0/input.hpp"
 
 #include <stdexcept>
 
@@ -14,7 +15,7 @@ namespace z0 {
 
     static void glfwKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
         auto windowHelper = reinterpret_cast<WindowHelper*>(glfwGetWindowUserPointer(window));
-        windowHelper->_inputQueue.push_back(std::make_shared<InputEventKey>(
+        Input::injectInputEvent(std::make_shared<InputEventKey>(
                 (Key)key,
                 (action == GLFW_PRESS) || (action == GLFW_REPEAT),
                 action == GLFW_REPEAT,
@@ -24,7 +25,7 @@ namespace z0 {
 
     static void glfwMouseMoveCallback(GLFWwindow* window, double xpos, double ypos) {
         auto windowHelper = reinterpret_cast<WindowHelper*>(glfwGetWindowUserPointer(window));
-        windowHelper->_inputQueue.push_back(std::make_shared<InputEventMouseMotion>(
+        Input::injectInputEvent(std::make_shared<InputEventMouseMotion>(
                 static_cast<float>(xpos),
                 static_cast<float>(ypos),
                 static_cast<float>(xpos - windowHelper->_mouseLastX),
@@ -41,12 +42,6 @@ namespace z0 {
     bool WindowHelper::shouldClose() {
         return glfwWindowShouldClose(windowHandle);
     };
-
-    std::shared_ptr<InputEvent> WindowHelper::consumeEvent() {
-        auto event = _inputQueue.front();
-        _inputQueue.pop_front();
-        return event;
-    }
 
     WindowHelper::WindowHelper(WindowMode _mode, int w, int h, const std::string& windowName):
         mode{_mode}, _width{w}, _height{h}

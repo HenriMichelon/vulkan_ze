@@ -1,5 +1,4 @@
 /*
- * Derived from
  * https://vulkan-tutorial.com/Texture_mapping/Images
  */
 #include "z0/vulkan/vulkan_image.hpp"
@@ -9,6 +8,8 @@
 
 #include <stb_image.h>
 //#include <stb_image_write.h>
+
+#include <cmath>
 
 namespace z0 {
 

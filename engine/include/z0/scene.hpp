@@ -1,8 +1,8 @@
 #pragma once
 
-#include <utility>
-
 #include "z0/material.hpp"
+
+#include <utility>
 
 namespace z0 {
 

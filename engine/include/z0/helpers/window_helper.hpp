@@ -15,6 +15,7 @@
 #include <iostream>
 #include <list>
 
+// For ImGui
 static void check_vk_result(VkResult err)
 {
     if (err == 0)
@@ -25,7 +26,6 @@ static void check_vk_result(VkResult err)
 }
 
 #include "z0/window.hpp"
-#include "z0/input.hpp"
 #include <string>
 
 namespace z0 {
@@ -37,8 +37,6 @@ namespace z0 {
         bool shouldClose();
         void process();
         void close();
-        bool haveInputEvent() const { return !_inputQueue.empty(); }
-        std::shared_ptr<InputEvent> consumeEvent();
 
         int getWidth() const { return _width; }
         int getHeight() const { return _height; }
@@ -54,7 +52,6 @@ namespace z0 {
 
     public:
         // accessed by static functions
-        std::list<std::shared_ptr<InputEvent>> _inputQueue;
         bool _windowResized = false;
         int _width, _height;
         double _mouseLastX, _mouseLastY;
