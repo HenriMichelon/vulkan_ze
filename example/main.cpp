@@ -43,22 +43,33 @@ public:
     }
 
     void onProcess(float delta) override {
-        if (z0::Input::isKeyPressed(z0::KEY_W)) {
+        if (z0::Input::isKeyPressed(z0::KEY_W) ||
+            z0::Input::getGamepadAxisValue(gamepad, z0::GAMEPAD_AXIS_LEFT_Y) < 0) {
             translate({0.0, 0.0, delta * translationSpeed});
             captureMouse();
-        } else if (z0::Input::isKeyPressed(z0::KEY_S)) {
+        } else if (z0::Input::isKeyPressed(z0::KEY_S) ||
+           z0::Input::getGamepadAxisValue(gamepad, z0::GAMEPAD_AXIS_LEFT_Y) > 0) {
             translate({0.0, 0.0, delta * -translationSpeed});
             captureMouse();
         }
-        if (z0::Input::isKeyPressed(z0::KEY_A)) {
+        if (z0::Input::isKeyPressed(z0::KEY_A) ||
+            z0::Input::getGamepadAxisValue(gamepad, z0::GAMEPAD_AXIS_LEFT_X) < 0) {
             translate({delta * -translationSpeed, 0.0, 0.0});
             captureMouse();
-        } else if (z0::Input::isKeyPressed(z0::KEY_D)) {
+        } else if (z0::Input::isKeyPressed(z0::KEY_D) ||
+                   z0::Input::getGamepadAxisValue(gamepad, z0::GAMEPAD_AXIS_LEFT_X) > 0) {
             translate({delta * translationSpeed, 0.0, 0.0});
             captureMouse();
         }
-        float angle = delta * glm::radians(90.0f) / 2;
-        //markup2->rotateY(angle);
+        if (mouseCaptured) {
+            auto gamepadDir = z0::Input::getGamepadVector(gamepad, z0::GAMEPAD_AXIS_RIGHT);
+            if (gamepadDir.length() > 0) {
+                auto look_dir = gamepadDir * delta;
+                rotateY(look_dir.x * 2.0);
+                camera->rotateX(-look_dir.y * mouseInvertedAxisY);
+                camera->setRotationX(std::clamp(camera->getRotationX() , maxCameraAngleDown, maxCameraAngleUp));
+            }
+        }
     }
 
     void onReady() override {
@@ -68,22 +79,24 @@ public:
         auto markup = z0::Loader::loadModelFromFile("models/light.glb", true);
         markup->setScale(glm::vec3{0.25});
         addChild(markup);
-        markup2 = z0::Loader::loadModelFromFile("models/crate.glb", true);
-        markup2->setScale(glm::vec3{0.1});
-        markup2->setPosition({-0.2, -0.2, 0.2});
-        markup2->rotateDegrees({45.0, 0.0, 0.0});
-        addChild(markup2);
 
         camera = std::make_shared<z0::Camera>();
         camera->setPosition({ 0.0f, 0.0f, -0.5f});
         addChild(static_cast<std::shared_ptr<z0::Node>>(camera));
 
-        camera->setRotationX(glm::radians(20.0));
-        //camera->rotateY(glm::radians(20.));
-        //printPosition(*camera);
+        for (int i = 0; i < z0::Input::getConnectedJoypads(); i++) {
+            if (z0::Input::isGamepad(i)) {
+                gamepad = i;
+                break;
+            }
+        }
+        if (gamepad != -1) {
+            std::cout << "Using Gamepad " << z0::Input::getGamepadName(gamepad) << std::endl;
+        }
     }
 
 private:
+    int gamepad{-1};
     bool mouseCaptured{false};
     int mouseInvertedAxisY{-1};
     std::shared_ptr<z0::Camera> camera;

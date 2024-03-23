@@ -3,12 +3,23 @@
 #include "z0/application.hpp"
 #include "z0/input_event.hpp"
 
+#include <map>
+
 namespace z0 {
 
     class Input {
     public:
         static bool isKeyPressed(Key key);
+
+        static bool isMouseButtonPressed(MouseButton mouseButton);
         static void setMouseMode(MouseMode mode);
+
+        static int getConnectedJoypads();
+        static bool isGamepad(int index);
+        static std::string getGamepadName(int index);
+        static bool isGamepadButtonPressed(int index, GamepadButton gamepadButton);
+        static float getGamepadAxisValue(int index, GamepadAxis gamepadAxis);
+        static glm::vec2 getGamepadVector(int index, GamepadAxisJoystick axisJoystick);
 
         inline static bool haveInputEvent() { return !inputQueue.empty(); }
         static std::shared_ptr<InputEvent> consumeInputEvent();

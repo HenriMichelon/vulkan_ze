@@ -127,6 +127,46 @@ namespace z0 {
          KEY_MENU           = 348
     };
 
+    enum MouseButton {
+        MOUSE_BUTTON_LEFT      = 1,
+        MOUSE_BUTTON_RIGHT     = 2,
+        MOUSE_BUTTON_MIDDLE    = 3,
+    };
+
+    enum GamepadButton {
+        GAMEPAD_BUTTON_A            = 0,
+        GAMEPAD_BUTTON_B            = 1,
+        GAMEPAD_BUTTON_X            = 2,
+        GAMEPAD_BUTTON_Y            = 3,
+        GAMEPAD_BUTTON_LEFT_BUMPER  = 4,
+        GAMEPAD_BUTTON_RIGHT_BUMPER = 5,
+        GAMEPAD_BUTTON_BACK         = 6,
+        GAMEPAD_BUTTON_START        = 7,
+        GAMEPAD_BUTTON_GUIDE        = 8,
+        GAMEPAD_BUTTON_LEFT_THUMB   = 9,
+        GAMEPAD_BUTTON_RIGHT_THUMB  = 10,
+        GAMEPAD_BUTTON_DPAD_UP      = 11,
+        GAMEPAD_BUTTON_DPAD_RIGHT   = 12,
+        GAMEPAD_BUTTON_DPAD_DOWN    = 13,
+        GAMEPAD_BUTTON_DPAD_LEFT    = 14,
+        GAMEPAD_BUTTON_CROSS        = GAMEPAD_BUTTON_A,
+        GAMEPAD_BUTTON_CIRCLE       = GAMEPAD_BUTTON_B,
+        GAMEPAD_BUTTON_SQUARE       = GAMEPAD_BUTTON_X,
+        GAMEPAD_BUTTON_TRIANGLE     = GAMEPAD_BUTTON_Y,
+    };
+
+    enum GamepadAxisJoystick {
+        GAMEPAD_AXIS_LEFT         = 0,
+        GAMEPAD_AXIS_RIGHT        = 1,
+    };
+
+    enum GamepadAxis {
+        GAMEPAD_AXIS_LEFT_X         = 0,
+        GAMEPAD_AXIS_LEFT_Y         = 1,
+        GAMEPAD_AXIS_RIGHT_X        = 2,
+        GAMEPAD_AXIS_RIGHT_Y        = 3,
+    };
+
     enum MouseMode {
         MOUSE_MODE_VISIBLE          = 0,
         MOUSE_MODE_VISIBLE_CAPTURED = 1,
