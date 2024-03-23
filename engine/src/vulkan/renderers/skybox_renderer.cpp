@@ -56,8 +56,7 @@ namespace z0 {
                 vulkanDevice,
                 vertexSize,
                 vertexCount,
-                VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                VK_BUFFER_USAGE_TRANSFER_SRC_BIT
         };
         stagingBuffer.map();
         stagingBuffer.writeToBuffer((void*)skyboxVertices);
@@ -65,8 +64,7 @@ namespace z0 {
                 vulkanDevice,
                 vertexSize,
                 vertexCount,
-                VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+                VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT
         );
         stagingBuffer.copyTo(*vertexBuffer, bufferSize);
     }

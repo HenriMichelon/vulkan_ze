@@ -4,12 +4,10 @@
  */
 #include "z0/vulkan/vulkan_image.hpp"
 #include "z0/vulkan/vulkan_buffer.hpp"
-#include "z0/log.hpp"
 #include "z0/vulkan/vulkan_stats.hpp"
+#include "z0/log.hpp"
 
-#define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
-//#define STB_IMAGE_WRITE_IMPLEMENTATION
 //#include <stb_image_write.h>
 
 namespace z0 {
@@ -22,7 +20,6 @@ namespace z0 {
                 imageSize,
                 1,
                 VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
         };
         textureStagingBuffer.map();
         textureStagingBuffer.writeToBuffer(data);

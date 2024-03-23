@@ -18,6 +18,8 @@ namespace z0 {
         VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
         // https://docs.vulkan.org/samples/latest/samples/extensions/shader_object/README.html
         VK_EXT_SHADER_OBJECT_EXTENSION_NAME,
+        // for Vulkan Memory Allocator
+        VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME
     };
 
 
@@ -64,6 +66,7 @@ namespace z0 {
             die("Failed to find a suitable GPU!");
         }
         createDevice();
+        createAllocator();
         createSwapChain();
 
         // Create command buffers
@@ -117,6 +120,7 @@ namespace z0 {
         }
         cleanupSwapChain();
         vkDestroyCommandPool(device, commandPool, nullptr);
+        vmaDestroyAllocator(allocator);
         vkDestroyDevice(device, nullptr);
         vkDestroySurfaceKHR(vulkanInstance.getInstance(), surface, nullptr);
     }
@@ -144,13 +148,6 @@ namespace z0 {
             for (auto& renderer: renderers) {
                 renderer->recreateImagesResources();
             }
-            /*int width, height;
-            glfwGetFramebufferSize(window, &width, &height);
-            if (width > 0 && height > 0) {
-                ImGui_ImplVulkan_SetMinImageCount(g_MinImageCount);
-                ImGui_ImplVulkanH_CreateOrResizeWindow(g_Instance, g_PhysicalDevice, g_Device, &g_MainWindowData,
-                                                       g_QueueFamily, g_Allocator, width, height, g_MinImageCount);
-            }*/
             return;
         } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
             die("failed to acquire swap chain image!");
@@ -220,19 +217,6 @@ namespace z0 {
                 for (auto& renderer: renderers) {
                     renderer->recreateImagesResources();
                 }
-                /*int width, height;
-                glfwGetFramebufferSize(window.getWindowHandle(), &width, &height);
-                if (width > 0 && height > 0) {
-                    ImGui_ImplVulkanH_CreateOrResizeWindow(vulkanInstance.getInstance(),
-                                                           physicalDevice,
-                                                           device,
-                                                           window.getWindowHandle(),
-                                                           findQueueFamilies(physicalDevice, surface),
-                                                           nullptr,
-                                                           width,
-                                                           height,
-                                                           MAX_FRAMES_IN_FLIGHT);
-                }*/
             } else if (result != VK_SUCCESS) {
                 die("failed to present swap chain image!");
             }
@@ -361,6 +345,46 @@ namespace z0 {
         if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
             die("Failed to create the command pool");
         }
+    }
+
+    // https://gpuopen-librariesandsdks.github.io/VulkanMemoryAllocator/html/quick_start.html
+    void VulkanDevice::createAllocator() {
+        const VmaVulkanFunctions vulkanFunctions {
+                .vkGetInstanceProcAddr = vkGetInstanceProcAddr,
+                .vkGetDeviceProcAddr = vkGetDeviceProcAddr,
+                .vkGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties,
+                .vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties,
+                .vkAllocateMemory = vkAllocateMemory,
+                .vkFreeMemory = vkFreeMemory,
+                .vkMapMemory = vkMapMemory,
+                .vkUnmapMemory = vkUnmapMemory,
+                .vkFlushMappedMemoryRanges = vkFlushMappedMemoryRanges,
+                .vkInvalidateMappedMemoryRanges = vkInvalidateMappedMemoryRanges,
+                .vkBindBufferMemory = vkBindBufferMemory,
+                .vkBindImageMemory = vkBindImageMemory,
+                .vkGetBufferMemoryRequirements = vkGetBufferMemoryRequirements,
+                .vkGetImageMemoryRequirements = vkGetImageMemoryRequirements,
+                .vkCreateBuffer = vkCreateBuffer,
+                .vkDestroyBuffer = vkDestroyBuffer,
+                .vkCreateImage = vkCreateImage,
+                .vkDestroyImage = vkDestroyImage,
+                .vkCmdCopyBuffer = vkCmdCopyBuffer,
+                .vkGetBufferMemoryRequirements2KHR = vkGetBufferMemoryRequirements2KHR,
+                .vkGetImageMemoryRequirements2KHR = vkGetImageMemoryRequirements2KHR,
+                .vkBindBufferMemory2KHR = vkBindBufferMemory2KHR,
+                .vkBindImageMemory2KHR = vkBindImageMemory2KHR,
+                .vkGetPhysicalDeviceMemoryProperties2KHR = vkGetPhysicalDeviceMemoryProperties2KHR,
+                .vkGetDeviceBufferMemoryRequirements = vkGetDeviceBufferMemoryRequirements,
+                .vkGetDeviceImageMemoryRequirements = vkGetDeviceImageMemoryRequirements,
+        };
+        const VmaAllocatorCreateInfo allocatorInfo = {
+                .physicalDevice = physicalDevice,
+                .device = device,
+                .pVulkanFunctions = &vulkanFunctions,
+                .instance = vulkanInstance.getInstance(),
+                .vulkanApiVersion = deviceProperties.apiVersion,
+        };
+        vmaCreateAllocator(&allocatorInfo, &allocator);
     }
 
     // https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain
@@ -756,20 +780,6 @@ namespace z0 {
             0, nullptr,
             0, nullptr,
             1, &barrier);
-    }
-
-    void VulkanDevice::transitionImageLayout(VkImage image,
-                                             VkImageLayout oldLayout, VkImageLayout newLayout,
-                                             VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
-                                             VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-                                             VkImageAspectFlags aspectMask, uint32_t mipLevels) {
-        VkCommandBuffer commandBuffer = beginSingleTimeCommands();
-        transitionImageLayout(commandBuffer, image,
-                              oldLayout, newLayout,
-                              srcAccessMask, dstAccessMask,
-                              srcStageMask, dstStageMask,
-                              aspectMask, mipLevels);
-        endSingleTimeCommands(commandBuffer);
     }
 
 }

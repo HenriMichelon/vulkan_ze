@@ -3,10 +3,7 @@
 #include "z0/vulkan/vulkan_descriptors.hpp"
 #include "z0/log.hpp"
 
-#include "glm/gtc/matrix_transform.hpp"
-
 #include <fstream>
-
 #include <filesystem>
 
 namespace z0 {
@@ -57,7 +54,6 @@ namespace z0 {
                     size,
                     count,
                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
                     vulkanDevice.getDeviceProperties().limits.minUniformBufferOffsetAlignment
             );
             uboBuffer->map();

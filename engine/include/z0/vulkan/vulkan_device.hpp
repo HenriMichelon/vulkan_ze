@@ -5,6 +5,8 @@
 #include "z0/vulkan/vulkan_renderer.hpp"
 #include "z0/ui/debug_ui.hpp"
 
+#include "vk_mem_alloc.h"
+
 #include <memory>
 #include <optional>
 #include <vector>
@@ -34,11 +36,13 @@ namespace z0 {
         VulkanDevice(VulkanInstance& instance, WindowHelper &window, bool autoMSAA = false, VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT);
         ~VulkanDevice();
 
-        VkDevice getDevice() { return device; }
-        VkPhysicalDevice getPhysicalDevice() { return physicalDevice; }
-        VkSampleCountFlagBits getSamples() { return samples; }
-        const VkExtent2D& getSwapChainExtent() const { return swapChainExtent;}
-        VkFormat getSwapChainImageFormat() const { return swapChainImageFormat; }
+        inline VkDevice getDevice() { return device; }
+        inline VmaAllocator getAllocator() { return allocator; }
+        inline VkPhysicalDevice getPhysicalDevice() { return physicalDevice; }
+        inline VkSampleCountFlagBits getSamples() { return samples; }
+        inline const VkExtent2D& getSwapChainExtent() const { return swapChainExtent;}
+        inline VkFormat getSwapChainImageFormat() const { return swapChainImageFormat; }
+
         VkPhysicalDeviceProperties getDeviceProperties() const { return deviceProperties; }
         VkSurfaceKHR getSurface() const { return surface; };
         VkQueue getGraphicsQueue() const { return graphicsQueue; }
@@ -60,11 +64,6 @@ namespace z0 {
         VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags,
                                     uint32_t mipLevels = 1, VkImageViewType type = VK_IMAGE_VIEW_TYPE_2D);
 
-        void transitionImageLayout(VkImage image,
-                                   VkImageLayout oldLayout, VkImageLayout newLayout,
-                                   VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
-                                   VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-                                   VkImageAspectFlags aspectMask, uint32_t mipLevels = 1);
         void transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image,
                                    VkImageLayout oldLayout, VkImageLayout newLayout,
                                    VkAccessFlags srcAccessMask, VkAccessFlags dstAccessMask,
@@ -93,6 +92,10 @@ namespace z0 {
         VkCommandPool commandPool;
         VkPhysicalDeviceProperties deviceProperties;
         void createDevice();
+
+        // Vulkan Memory Allocator
+        VmaAllocator allocator;
+        void createAllocator();
 
         // Drawing a frame
         uint32_t currentFrame = 0;
