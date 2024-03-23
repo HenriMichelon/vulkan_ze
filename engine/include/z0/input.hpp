@@ -10,6 +10,7 @@ namespace z0 {
     class Input {
     public:
         static bool isKeyPressed(Key key);
+        static glm::vec2 getKeyboardVector(Key negX, Key posX, Key negY, Key posY);
 
         static bool isMouseButtonPressed(MouseButton mouseButton);
         static void setMouseMode(MouseMode mode);

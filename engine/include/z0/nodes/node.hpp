@@ -88,6 +88,10 @@ namespace z0 {
         void removeChild(const std::shared_ptr<Node>& child);
         std::list<std::shared_ptr<Node>>& getChildren() { return children; }
 
+        const glm::mat3 transformBasis{1, 0, 0, 0, 1, 0, 0, 0, 1};
+        const glm::vec3 vec3Zero{0.0};
+        const glm::vec2 vec2Zero{0.0};
+
     protected:
         std::string name;
         glm::mat4 localTransform {};

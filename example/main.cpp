@@ -9,6 +9,7 @@
 #include "z0/nodes/spot_light.hpp"
 #include "z0/nodes/mesh_instance.hpp"
 #include "z0/nodes/skybox.hpp"
+#include "z0/log.hpp"
 
 #include <algorithm>
 
@@ -21,7 +22,7 @@ void printPosition(z0::Node node) {
 
 class Player: public z0::Node {
 public:
-    const float translationSpeed = 2.0;
+    const float translationSpeed = 4.0;
     const float mouseSensitivity = 0.002;
     const float maxCameraAngleUp = glm::radians(60.0);
     const float maxCameraAngleDown = -glm::radians(45.0);
@@ -43,28 +44,32 @@ public:
     }
 
     void onProcess(float delta) override {
-        if (z0::Input::isKeyPressed(z0::KEY_W) ||
-            z0::Input::getGamepadAxisValue(gamepad, z0::GAMEPAD_AXIS_LEFT_Y) < 0) {
-            translate({0.0, 0.0, delta * translationSpeed});
-            captureMouse();
-        } else if (z0::Input::isKeyPressed(z0::KEY_S) ||
-           z0::Input::getGamepadAxisValue(gamepad, z0::GAMEPAD_AXIS_LEFT_Y) > 0) {
-            translate({0.0, 0.0, delta * -translationSpeed});
-            captureMouse();
+        glm::vec2 input;
+        if (gamepad != -1) {
+            input = z0::Input::getGamepadVector(gamepad, z0::GAMEPAD_AXIS_LEFT);
+            if (input == vec2Zero) input = z0::Input::getKeyboardVector(z0::KEY_A, z0::KEY_D, z0::KEY_W, z0::KEY_S);
+        } else {
+            input = z0::Input::getKeyboardVector(z0::KEY_A, z0::KEY_D, z0::KEY_W, z0::KEY_S);
         }
-        if (z0::Input::isKeyPressed(z0::KEY_A) ||
-            z0::Input::getGamepadAxisValue(gamepad, z0::GAMEPAD_AXIS_LEFT_X) < 0) {
-            translate({delta * -translationSpeed, 0.0, 0.0});
-            captureMouse();
-        } else if (z0::Input::isKeyPressed(z0::KEY_D) ||
-                   z0::Input::getGamepadAxisValue(gamepad, z0::GAMEPAD_AXIS_LEFT_X) > 0) {
-            translate({delta * translationSpeed, 0.0, 0.0});
-            captureMouse();
+        if (input != vec2Zero) {
+            auto direction = transformBasis * glm::vec3{input.x, 0, -input.y};
+            glm::vec3 velocity{direction.x * translationSpeed, 0.0, direction.z * translationSpeed};
+            velocity = velocity * delta;
+            if (velocity != vec3Zero) {
+                captureMouse();
+                translate(velocity);
+            }
         }
         if (mouseCaptured) {
-            auto gamepadDir = z0::Input::getGamepadVector(gamepad, z0::GAMEPAD_AXIS_RIGHT);
-            if (gamepadDir.length() > 0) {
-                auto look_dir = gamepadDir * delta;
+            glm::vec2 inputDir;
+            if (gamepad != -1) {
+                inputDir = z0::Input::getGamepadVector(gamepad, z0::GAMEPAD_AXIS_RIGHT);
+                if (inputDir == vec2Zero) inputDir = z0::Input::getKeyboardVector(z0::KEY_LEFT, z0::KEY_RIGHT, z0::KEY_UP, z0::KEY_DOWN);
+            } else {
+                inputDir = z0::Input::getKeyboardVector(z0::KEY_LEFT, z0::KEY_RIGHT, z0::KEY_UP, z0::KEY_DOWN);
+            }
+            if (inputDir != vec2Zero) {
+                auto look_dir = inputDir * delta;
                 rotateY(look_dir.x * 2.0);
                 camera->rotateX(-look_dir.y * mouseInvertedAxisY);
                 camera->setRotationX(std::clamp(camera->getRotationX() , maxCameraAngleDown, maxCameraAngleUp));
