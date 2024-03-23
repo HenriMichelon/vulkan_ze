@@ -18,7 +18,6 @@ namespace z0 {
                 imageSize,
                 6,
                 VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                 vulkanDevice.getDeviceProperties().limits.minUniformBufferOffsetAlignment
         };
         textureStagingBuffer.map();

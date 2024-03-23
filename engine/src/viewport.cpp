@@ -1,5 +1,6 @@
 #include "z0/vulkan/renderers/scene_renderer.hpp"
 #include "z0/mainloop.hpp"
+#include "z0/log.hpp"
 
 namespace z0 {
 

@@ -1,6 +1,7 @@
 #include "z0/vulkan/renderers/depth_prepass_renderer.hpp"
 #include "z0/log.hpp"
 
+#include <array>
 
 namespace z0 {
 

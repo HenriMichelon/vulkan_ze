@@ -3,6 +3,8 @@
 #include "z0/vulkan/vulkan_cubemap.hpp"
 #include "z0/resource.hpp"
 
+#include <filesystem>
+
 namespace z0 {
 
     class Cubemap: public Resource {

@@ -1,6 +1,10 @@
 #include "z0/nodes/mesh_instance.hpp"
 #include "z0/application.hpp"
 #include "z0/loader.hpp"
+#include "z0/log.hpp"
+
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
 
 #include <fastgltf/glm_element_traits.hpp>
 #include <fastgltf/core.hpp>

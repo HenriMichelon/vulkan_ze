@@ -1,8 +1,15 @@
-// Using one descriptor per scene with offsets
-// https://docs.vulkan.org/samples/latest/samples/performance/descriptor_management/README.html
+/*
+ *  Using one descriptor per scene with offsets
+ * https://docs.vulkan.org/samples/latest/samples/performance/descriptor_management/README.html
+ */
 #include "z0/vulkan/renderers/scene_renderer.hpp"
-#include "z0/log.hpp"
 #include "z0/nodes/skybox.hpp"
+#include "z0/log.hpp"
+
+#include <glm/gtc/matrix_inverse.hpp>
+
+#include <array>
+#include <set>
 
 namespace z0 {
 

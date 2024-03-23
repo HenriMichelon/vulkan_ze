@@ -1,6 +1,9 @@
 #include "z0/nodes/camera.hpp"
 #include "z0/application.hpp"
 
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
+
 #include <cassert>
 #include <limits>
 

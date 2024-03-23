@@ -2,11 +2,13 @@
 
 #include "z0/vulkan/renderers/shadowmap_renderer.hpp"
 #include "z0/vulkan/renderers/depth_prepass_renderer.hpp"
+#include "z0/vulkan/renderers/skybox_renderer.hpp"
 #include "z0/nodes/camera.hpp"
 #include "z0/nodes/directional_light.hpp"
 #include "z0/nodes/environment.hpp"
 #include "z0/nodes/omni_light.hpp"
-#include "skybox_renderer.hpp"
+
+#include <map>
 
 namespace z0 {
 

@@ -25,7 +25,7 @@ add_shaders(${PROJECT_NAME}_shaders ${Z0_GLSL_SOURCE_FILES})
 
 add_executable(${PROJECT_NAME}
 		${IMGUI_SOURCES}
-        example/main.cpp
+		${Z0_ENGINE_DIR}/src/libraries.cpp
         ${Z0_ENGINE_DIR}/include/z0/helpers/window_helper.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_device.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_buffer.hpp
@@ -110,6 +110,7 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/loader.cpp
 		${Z0_ENGINE_DIR}/src/cubemap.cpp
 		${Z0_ENGINE_DIR}/src/input.cpp
+		example/main.cpp
 )
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_shaders)
 

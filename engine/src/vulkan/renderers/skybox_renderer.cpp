@@ -52,21 +52,18 @@ namespace z0 {
         vertexCount = 108 / 3;
         uint32_t  vertexSize = sizeof(float) * 3;
         VkDeviceSize bufferSize = vertexSize * vertexCount;
-        VulkanBuffer stagingBuffer {
+        const VulkanBuffer stagingBuffer {
                 vulkanDevice,
                 vertexSize,
                 vertexCount,
-                VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                VK_BUFFER_USAGE_TRANSFER_SRC_BIT
         };
-        stagingBuffer.map();
         stagingBuffer.writeToBuffer((void*)skyboxVertices);
         vertexBuffer = std::make_unique<VulkanBuffer>(
                 vulkanDevice,
                 vertexSize,
                 vertexCount,
-                VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+                VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT
         );
         stagingBuffer.copyTo(*vertexBuffer, bufferSize);
     }

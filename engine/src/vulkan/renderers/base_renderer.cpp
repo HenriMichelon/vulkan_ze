@@ -3,10 +3,7 @@
 #include "z0/vulkan/vulkan_descriptors.hpp"
 #include "z0/log.hpp"
 
-#include "glm/gtc/matrix_transform.hpp"
-
 #include <fstream>
-
 #include <filesystem>
 
 namespace z0 {
@@ -47,7 +44,6 @@ namespace z0 {
     void BaseRenderer::writeUniformBuffer(const std::vector<std::unique_ptr<VulkanBuffer>>& buffers, uint32_t currentFrame, void *data, uint32_t index) {
         uint32_t size = buffers[currentFrame]->getAlignmentSize();
         buffers[currentFrame]->writeToBuffer(data, size, size * index);
-        buffers[currentFrame]->flush();
     }
 
     void BaseRenderer::createUniformBuffers(std::vector<std::unique_ptr<VulkanBuffer>>& buffers, VkDeviceSize size, uint32_t count) {
@@ -57,7 +53,6 @@ namespace z0 {
                     size,
                     count,
                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
                     vulkanDevice.getDeviceProperties().limits.minUniformBufferOffsetAlignment
             );
             uboBuffer->map();

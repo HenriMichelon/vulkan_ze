@@ -9,13 +9,14 @@
 #include "z0/nodes/mesh_instance.hpp"
 #include "z0/nodes/skybox.hpp"
 
+#include <algorithm>
+
 void printPosition(z0::Node node) {
     auto pos = node.getPosition();
     std::cout << node.toString() << " local position : " << pos.x << "," << pos.y << "," << pos.z << std::endl;
     pos = node.getPositionGlobal();
     std::cout << node.toString() << " global position : " << pos.x << "," << pos.y << "," << pos.z << std::endl;
 }
-
 
 class Player: public z0::Node {
 public:

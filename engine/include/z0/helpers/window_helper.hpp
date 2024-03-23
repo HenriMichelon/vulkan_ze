@@ -1,8 +1,6 @@
 #pragma once
 
 #include "volk.h"
-#include <iostream>
-
 #include "imgui.h"
 
 #define GLFW_INCLUDE_VULKAN
@@ -13,6 +11,9 @@
   #define GLFW_EXPOSE_NATIVE_WIN32
   #include "GLFW/glfw3native.h"
 #endif
+
+#include <iostream>
+#include <list>
 
 static void check_vk_result(VkResult err)
 {
