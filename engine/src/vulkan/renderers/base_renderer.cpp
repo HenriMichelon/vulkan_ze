@@ -44,7 +44,6 @@ namespace z0 {
     void BaseRenderer::writeUniformBuffer(const std::vector<std::unique_ptr<VulkanBuffer>>& buffers, uint32_t currentFrame, void *data, uint32_t index) {
         uint32_t size = buffers[currentFrame]->getAlignmentSize();
         buffers[currentFrame]->writeToBuffer(data, size, size * index);
-        buffers[currentFrame]->flush();
     }
 
     void BaseRenderer::createUniformBuffers(std::vector<std::unique_ptr<VulkanBuffer>>& buffers, VkDeviceSize size, uint32_t count) {

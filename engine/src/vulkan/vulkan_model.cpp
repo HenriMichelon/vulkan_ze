@@ -46,14 +46,13 @@ namespace  z0 {
         VkDeviceSize bufferSize = sizeof (vertices[0]) * vertexCount;
         uint32_t  vertexSize = sizeof(vertices[0]);
 
-        VulkanBuffer stagingBuffer {
+        const VulkanBuffer stagingBuffer {
                 device,
             vertexSize,
             vertexCount,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
         };
-        stagingBuffer.map();
         stagingBuffer.writeToBuffer((void*)vertices.data());
 
         vertexBuffer = std::make_unique<VulkanBuffer>(
@@ -73,13 +72,12 @@ namespace  z0 {
         }
         VkDeviceSize bufferSize = sizeof (indices[0]) * indexCount;
         uint32_t  indexSize = sizeof(indices[0]);
-        VulkanBuffer stagingBuffer {
+        const VulkanBuffer stagingBuffer {
                 device,
             indexSize,
             indexCount,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         };
-        stagingBuffer.map();
         stagingBuffer.writeToBuffer((void*)indices.data());
 
         indexBuffer = std::make_unique<VulkanBuffer>(

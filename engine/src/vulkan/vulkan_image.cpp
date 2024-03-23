@@ -15,13 +15,12 @@ namespace z0 {
     VulkanImage::VulkanImage(VulkanDevice& device, uint32_t w, uint32_t h, VkDeviceSize imageSize, void* data):
         vulkanDevice{device}, width{w}, height{h}
     {
-        VulkanBuffer textureStagingBuffer{
+        const VulkanBuffer textureStagingBuffer{
                 vulkanDevice,
                 imageSize,
                 1,
                 VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         };
-        textureStagingBuffer.map();
         textureStagingBuffer.writeToBuffer(data);
 
         const VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;

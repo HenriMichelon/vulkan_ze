@@ -52,13 +52,12 @@ namespace z0 {
         vertexCount = 108 / 3;
         uint32_t  vertexSize = sizeof(float) * 3;
         VkDeviceSize bufferSize = vertexSize * vertexCount;
-        VulkanBuffer stagingBuffer {
+        const VulkanBuffer stagingBuffer {
                 vulkanDevice,
                 vertexSize,
                 vertexCount,
                 VK_BUFFER_USAGE_TRANSFER_SRC_BIT
         };
-        stagingBuffer.map();
         stagingBuffer.writeToBuffer((void*)skyboxVertices);
         vertexBuffer = std::make_unique<VulkanBuffer>(
                 vulkanDevice,
