@@ -132,6 +132,9 @@ namespace z0 {
                     if (standardMaterial->specularTexture != nullptr) {
                         images.insert(standardMaterial->specularTexture->getImage()._getImage());
                     }
+                    if (standardMaterial->normalTexture != nullptr) {
+                        images.insert(standardMaterial->normalTexture->getImage()._getImage());
+                    }
                 }
             }
         }
@@ -235,6 +238,9 @@ namespace z0 {
                         }
                         if (standardMaterial->specularTexture != nullptr) {
                             surfaceUbo.specularIndex = imagesIndices[standardMaterial->specularTexture->getImage().getId()];
+                        }
+                        if (standardMaterial->normalTexture != nullptr) {
+                            surfaceUbo.normalIndex = imagesIndices[standardMaterial->normalTexture->getImage().getId()];
                         }
                         surfaceUbo.transparency = standardMaterial->transparency;
                         surfaceUbo.alphaScissor = standardMaterial->alphaScissor;

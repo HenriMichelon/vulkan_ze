@@ -79,11 +79,11 @@ public:
 
     void onReady() override {
         captureMouse();
-        setPosition({0.0, 0.0, -10.0});
+        setPosition({0.0, -0.0, -2.5});
 
-        auto markup = z0::Loader::loadModelFromFile("models/light.glb", true);
+        /*auto markup = z0::Loader::loadModelFromFile("models/light.glb", true);
         markup->setScale(glm::vec3{0.25});
-        addChild(markup);
+        addChild(markup);*/
 
         camera = std::make_shared<z0::Camera>();
         camera->setPosition({ 0.0f, 0.0f, -0.5f});
@@ -125,9 +125,6 @@ public:
 
     void onProcess(float delta) override {
         float angle = delta * glm::radians(90.0f) / 2;
-        model1->rotateGlobalZ(angle);
-        model2->rotateX(angle);
-        model3->rotateY(angle);
     }
 
     void onReady() override {
@@ -138,62 +135,27 @@ public:
         z0::Skybox skybox("textures/sky", ".jpg");
         addChild(skybox);
 
-        z0::DirectionalLight directionalLight{glm::vec3{0.0f, .5f, 0.1f}};
-        directionalLight.setColorAndIntensity({1.0f, 1.0f, 1.0f, 1.0f});
+        z0::DirectionalLight directionalLight{glm::vec3{0.5f, 0.5f, -0.5f}};
+        directionalLight.setColorAndIntensity({1.0f, 1.0f, 1.0f, .5f});
         directionalLight.setCastShadow(true);
         addChild(directionalLight);
 
-       /* z0::SpotLight spotLight1{{-0.75, .5, 0.1},
+        z0::SpotLight spotLight1{{-0.2, .0, 0.2},
                                  45.0, 55.0,
                                  0.027, 0.0028};
-        spotLight1.setPosition({3.0, -6.0, -2.1});
+        spotLight1.setPosition({.2, -0.2, -2});
         spotLight1.setColorAndIntensity({1.0f, 1.0f, 1.0f, 4.0f});
         spotLight1.setCastShadow(true);
         addChild(spotLight1);
-        light1 = z0::Loader::loadModelFromFile("models/light.glb", false);
+        /*light1 = z0::Loader::loadModelFromFile("models/light.glb", false);
         light1->setPosition(spotLight1.getPosition());
-        addChild(light1);
-
-        z0::SpotLight spotLight2{{0.75, .5, 0.1},
-                                 45.0, 55.0,
-                                 0.027, 0.0028};
-        spotLight2.setPosition({-3.0, -4.0, -2.1});
-        spotLight2.setColorAndIntensity({1.0f, 1.0f, 1.0f, 4.0f});
-        //spotLight2.setCastShadow(true);
-        //addChild(spotLight2);
-        light2 =  z0::Loader::loadModelFromFile("models/light.glb", false);
-        light2->setPosition(spotLight2.getPosition());
-        addChild(light2);*/
-
-        model3 = z0::Loader::loadModelFromFile("models/window.glb");
-        model3->rotateDegrees({-90.0, 0.0, 0.0});
-        model3->setPosition({1.0, -0.0, -3.0});
-        auto* mi = dynamic_cast<z0::MeshInstance*>(model3->getChildren().front().get());
-        auto* mat = dynamic_cast<z0::StandardMaterial*>(mi->getMesh()->getSurfaceMaterial(0).get());
-        mat->transparency = z0::TRANSPARENCY_ALPHA;
-        mat->cullMode = z0::CULLMODE_DISABLED;
-        //mat->alphaScissor = 0.4;
-
-        model4 = model3->duplicate();
-        model4->setPosition({0.0, -0.0, 4.0});
-
-        addChild(model4);
-        addChild(model3);
+        addChild(light1);*/
 
         model1 = z0::Loader::loadModelFromFile("models/cube2.glb", true);
-
-        model2 = model1->duplicate();
-        addChild(model2);
+        spotLight1.setPosition({.0, .0, 0.5});
+        model1->rotateZ(glm::radians(-180.0));
+        //model1->rotateY(glm::radians(20.0));
         addChild(model1);
-
-        model1->setScale(glm::vec3{.5});
-
-        model1->setPositionGlobal({4.0, 0.0, 0.0});
-        model2->setPosition({0.0, -2.0, 0.0});
-
-        /*floor = z0::Loader::loadModelFromFile("models/floor.glb", true );
-        floor->setPosition({0.0, 2.0, 0.0});
-        addChild(floor);*/
 
         addChild(std::make_shared<Player>());
         //printTree(std::cout);

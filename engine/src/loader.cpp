@@ -145,6 +145,11 @@ namespace z0 {
                     material->specularTexture = std::make_shared<ImageTexture>(image);
                 }
             }
+            if (mat.normalTexture.has_value()) {
+                auto imageIndex = gltf.textures[mat.normalTexture->textureIndex].imageIndex.value();
+                std::shared_ptr<Image> image = images[imageIndex];
+                material->normalTexture = std::make_shared<ImageTexture>(image);
+            }
             material->cullMode = forceBackFaceCulling ? CULLMODE_BACK : mat.doubleSided ? CULLMODE_DISABLED : CULLMODE_BACK;
             materials.push_back(material);
         }

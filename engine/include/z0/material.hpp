@@ -26,8 +26,9 @@ namespace z0 {
     class StandardMaterial: public Material {
     public:
         Color                           albedoColor {0.8f, 0.3f, 0.5f, 1.0f };
-        std::shared_ptr<ImageTexture>   albedoTexture;
-        std::shared_ptr<ImageTexture>   specularTexture;
+        std::shared_ptr<ImageTexture>   albedoTexture {nullptr};
+        std::shared_ptr<ImageTexture>   specularTexture {nullptr};
+        std::shared_ptr<ImageTexture>   normalTexture {nullptr};
         CullMode                        cullMode { CULLMODE_BACK };
         Transparency                    transparency { TRANSPARENCY_DISABLED };
         float                           alphaScissor { 0.1 };

@@ -9,20 +9,18 @@ layout (location = 3) in vec3 POSITION;
 
 layout (location = 0) out vec4 COLOR;
 
+vec3 normal;
 vec3 viewDir;
 
 vec3 calcDirectionalLight(DirectionalLight light, vec3 color) {
     vec3 lightDir = normalize(-light.direction);
-    float diff = max(dot(NORMAL, lightDir), 0.0);
+    float diff = max(dot(normal, lightDir), 0.0);
     vec3 diffuse = diff * light.color.rgb * light.color.w * color;
     if (material.specularIndex != -1) {
         // Blinn-Phong
         // https://learnopengl.com/Advanced-Lighting/Advanced-Lighting
         vec3 halfwayDir = normalize(lightDir + viewDir);
-        float spec = pow(max(dot(NORMAL, halfwayDir), 0.0), material.shininess*3);
-        // Phong
-        //vec3 reflectDir = reflect(- lightDir, NORMAL);
-        //float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+        float spec = pow(max(dot(normal, halfwayDir), 0.0), material.shininess*3);
         vec3 specular = light.specular * spec * light.color.rgb * texture(texSampler[material.specularIndex], UV).rgb;
         return diffuse + specular;
     }
@@ -46,16 +44,13 @@ vec3 calcPointLight(PointLight light, vec3 color) {
 
     if (!cutOff)
     {
-        float diff = max(dot(NORMAL, lightDir), 0.0);
+        float diff = max(dot(normal, lightDir), 0.0);
         vec3 diffuse = intensity * attenuation * diff * light.color.rgb * light.color.w * color;
         if (material.specularIndex != -1) {
             // Blinn-Phong
             // https://learnopengl.com/Advanced-Lighting/Advanced-Lighting
             vec3 halfwayDir = normalize(lightDir + viewDir);
-            float spec = pow(max(dot(NORMAL, halfwayDir), 0.0), material.shininess*3);
-            // Phong
-            //vec3 reflectDir = reflect(-lightDir, NORMAL);
-            //float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+            float spec = pow(max(dot(normal, halfwayDir), 0.0), material.shininess*3);
             vec3 specular = intensity * attenuation * light.specular * spec * light.color.rgb * texture(texSampler[material.specularIndex], UV).rgb;
             return diffuse + specular;
         }
@@ -96,6 +91,13 @@ float shadowFactor(int shadowMapIndex)
 
 
 void main() {
+    if (material.normalIndex != -1) {
+        normal = texture(texSampler[material.normalIndex], UV).rgb;
+        normal = normalize(normal * 2.0 - 1.0);
+    } else {
+        normal = NORMAL;
+    }
+
     viewDir = normalize(global.cameraPosition - GLOBAL_POSITION.xyz);
     vec4 color = material.albedoColor;
     if (material.diffuseIndex != -1) {

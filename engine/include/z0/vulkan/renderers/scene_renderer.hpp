@@ -54,6 +54,7 @@ namespace z0 {
             alignas(4) float alphaScissor;
             alignas(4) int32_t diffuseIndex{-1};
             alignas(4) int32_t specularIndex{-1};
+            alignas(4) int32_t normalIndex{-1};
             alignas(16) glm::vec4 albedoColor;
             alignas(4) float shininess{32.0f};
         };
