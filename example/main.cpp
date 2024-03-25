@@ -7,7 +7,6 @@
 #include "z0/nodes/environment.hpp"
 #include "z0/nodes/omni_light.hpp"
 #include "z0/nodes/spot_light.hpp"
-#include "z0/nodes/mesh_instance.hpp"
 #include "z0/nodes/skybox.hpp"
 #include "z0/log.hpp"
 
@@ -129,31 +128,30 @@ public:
 
     void onReady() override {
         z0::Environment environment{};
-        environment.setAmbientColorAndIntensity({1.0f, 1.0f, 1.0f, 0.2f});
+        environment.setAmbientColorAndIntensity({1.0f, 1.0f, 1.0f, 0.05f});
         addChild(environment);
 
         z0::Skybox skybox("textures/sky", ".jpg");
         addChild(skybox);
 
         z0::DirectionalLight directionalLight{glm::vec3{0.5f, 0.5f, -0.5f}};
-        directionalLight.setColorAndIntensity({1.0f, 1.0f, 1.0f, .5f});
-        directionalLight.setCastShadow(true);
-        addChild(directionalLight);
+        directionalLight.setColorAndIntensity({1.0f, 1.0f, 1.0f, 0.5f});
+        directionalLight.setCastShadow(false);
+        //addChild(directionalLight);
 
-        z0::SpotLight spotLight1{{-0.2, .0, 0.2},
-                                 45.0, 55.0,
+        z0::SpotLight spotLight1{{-.25, .25, 1.0},
+                                 20.0, 25.0,
                                  0.027, 0.0028};
         spotLight1.setPosition({.2, -0.2, -2});
-        spotLight1.setColorAndIntensity({1.0f, 1.0f, 1.0f, 4.0f});
+        spotLight1.setColorAndIntensity({1.0f, 1.0f, 1.0f, 2.0f});
         spotLight1.setCastShadow(true);
         addChild(spotLight1);
-        /*light1 = z0::Loader::loadModelFromFile("models/light.glb", false);
+        light1 = z0::Loader::loadModelFromFile("models/light.glb", false);
+        light1->setScale(glm::vec3{0.25});
         light1->setPosition(spotLight1.getPosition());
-        addChild(light1);*/
+        addChild(light1);
 
         model1 = z0::Loader::loadModelFromFile("models/cube2.glb", true);
-        spotLight1.setPosition({.0, .0, 0.5});
-        model1->rotateZ(glm::radians(-180.0));
         //model1->rotateY(glm::radians(20.0));
         addChild(model1);
 

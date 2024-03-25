@@ -108,8 +108,8 @@ namespace z0 {
             }
         }
         if (auto* omniLight = dynamic_cast<OmniLight*>(parent.get())) {
+            omniLights.push_back(omniLight);
             if (omniLight->getCastShadows()) {
-                omniLights.push_back(omniLight);
                 if (auto *spotLight = dynamic_cast<SpotLight *>(parent.get())) {
                     shadowMaps.push_back(std::make_shared<ShadowMap>(vulkanDevice, spotLight));
                 }

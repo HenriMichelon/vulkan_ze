@@ -28,35 +28,32 @@ vec3 calcDirectionalLight(DirectionalLight light, vec3 color) {
 }
 
 vec3 calcPointLight(PointLight light, vec3 color) {
-    float dist = length(light.position - GLOBAL_POSITION.xyz);
-    float attenuation = 1.0 / (light.constant + light.linear * dist + light.quadratic * (dist * dist));
-    vec3 lightDir = normalize(light.position - GLOBAL_POSITION.xyz);
-    float intensity = 1.0f;
+    vec3 directionToLight = light.position.xyz - GLOBAL_POSITION.xyz;
+    float attenuation = 1.0 / dot(directionToLight, directionToLight); // attenuate by object distance squared
+    directionToLight = normalize(directionToLight);
+    vec3 intensity = light.color.xyz * light.color.w;
     bool cutOff = light.isSpot;
-
-    if (light.isSpot)
-    {
-        float theta = dot(lightDir, normalize(-light.direction));
+    if (light.isSpot) {
+        float theta = dot(directionToLight, normalize(-light.direction));
         float epsilon = light.cutOff - light.outerCutOff;
-        intensity = clamp((theta - light.outerCutOff) / epsilon, 0.0, 1.0);
+        intensity *= clamp((theta - light.outerCutOff) / epsilon, 0.0, 1.0);
         cutOff = theta <= light.outerCutOff;
     }
 
-    if (!cutOff)
-    {
-        float diff = max(dot(normal, lightDir), 0.0);
-        vec3 diffuse = intensity * attenuation * diff * light.color.rgb * light.color.w * color;
-        if (material.specularIndex != -1) {
+    if (!cutOff) {
+        float cosAngIncidence = max(dot(normal, directionToLight), 0);
+        vec3 diffuseLight = intensity * attenuation * cosAngIncidence * color;
+         if (material.specularIndex != -1) {
             // Blinn-Phong
             // https://learnopengl.com/Advanced-Lighting/Advanced-Lighting
-            vec3 halfwayDir = normalize(lightDir + viewDir);
+            vec3 halfwayDir = normalize(directionToLight + viewDir);
             float spec = pow(max(dot(normal, halfwayDir), 0.0), material.shininess*3);
             vec3 specular = intensity * attenuation * light.specular * spec * light.color.rgb * texture(texSampler[material.specularIndex], UV).rgb;
-            return diffuse + specular;
+            return diffuseLight + specular;
         }
-        return diffuse;
+        return diffuseLight;
     }
-    return vec3(0, 0, 0);
+    return vec3(0.0, 0, 0);
 }
 
 // https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
@@ -91,18 +88,21 @@ float shadowFactor(int shadowMapIndex)
 
 
 void main() {
-    if (material.normalIndex != -1) {
-        normal = texture(texSampler[material.normalIndex], UV).rgb;
-        normal = normalize(normal * 2.0 - 1.0);
-    } else {
-        normal = NORMAL;
-    }
-
     viewDir = normalize(global.cameraPosition - GLOBAL_POSITION.xyz);
     vec4 color = material.albedoColor;
     if (material.diffuseIndex != -1) {
         color = texture(texSampler[material.diffuseIndex], UV);
     }
+
+    if (material.normalIndex != -1) {
+        normal = texture(texSampler[material.normalIndex], UV).rgb;
+        normal = normalize(normal * 2.0 - 1.0) ;
+        normal.y = -normal.y;
+        normal.z = -normal.z;
+    } else {
+        normal = NORMAL;
+    }
+
     if (((material.transparency == 2) || (material.transparency == 3)) && (color.a < material.alphaScissor)) {
         discard;
     }
@@ -116,7 +116,7 @@ void main() {
     for(int i = 0; i < global.pointLightsCount; i++) {
         diffuse += calcPointLight(pointLights.lights[i], color.rgb);
     }
-    vec3 result = (ambient + diffuse) * material.albedoColor.rgb;
+    vec3 result = ambient + diffuse;
 
     for (int i = 0; i < global.shadowMapsCount; i++) {
         float shadows = shadowFactor(i);

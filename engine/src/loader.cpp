@@ -268,8 +268,8 @@ namespace z0 {
                 rootNode->addChild(node);
             }
         }
-        //rootNode->setRotation({glm::radians(180.f), 0.0f, 0.0f});
 
+        //rootNode->rotateX(glm::radians(180.f));
         return rootNode;
     }
 

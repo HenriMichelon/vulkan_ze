@@ -12,11 +12,11 @@ layout(location = 2) out vec4 GLOBAL_POSITION;
 layout(location = 3) out vec3 POSITION;
 
 void main() {
-    vec4 globalPosition = model.matrix * vec4(position, 1.0);
-    gl_Position = global.projection * global.view * globalPosition;
+    GLOBAL_POSITION = model.matrix * vec4(position, 1.0);
+    NORMAL = normalize(mat3(transpose(inverse(model.matrix))) * normal);
+    gl_Position = global.projection * global.view * GLOBAL_POSITION;
 
     UV = uv;
-    NORMAL = normalize(mat3(model.normalMatrix) * normal);
-    GLOBAL_POSITION = globalPosition;
+    //NORMAL = normalize(mat3(model.normalMatrix) * normal);
     POSITION = position;
 }
