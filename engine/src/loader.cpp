@@ -212,7 +212,28 @@ namespace z0 {
                     auto material = materials[p.materialIndex.value()];
                     surface->material = material;
                     mesh->_getMaterials().insert(material);
-                };
+
+                }
+                // calculate tangent for each triangle
+                for (int i = 0; i < indices.size(); i += 3) {
+                    auto& vertex1 = vertices[indices[i]];
+                    auto& vertex2 = vertices[indices[i + 1]];
+                    auto& vertex3 = vertices[indices[i + 2]];
+                    glm::vec3 edge1 = vertex2.position - vertex1.position;
+                    glm::vec3 edge2 = vertex3.position - vertex1.position;
+                    glm::vec2 deltaUV1 = vertex2.uv - vertex1.uv;
+                    glm::vec2 deltaUV2 = vertex3.uv - vertex1.uv;
+
+                    float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+                    glm::vec3 tangent {
+                            f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x),
+                            f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y),
+                            f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z),
+                    };
+                    vertex1.tangent = tangent;
+                    vertex2.tangent = tangent;
+                    vertex3.tangent = tangent;
+                }
                 mesh->getSurfaces().push_back(surface);
             }
             meshes.push_back(mesh);

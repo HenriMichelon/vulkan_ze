@@ -139,6 +139,14 @@ namespace  z0 {
                 VK_FORMAT_R32G32_SFLOAT,
                 offsetof(Vertex, uv)
         });
+        attributeDescriptions.push_back({
+                VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT,
+                nullptr,
+                3,
+                0,
+                VK_FORMAT_R32G32B32_SFLOAT,
+                offsetof(Vertex, tangent)
+        });
         return attributeDescriptions;
     }
 

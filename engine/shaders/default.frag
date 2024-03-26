@@ -2,11 +2,7 @@
 
 #include "input_datas.glsl"
 
-layout (location = 0) in vec2 UV;
-layout (location = 1) in vec3 NORMAL;
-layout (location = 2) in vec4 GLOBAL_POSITION;
-layout (location = 3) in vec3 POSITION;
-layout (location = 4) in vec3 VIEW_DIRECTION;
+layout (location = 0) in VertexOut fs_in;
 
 layout (location = 0) out vec4 COLOR;
 
@@ -17,8 +13,8 @@ vec3 normal;
 // https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
 float shadowFactor(int shadowMapIndex)
 {
-    vec4 SHADOW_COORD = shadowMapsInfos.shadowMaps[shadowMapIndex].lightSpace * GLOBAL_POSITION;
-    vec3 LIGHT_DIR = normalize(shadowMapsInfos.shadowMaps[shadowMapIndex].lightPos - POSITION);
+    vec4 SHADOW_COORD = shadowMapsInfos.shadowMaps[shadowMapIndex].lightSpace * fs_in.GLOBAL_POSITION;
+    vec3 LIGHT_DIR = normalize(shadowMapsInfos.shadowMaps[shadowMapIndex].lightPos - fs_in.POSITION);
 
     vec3 projCoords = SHADOW_COORD.xyz / SHADOW_COORD.w;
     if (projCoords.z > 1.0) return 1.0f;
@@ -48,16 +44,16 @@ float shadowFactor(int shadowMapIndex)
 void main() {
     vec4 color = material.albedoColor;
     if (material.diffuseIndex != -1) {
-        color = texture(texSampler[material.diffuseIndex], UV);
+        color = texture(texSampler[material.diffuseIndex], fs_in.UV);
     }
 
     if (material.normalIndex != -1) {
-        normal = texture(texSampler[material.normalIndex], UV).rgb;
+        normal = texture(texSampler[material.normalIndex], fs_in.UV).rgb;
         normal = normalize(normal * 2.0 - 1.0) ;
-        normal.y = -normal.y;
-        normal.z = -normal.z;
+        //normal.y = -normal.y;
+        //normal.z = -normal.z;
     } else {
-        normal = NORMAL;
+        normal = fs_in.NORMAL;
     }
 
     if (((material.transparency == 2) || (material.transparency == 3)) && (color.a < material.alphaScissor)) {

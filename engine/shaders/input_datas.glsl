@@ -58,3 +58,14 @@ layout(set = 0, binding = 5) uniform ShadowMapArray {
 } shadowMapsInfos;
 
 layout (set = 0, binding = 6) uniform sampler2D shadowMaps[1];
+
+struct VertexOut {
+    vec2 UV;
+    vec3 NORMAL;
+    vec4 GLOBAL_POSITION;
+    vec3 POSITION;
+    vec3 VIEW_DIRECTION;
+    vec3 TANGENT_VIEW_DIRECTION;
+    vec3 TANGENT_POSITION;
+    mat3 TBN;
+};
