@@ -9,7 +9,9 @@ set(Z0_SHADERS_BUILD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/shaders)
 make_directory(${Z0_SHADERS_BUILD_DIR})
 
 include(FetchContent)
-include(.env.cmake)
+if(EXISTS .env.cmake)
+	include(.env.cmake)
+endif ()
 include(cmake/shaders.cmake)
 include(cmake/imgui.cmake)
 

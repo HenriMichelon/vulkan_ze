@@ -16,11 +16,6 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Create .env file
-      uses: SpicyPizza/create-envfile@v2.0.3
-      with:
-        file_name: .env.cmake
-    
     - name: Install Packages
       uses: ConorMacBride/install-package@v1.1.0
       with:
