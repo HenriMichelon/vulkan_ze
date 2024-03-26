@@ -12,18 +12,18 @@ ZeroZero is a 3D game engine based on the Vulkan 1.3 API
 
 **Please note**
 - This project was made for learning purpose
-- This engine is not intended for general use
+- This engine is not intended for general use, features are added as needed
 
 **Vulkan extensions and third parties dependencies**
 - Dynamic rendering (VK_KHR_dynamic_rendering)
 - Shader object (VK_EXT_shader_object)
-- VulkanMemoryAllocator https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
-- stb https://github.com/nothings/stb
-- Dear Imgui https://www.dearimgui.com/
 - volk https://github.com/zeux/volk
+- VulkanMemoryAllocator https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
 - GLFW https://www.glfw.org/
 - GLM https://github.com/g-truc/glm
+- stb https://github.com/nothings/stb
 - fastgltf https://github.com/spnda/fastgltf
+- Dear Imgui https://www.dearimgui.com/
 
 **Building tools needed**
 - GCC/MINGW 11+ (C++ 23)
