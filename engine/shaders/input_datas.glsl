@@ -65,7 +65,5 @@ struct VertexOut {
     vec4 GLOBAL_POSITION;
     vec3 POSITION;
     vec3 VIEW_DIRECTION;
-    vec3 TANGENT_VIEW_DIRECTION;
-    vec3 TANGENT_POSITION;
     mat3 TBN;
 };

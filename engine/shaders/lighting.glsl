@@ -1,11 +1,11 @@
-vec3 calcDirectionalLight(DirectionalLight light, vec3 color) {
+vec3 calcDirectionalLight(DirectionalLight light) {
     vec3 lightDir = normalize(-light.direction);
     float diff = max(dot(normal, lightDir), 0.0);
-    vec3 diffuse = diff * light.color.rgb * light.color.w * color;
+    vec3 diffuse = diff * light.color.rgb * light.color.w * color.rgb;
     if (material.specularIndex != -1) {
         // Blinn-Phong
         // https://learnopengl.com/Advanced-Lighting/Advanced-Lighting
-        vec3 halfwayDir = normalize(lightDir + fs_in.TANGENT_VIEW_DIRECTION);
+        vec3 halfwayDir = normalize(lightDir + fs_in.VIEW_DIRECTION);
         float spec = pow(max(dot(normal, halfwayDir), 0.0), material.shininess*3);
         vec3 specular = light.specular * spec * light.color.rgb * texture(texSampler[material.specularIndex], fs_in.UV).rgb;
         return diffuse + specular;
@@ -13,9 +13,7 @@ vec3 calcDirectionalLight(DirectionalLight light, vec3 color) {
     return diffuse;
 }
 
-vec3 calcPointLight(PointLight light, vec3 color) {
-    //vec3 tangentLightPos = fs_in.TBN * light.position;
-    //vec3 directionToLight = tangentLightPos - fs_in.TANGENT_POSITION;
+vec3 calcPointLight(PointLight light) {
     vec3 directionToLight = light.position.xyz - fs_in.GLOBAL_POSITION.xyz;
     float attenuation = 1.0 / dot(directionToLight, directionToLight); // attenuate by object distance squared
     directionToLight = normalize(directionToLight);
@@ -30,12 +28,11 @@ vec3 calcPointLight(PointLight light, vec3 color) {
 
     if (!cutOff) {
         float cosAngIncidence = max(dot(normal, directionToLight), 0);
-        vec3 diffuseLight = intensity * attenuation * cosAngIncidence * color;
+        vec3 diffuseLight = intensity * attenuation * cosAngIncidence * color.rgb;
         if (material.specularIndex != -1) {
             // Blinn-Phong
             // https://learnopengl.com/Advanced-Lighting/Advanced-Lighting
             vec3 halfwayDir = normalize(directionToLight + fs_in.VIEW_DIRECTION);
-            //vec3 halfwayDir = normalize(directionToLight + fs_in.TANGENT_VIEW_DIRECTION);
             float spec = pow(max(dot(normal, halfwayDir), 0.0), material.shininess*3);
             vec3 specular = intensity * attenuation * light.specular * spec * light.color.rgb * texture(texSampler[material.specularIndex], fs_in.UV).rgb;
             return diffuseLight + specular;

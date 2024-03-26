@@ -78,8 +78,8 @@ public:
 
     void onReady() override {
         captureMouse();
-        setPosition({0.0, -0, 2.5});
-        //rotateX(glm::radians(-20.));
+        setPosition({0.0, 2.0, 2.0});
+        //rotateX(glm::radians(-45.));
 
         /*auto markup = z0::Loader::loadModelFromFile("models/light.glb", true);
         markup->setScale(glm::vec3{0.25});
@@ -135,10 +135,10 @@ public:
         z0::Skybox skybox("textures/sky", ".jpg");
         addChild(skybox);
 
-        z0::DirectionalLight directionalLight{glm::vec3{0.5f, -0.5f, 0.5f}};
-        directionalLight.setColorAndIntensity({1.0f, 1.0f, 1.0f, 0.5f});
+        z0::DirectionalLight directionalLight{glm::vec3{0.0f, -1.0f, 0.0f}};
+        directionalLight.setColorAndIntensity({1.0f, 1.0f, 1.0f, 1.0f});
         directionalLight.setCastShadow(false);
-        //addChild(directionalLight);
+        addChild(directionalLight);
 
         z0::SpotLight spotLight1{{-.25, -1.25, -1.0},
                                  20.0, 25.0,
@@ -146,14 +146,14 @@ public:
         spotLight1.setPosition({.2, 2.5, 1.});
         spotLight1.setColorAndIntensity({1.0f, 1.0f, 1.0f, 2.0f});
         spotLight1.setCastShadow(false);
-        addChild(spotLight1);
+        //addChild(spotLight1);
         light1 = z0::Loader::loadModelFromFile("models/light.glb", true);
         light1->setScale(glm::vec3{0.25});
         light1->setPosition(spotLight1.getPosition());
         addChild(light1);
 
         model1 = z0::Loader::loadModelFromFile("models/cube2.glb", true);
-        model1->rotateX(glm::radians(10.0));
+        //model1->rotateZ(glm::radians(10.0));
         addChild(model1);
 
         floor = z0::Loader::loadModelFromFile("models/floor.glb", true);

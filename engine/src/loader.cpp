@@ -233,6 +233,15 @@ namespace z0 {
                     vertex1.tangent = tangent;
                     vertex2.tangent = tangent;
                     vertex3.tangent = tangent;
+
+                    glm::vec3 bitangent {
+                            f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x),
+                            f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y),
+                            f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z),
+                    };
+                    vertex1.bitangent = bitangent;
+                    vertex2.bitangent = bitangent;
+                    vertex3.bitangent = bitangent;
                 }
                 mesh->getSurfaces().push_back(surface);
             }

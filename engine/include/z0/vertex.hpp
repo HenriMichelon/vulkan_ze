@@ -9,6 +9,7 @@ namespace z0 {
         glm::vec3   normal{};
         alignas(16) glm::vec2 uv{};
         glm::vec3   tangent{};
+        glm::vec3   bitangent{};
 
         bool operator==(const Vertex&other) const {
             return position == other.position && normal == other.normal && uv == other.uv;
