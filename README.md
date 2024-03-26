@@ -2,12 +2,7 @@
 
 ZeroZero is a 3D game engine based on the Vulkan 1.3 API
 
-This project uses the following Vulkan extensions :
-
-- Dynamic rendering (VK_KHR_dynamic_rendering)
-- Shader object (VK_EXT_shader_object)
-
-Current state :
+**Current state**
 - Scene tree & nodes using classical OO approch
 - Depth pre-pass
 - glTF scene loading
@@ -15,10 +10,30 @@ Current state :
 - Simple shadows for directionals & spots ligths
 - Skybox using cubemap
 
-**Please note :**
+**Please note**
 - This project was made for learning purpose
 - This engine is not intended for general use
 
-Released under the [MIT license](https://raw.githubusercontent.com/HenriMichelon/zero_zero/main/LICENSE.txt).
+**Vulkan extensions and third parties dependencies**
+- Dynamic rendering (VK_KHR_dynamic_rendering)
+- Shader object (VK_EXT_shader_object)
+- VulkanMemoryAllocator https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
+- stb https://github.com/nothings/stb
+- Dear Imgui https://www.dearimgui.com/
+- volk https://github.com/zeux/volk
+- GLFW https://www.glfw.org/
+- GLM https://github.com/g-truc/glm
+- fastgltf https://github.com/spnda/fastgltf
 
-![example workflow](https://github.com/HenriMichelon/zero_zero/actions/workflows/main.yml/badge.svg)
+**Building tools needed**
+- GCC/MINGW 11+ (C++ 23)
+- CMake 3.22+
+- Vulkan SDK 1.3+ 
+- Git
+
+**Building**
+- create a `.env.cmake` file with `set(VULKAN_SDK_PATH=/path/to/vulkan/version)`
+- `cmake -B`
+- `cmake --build`
+
+Released under the [MIT license](https://raw.githubusercontent.com/HenriMichelon/zero_zero/main/LICENSE.txt).

@@ -1,6 +1,5 @@
 find_package(Vulkan REQUIRED)
 target_include_directories(${PROJECT_NAME} PUBLIC ${Vulkan_INCLUDE_DIRS})
-#target_link_libraries(${PROJECT_NAME} Vulkan::Vulkan)
 
 FetchContent_Declare(
         fetch_volk
