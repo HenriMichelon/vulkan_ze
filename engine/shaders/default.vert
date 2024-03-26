@@ -22,5 +22,4 @@ void main() {
     vs_out.TBN = transpose(mat3(T, B, N));
     vs_out.TANGENT_POSITION  = vs_out.TBN * vs_out.GLOBAL_POSITION.xyz;
     vs_out.TANGENT_VIEW_DIRECTION = normalize((vs_out.TBN * global.cameraPosition) - vs_out.TANGENT_POSITION);
-
 }

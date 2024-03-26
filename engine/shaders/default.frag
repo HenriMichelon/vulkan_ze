@@ -11,8 +11,7 @@ vec3 normal;
 #include "lighting.glsl"
 
 // https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
-float shadowFactor(int shadowMapIndex)
-{
+float shadowFactor(int shadowMapIndex) {
     vec4 SHADOW_COORD = shadowMapsInfos.shadowMaps[shadowMapIndex].lightSpace * fs_in.GLOBAL_POSITION;
     vec3 LIGHT_DIR = normalize(shadowMapsInfos.shadowMaps[shadowMapIndex].lightPos - fs_in.POSITION);
 
@@ -55,6 +54,7 @@ void main() {
     } else {
         normal = fs_in.NORMAL;
     }
+    normal = fs_in.NORMAL;
 
     if (((material.transparency == 2) || (material.transparency == 3)) && (color.a < material.alphaScissor)) {
         discard;

@@ -13,6 +13,8 @@ namespace z0 {
     const glm::vec3 AXIS_X { 1.0, 0.0f, 0.0f };
     const glm::vec3 AXIS_Y { 0.0, 1.0f, 0.0f };
     const glm::vec3 AXIS_Z { 0.0, 0.0f, 1.0f };
+    const glm::vec3 AXIS_UP = AXIS_Y;
+    const glm::vec3 AXIS_FRONT = -AXIS_Z;
 
     class Node: public Object {
     public:
