@@ -10,13 +10,13 @@ layout(location = 0) out vec2 UV;
 layout(location = 1) out vec3 NORMAL;
 layout(location = 2) out vec4 GLOBAL_POSITION;
 layout(location = 3) out vec3 POSITION;
+layout(location = 4) out vec3 VIEW_DIRECTION;
 
 void main() {
+    UV = uv;
+    POSITION = position;
     GLOBAL_POSITION = model.matrix * vec4(position, 1.0);
     NORMAL = normalize(mat3(transpose(inverse(model.matrix))) * normal);
+    VIEW_DIRECTION = normalize(global.cameraPosition - GLOBAL_POSITION.xyz);
     gl_Position = global.projection * global.view * GLOBAL_POSITION;
-
-    UV = uv;
-    //NORMAL = normalize(mat3(model.normalMatrix) * normal);
-    POSITION = position;
 }

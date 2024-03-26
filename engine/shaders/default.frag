@@ -6,11 +6,11 @@ layout (location = 0) in vec2 UV;
 layout (location = 1) in vec3 NORMAL;
 layout (location = 2) in vec4 GLOBAL_POSITION;
 layout (location = 3) in vec3 POSITION;
+layout (location = 4) in vec3 VIEW_DIRECTION;
 
 layout (location = 0) out vec4 COLOR;
 
 vec3 normal;
-vec3 viewDir;
 
 #include "lighting.glsl"
 
@@ -46,7 +46,6 @@ float shadowFactor(int shadowMapIndex)
 
 
 void main() {
-    viewDir = normalize(global.cameraPosition - GLOBAL_POSITION.xyz);
     vec4 color = material.albedoColor;
     if (material.diffuseIndex != -1) {
         color = texture(texSampler[material.diffuseIndex], UV);

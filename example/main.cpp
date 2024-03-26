@@ -78,7 +78,8 @@ public:
 
     void onReady() override {
         captureMouse();
-        setPosition({0.0, -0.0, -2.5});
+        setPosition({0.0, -2.5, -2.5});
+        rotateX(glm::radians(-20.));
 
         /*auto markup = z0::Loader::loadModelFromFile("models/light.glb", true);
         markup->setScale(glm::vec3{0.25});
@@ -139,10 +140,10 @@ public:
         directionalLight.setCastShadow(false);
         //addChild(directionalLight);
 
-        z0::SpotLight spotLight1{{-.25, .25, 1.0},
+        z0::SpotLight spotLight1{{-.25, 1.25, 1.0},
                                  20.0, 25.0,
                                  0.027, 0.0028};
-        spotLight1.setPosition({.2, -0.2, -2});
+        spotLight1.setPosition({.2, -2.5, -1.});
         spotLight1.setColorAndIntensity({1.0f, 1.0f, 1.0f, 2.0f});
         spotLight1.setCastShadow(true);
         addChild(spotLight1);

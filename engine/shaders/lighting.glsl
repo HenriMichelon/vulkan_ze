@@ -5,7 +5,7 @@ vec3 calcDirectionalLight(DirectionalLight light, vec3 color) {
     if (material.specularIndex != -1) {
         // Blinn-Phong
         // https://learnopengl.com/Advanced-Lighting/Advanced-Lighting
-        vec3 halfwayDir = normalize(lightDir + viewDir);
+        vec3 halfwayDir = normalize(lightDir + VIEW_DIRECTION);
         float spec = pow(max(dot(normal, halfwayDir), 0.0), material.shininess*3);
         vec3 specular = light.specular * spec * light.color.rgb * texture(texSampler[material.specularIndex], UV).rgb;
         return diffuse + specular;
@@ -32,7 +32,7 @@ vec3 calcPointLight(PointLight light, vec3 color) {
         if (material.specularIndex != -1) {
             // Blinn-Phong
             // https://learnopengl.com/Advanced-Lighting/Advanced-Lighting
-            vec3 halfwayDir = normalize(directionToLight + viewDir);
+            vec3 halfwayDir = normalize(directionToLight + VIEW_DIRECTION);
             float spec = pow(max(dot(normal, halfwayDir), 0.0), material.shininess*3);
             vec3 specular = intensity * attenuation * light.specular * spec * light.color.rgb * texture(texSampler[material.specularIndex], UV).rgb;
             return diffuseLight + specular;

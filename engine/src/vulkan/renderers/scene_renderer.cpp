@@ -226,7 +226,6 @@ namespace z0 {
             if (meshInstance->getMesh()->isValid()) {
                 ModelUniformBufferObject modelUbo {
                     .matrix = meshInstance->getTransformGlobal(),
-                    .normalMatrix = glm::inverseTranspose(glm::mat3(meshInstance->getTransformGlobal()))
                 };
                 writeUniformBuffer(modelsBuffers, currentFrame, &modelUbo, modelIndex);
                 for (const auto &surface: meshInstance->getMesh()->getSurfaces()) {
