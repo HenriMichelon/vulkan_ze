@@ -155,6 +155,10 @@ public:
         //model1->rotateY(glm::radians(20.0));
         addChild(model1);
 
+        floor = z0::Loader::loadModelFromFile("models/floor.glb", false);
+        floor->setPosition({0.0, 2.0, 0.0});
+        addChild(floor);
+
         addChild(std::make_shared<Player>());
         //printTree(std::cout);
     }
