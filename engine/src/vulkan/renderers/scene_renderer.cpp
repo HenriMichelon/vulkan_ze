@@ -154,6 +154,11 @@ namespace z0 {
                         auto index = std::distance(std::begin(images), images.find(image._getImage()));
                         imagesIndices[image.getId()] = static_cast<int32_t>(index);
                     }
+                    if (standardMaterial->normalTexture != nullptr) {
+                        auto &image = standardMaterial->normalTexture->getImage();
+                        auto index = std::distance(std::begin(images), images.find(image._getImage()));
+                        imagesIndices[image.getId()] = static_cast<int32_t>(index);
+                    }
                 }
             }
         }
