@@ -30,8 +30,6 @@ vec3 calcPointLight(PointLight light) {
         float cosAngIncidence = max(dot(normal, directionToLight), 0);
         vec3 diffuseLight = intensity * attenuation * cosAngIncidence * color.rgb;
         if (material.specularIndex != -1) {
-            // Blinn-Phong
-            // https://learnopengl.com/Advanced-Lighting/Advanced-Lighting
             vec3 halfwayDir = normalize(directionToLight + fs_in.VIEW_DIRECTION);
             float spec = pow(max(dot(normal, halfwayDir), 0.0), material.shininess*3);
             vec3 specular = intensity * attenuation * light.specular * spec * light.color.rgb * texture(texSampler[material.specularIndex], fs_in.UV).rgb;

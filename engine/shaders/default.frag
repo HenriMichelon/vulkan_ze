@@ -46,6 +46,10 @@ void main() {
         color = material.albedoColor;
     }
 
+    if (((material.transparency == 2) || (material.transparency == 3)) && (color.a < material.alphaScissor)) {
+        discard;
+    }
+
     if ((material.normalIndex != -1) && (fs_in.tangent != vec4(0.0, 0.0, 0.0, 0.0))) {
         normal = texture(texSampler[material.normalIndex], fs_in.UV).rgb * 2.0 - 1.0;
         normal = normalize(fs_in.TBN * normal);
@@ -53,12 +57,7 @@ void main() {
         normal = fs_in.NORMAL;
     }
 
-    if (((material.transparency == 2) || (material.transparency == 3)) && (color.a < material.alphaScissor)) {
-        discard;
-    }
-
     vec3 ambient = global.ambient.w * global.ambient.rgb * color.rgb;
-
     vec3 diffuse = vec3(0, 0, 0);
     if (global.haveDirectionalLight) {
         diffuse = calcDirectionalLight(global.directionalLight);
@@ -74,5 +73,4 @@ void main() {
     }
 
     COLOR = vec4(result, material.transparency == 1 || material.transparency == 3 ? color.a : 1.0);
-
 }

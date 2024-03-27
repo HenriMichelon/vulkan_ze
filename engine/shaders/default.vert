@@ -16,6 +16,7 @@ void main() {
     vs_out.NORMAL = normalize(mat3(transpose(inverse(model.matrix))) * normal);
     vs_out.VIEW_DIRECTION = normalize(global.cameraPosition - vs_out.GLOBAL_POSITION.xyz);
     gl_Position = global.projection * global.view * vs_out.GLOBAL_POSITION;
+
     // https://learnopengl.com/Advanced-Lighting/Normal-Mapping
     vs_out.tangent = tangent;
     if (tangent != vec4(0.0, 0.0, 0.0, 0.0)) {
