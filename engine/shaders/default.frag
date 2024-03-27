@@ -26,10 +26,8 @@ float shadowFactor(int shadowMapIndex) {
 
     float shadow = 0.0;
     vec2 texelSize = 1.0 / textureSize(shadowMaps[shadowMapIndex], 0);
-    for(int x = -1; x <= 1; ++x)
-    {
-        for(int y = -1; y <= 1; ++y)
-        {
+    for(int x = -1; x <= 1; ++x)  {
+        for(int y = -1; y <= 1; ++y) {
             float pcfDepth = texture(shadowMaps[shadowMapIndex], projCoords.xy + vec2(x, y) * texelSize).r;
             shadow += currentDepth > pcfDepth ? 1.0 : 0.0;
         }
@@ -56,6 +54,7 @@ void main() {
     } else {
         normal = fs_in.NORMAL;
     }
+    //COLOR = vec4(normal, 1.0);
 
     vec3 ambient = global.ambient.w * global.ambient.rgb * color.rgb;
     vec3 diffuse = vec3(0, 0, 0);

@@ -13,7 +13,12 @@
 
 namespace z0 {
 
-    VulkanImage::VulkanImage(VulkanDevice& device, uint32_t w, uint32_t h, VkDeviceSize imageSize, void* data):
+    VulkanImage::VulkanImage(VulkanDevice& device,
+                             uint32_t w,
+                             uint32_t h,
+                             VkDeviceSize imageSize,
+                             void* data,
+                             VkFormat format):
         vulkanDevice{device}, width{w}, height{h}
     {
         const VulkanBuffer textureStagingBuffer{
@@ -24,7 +29,6 @@ namespace z0 {
         };
         textureStagingBuffer.writeToBuffer(data);
 
-        const VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
         mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
         vulkanDevice.createImage(width, height, mipLevels, VK_SAMPLE_COUNT_1_BIT, format,
                                  VK_IMAGE_TILING_OPTIMAL,

@@ -17,10 +17,10 @@ namespace z0 {
 
     // https://fastgltf.readthedocs.io/v0.7.x/tools.html
     // https://github.com/vblanco20-1/vulkan-guide/blob/all-chapters-1.3-wip/chapter-5/vk_loader.cpp
-    std::shared_ptr<Image> loadImage(fastgltf::Asset& asset, fastgltf::Image& image) {
+    std::shared_ptr<Image> loadImage(fastgltf::Asset& asset, fastgltf::Image& image, VkFormat format) {
         std::shared_ptr<VulkanImage> newImage;
         int width, height, nrChannels;
-        std::string name;
+        std::string name{image.name};
         std::visit(
             fastgltf::visitor {
                 [](auto& arg) {},
@@ -35,8 +35,7 @@ namespace z0 {
                         VkDeviceSize imageSize = width * height * STBI_rgb_alpha;
                         newImage = std::make_shared<VulkanImage>(Application::getViewport()._getDevice(),
                                                                  width, height,
-                                                                 imageSize, data);
-
+                                                                 imageSize, data, format);
                         stbi_image_free(data);
                     }
                 },
@@ -48,14 +47,13 @@ namespace z0 {
                         VkDeviceSize imageSize = width * height * STBI_rgb_alpha;
                         newImage = std::make_shared<VulkanImage>(Application::getViewport()._getDevice(),
                                                                  width, height,
-                                                                 imageSize, data);
+                                                                 imageSize, data, format);
                         stbi_image_free(data);
                     }
                 },
                 [&](fastgltf::sources::BufferView& view) {
                     auto& bufferView = asset.bufferViews[view.bufferViewIndex];
                     auto& buffer = asset.buffers[bufferView.bufferIndex];
-                    name = bufferView.name;
 
                     std::visit(fastgltf::visitor {
                            // We only care about VectorWithMime here, because we
@@ -71,7 +69,7 @@ namespace z0 {
                                    VkDeviceSize imageSize = width * height * STBI_rgb_alpha;
                                    newImage = std::make_shared<VulkanImage>(Application::getViewport()._getDevice(),
                                                                             width, height,
-                                                                            imageSize, data);
+                                                                            imageSize, data, format);
                                    stbi_image_free(data);
                                }
                            },
@@ -84,7 +82,7 @@ namespace z0 {
                                    VkDeviceSize imageSize = width * height * STBI_rgb_alpha;
                                    newImage = std::make_shared<VulkanImage>(Application::getViewport()._getDevice(),
                                                                             width, height,
-                                                                            imageSize, data);
+                                                                            imageSize, data, format);
                                    stbi_image_free(data);
                                }
                            },
@@ -93,6 +91,7 @@ namespace z0 {
                 },
             },
         image.data);
+        //std::cout << name << std::endl;
         return newImage == nullptr ? nullptr : std::make_shared<Image>(newImage, name);
     }
 
@@ -115,12 +114,12 @@ namespace z0 {
         fastgltf::Asset gltf = std::move(asset.get());
 
         // load all textures
-        std::vector<std::shared_ptr<Image>> images;
+        /*std::vector<std::shared_ptr<Image>> images;
         for (fastgltf::Image& image : gltf.images) {
             std::shared_ptr<Image> newImage = loadImage(gltf, image);
-            //std::cout << newImage->toString() << std::endl;
+            std::cout << newImage->toString() << std::endl;
             images.push_back(newImage);
-        }
+        }*/
 
         // load all materials
         std::vector<std::shared_ptr<StandardMaterial>> materials{};
@@ -129,7 +128,7 @@ namespace z0 {
             if (mat.pbrData.baseColorTexture.has_value()) {
                 //std::cout << material->toString() << std::endl;
                 auto imageIndex = gltf.textures[mat.pbrData.baseColorTexture.value().textureIndex].imageIndex.value();
-                std::shared_ptr<Image> image = images[imageIndex];
+                std::shared_ptr<Image> image =  loadImage(gltf, gltf.images[imageIndex], VK_FORMAT_R8G8B8A8_SRGB);
                 material->albedoTexture = std::make_shared<ImageTexture>(image);
             }
             material->albedoColor = Color{
@@ -141,13 +140,14 @@ namespace z0 {
             if (mat.specular != nullptr) {
                 if (mat.specular->specularColorTexture.has_value()) {
                     auto imageIndex = gltf.textures[mat.specular->specularColorTexture.value().textureIndex].imageIndex.value();
-                    std::shared_ptr<Image> image = images[imageIndex];
+                    std::shared_ptr<Image> image = loadImage(gltf, gltf.images[imageIndex], VK_FORMAT_R8G8B8A8_SRGB);
                     material->specularTexture = std::make_shared<ImageTexture>(image);
                 }
             }
             if (mat.normalTexture.has_value()) {
                 auto imageIndex = gltf.textures[mat.normalTexture->textureIndex].imageIndex.value();
-                std::shared_ptr<Image> image = images[imageIndex];
+                // https://www.reddit.com/r/vulkan/comments/wksa4z/comment/jd7504e/
+                std::shared_ptr<Image> image = loadImage(gltf, gltf.images[imageIndex], VK_FORMAT_R8G8B8A8_UNORM);
                 material->normalTexture = std::make_shared<ImageTexture>(image);
             }
             material->cullMode = forceBackFaceCulling ? CULLMODE_BACK : mat.doubleSided ? CULLMODE_DISABLED : CULLMODE_BACK;
@@ -167,6 +167,7 @@ namespace z0 {
                         static_cast<uint32_t>(indices.size()),
                         static_cast<uint32_t>(gltf.accessors[p.indicesAccessor.value()].count));
                 size_t initial_vtx = vertices.size();
+                bool haveTangents = false;
                 // load indexes
                 {
                     fastgltf::Accessor& indexaccessor = gltf.accessors[p.indicesAccessor.value()];
@@ -207,10 +208,10 @@ namespace z0 {
                                                                       };
                                                                   });
                 }
-                auto tangent = p.findAttribute("TANGENT");
-                if (tangent != p.attributes.end()) {
-                    log("Loading TANGENT attribute for ", filename.string());
-                    fastgltf::iterateAccessorWithIndex<glm::vec4>(gltf, gltf.accessors[(*tangent).second],
+                auto tangents = p.findAttribute("TANGENT");
+                if (tangents != p.attributes.end()) {
+                    haveTangents = true;
+                    fastgltf::iterateAccessorWithIndex<glm::vec4>(gltf, gltf.accessors[(*tangents).second],
                                                                   [&](glm::vec4 v, size_t index) {
                                                                       vertices[index + initial_vtx].tangent = v;
                                                                   });
@@ -223,34 +224,27 @@ namespace z0 {
 
                 }
                 // calculate tangent for each triangle
-                /*for (int i = 0; i < indices.size(); i += 3) {
-                    auto& vertex1 = vertices[indices[i]];
-                    auto& vertex2 = vertices[indices[i + 1]];
-                    auto& vertex3 = vertices[indices[i + 2]];
-                    glm::vec3 edge1 = vertex2.position - vertex1.position;
-                    glm::vec3 edge2 = vertex3.position - vertex1.position;
-                    glm::vec2 deltaUV1 = vertex2.uv - vertex1.uv;
-                    glm::vec2 deltaUV2 = vertex3.uv - vertex1.uv;
+                if (!haveTangents) {
+                    for (int i = 0; i < indices.size(); i += 3) {
+                        auto &vertex1 = vertices[indices[i]];
+                        auto &vertex2 = vertices[indices[i + 1]];
+                        auto &vertex3 = vertices[indices[i + 2]];
+                        glm::vec3 edge1 = vertex2.position - vertex1.position;
+                        glm::vec3 edge2 = vertex3.position - vertex1.position;
+                        glm::vec2 deltaUV1 = vertex2.uv - vertex1.uv;
+                        glm::vec2 deltaUV2 = vertex3.uv - vertex1.uv;
 
-                    float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
-                    glm::vec3 tangent {
-                            f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x),
-                            f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y),
-                            f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z),
-                    };
-                    vertex1.tangent = tangent;
-                    vertex2.tangent = tangent;
-                    vertex3.tangent = tangent;
-
-                    glm::vec3 bitangent {
-                            f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x),
-                            f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y),
-                            f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z),
-                    };
-                    vertex1.bitangent = bitangent;
-                    vertex2.bitangent = bitangent;
-                    vertex3.bitangent = bitangent;
-                }*/
+                        float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+                        glm::vec3 tangent {
+                                f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x),
+                                f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y),
+                                f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z),
+                        };
+                        vertex1.tangent = glm::vec4(tangent, 1.0);
+                        vertex2.tangent = glm::vec4(tangent, 1.0);
+                        vertex3.tangent = glm::vec4(tangent, 1.0);
+                    }
+                }
                 mesh->getSurfaces().push_back(surface);
             }
             meshes.push_back(mesh);

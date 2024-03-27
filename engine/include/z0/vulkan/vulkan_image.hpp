@@ -6,7 +6,12 @@ namespace z0 {
 
     class VulkanImage {
     public:
-        VulkanImage(VulkanDevice& device, uint32_t width, uint32_t height, VkDeviceSize imageSize, void* data);
+        VulkanImage(VulkanDevice& device,
+                    uint32_t width,
+                    uint32_t height,
+                    VkDeviceSize imageSize,
+                    void* data,
+                    VkFormat format = VK_FORMAT_R8G8B8A8_SRGB);
         ~VulkanImage();
 
         VkDescriptorImageInfo imageInfo();
