@@ -66,4 +66,5 @@ struct VertexOut {
     vec3 POSITION;
     vec3 VIEW_DIRECTION;
     mat3 TBN;
+    vec4 tangent;
 };

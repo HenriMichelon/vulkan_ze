@@ -46,14 +46,12 @@ void main() {
         color = material.albedoColor;
     }
 
-    if (material.normalIndex != -1) {
-        normal = texture(texSampler[material.normalIndex], fs_in.UV).rgb;
-        normal = normalize(normal * 2.0 - 1.0);
-        //normal = normalize(fs_in.TBN * normal);
+    if ((material.normalIndex != -1) && (fs_in.tangent != vec4(0.0, 0.0, 0.0, 0.0))) {
+        normal = texture(texSampler[material.normalIndex], fs_in.UV).rgb * 2.0 - 1.0;
+        normal = normalize(fs_in.TBN * normal);
     } else {
         normal = fs_in.NORMAL;
     }
-        normal = fs_in.NORMAL;
 
     if (((material.transparency == 2) || (material.transparency == 3)) && (color.a < material.alphaScissor)) {
         discard;

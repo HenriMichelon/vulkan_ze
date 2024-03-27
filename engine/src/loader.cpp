@@ -207,6 +207,14 @@ namespace z0 {
                                                                       };
                                                                   });
                 }
+                auto tangent = p.findAttribute("TANGENT");
+                if (tangent != p.attributes.end()) {
+                    log("Loading TANGENT attribute for ", filename.string());
+                    fastgltf::iterateAccessorWithIndex<glm::vec4>(gltf, gltf.accessors[(*tangent).second],
+                                                                  [&](glm::vec4 v, size_t index) {
+                                                                      vertices[index + initial_vtx].tangent = v;
+                                                                  });
+                }
                 // associate material to surface and keep track of all materials used in the Mesh
                 if (p.materialIndex.has_value()) {
                     auto material = materials[p.materialIndex.value()];
@@ -215,7 +223,7 @@ namespace z0 {
 
                 }
                 // calculate tangent for each triangle
-                for (int i = 0; i < indices.size(); i += 3) {
+                /*for (int i = 0; i < indices.size(); i += 3) {
                     auto& vertex1 = vertices[indices[i]];
                     auto& vertex2 = vertices[indices[i + 1]];
                     auto& vertex3 = vertices[indices[i + 2]];
@@ -242,7 +250,7 @@ namespace z0 {
                     vertex1.bitangent = bitangent;
                     vertex2.bitangent = bitangent;
                     vertex3.bitangent = bitangent;
-                }
+                }*/
                 mesh->getSurfaces().push_back(surface);
             }
             meshes.push_back(mesh);

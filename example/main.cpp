@@ -146,11 +146,11 @@ public:
         spotLight1.setPosition({.2, 2.5, 1.});
         spotLight1.setColorAndIntensity({1.0f, 1.0f, 1.0f, 2.0f});
         spotLight1.setCastShadow(false);
-        //addChild(spotLight1);
+        /*addChild(spotLight1);
         light1 = z0::Loader::loadModelFromFile("models/light.glb", true);
         light1->setScale(glm::vec3{0.25});
         light1->setPosition(spotLight1.getPosition());
-        addChild(light1);
+        addChild(light1);*/
 
         model1 = z0::Loader::loadModelFromFile("models/cube2.glb", true);
         //model1->rotateZ(glm::radians(10.0));
