@@ -47,7 +47,6 @@ namespace z0 {
         };
         struct ModelUniformBufferObject {
             glm::mat4 matrix;
-            glm::mat4 normalMatrix;
         };
         struct SurfaceUniformBufferObject {
             alignas(4) int transparency;

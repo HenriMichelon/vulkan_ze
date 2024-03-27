@@ -28,7 +28,6 @@ namespace z0 {
         glm::mat4 viewMatrix{1.0f};
 
         const glm::vec3 direction{0.0f, 0.0f, 1.0f };
-        const glm::vec3 up{0.0f, -1.0f, 0.0f};
 
         void setViewDirection();
 

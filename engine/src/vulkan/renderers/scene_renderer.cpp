@@ -154,6 +154,11 @@ namespace z0 {
                         auto index = std::distance(std::begin(images), images.find(image._getImage()));
                         imagesIndices[image.getId()] = static_cast<int32_t>(index);
                     }
+                    if (standardMaterial->normalTexture != nullptr) {
+                        auto &image = standardMaterial->normalTexture->getImage();
+                        auto index = std::distance(std::begin(images), images.find(image._getImage()));
+                        imagesIndices[image.getId()] = static_cast<int32_t>(index);
+                    }
                 }
             }
         }
@@ -226,7 +231,6 @@ namespace z0 {
             if (meshInstance->getMesh()->isValid()) {
                 ModelUniformBufferObject modelUbo {
                     .matrix = meshInstance->getTransformGlobal(),
-                    .normalMatrix = glm::inverseTranspose(glm::mat3(meshInstance->getTransformGlobal()))
                 };
                 writeUniformBuffer(modelsBuffers, currentFrame, &modelUbo, modelIndex);
                 for (const auto &surface: meshInstance->getMesh()->getSurfaces()) {

@@ -38,6 +38,7 @@ namespace z0 {
         projectionMatrix[2][2] = _far / (_far - _near);
         projectionMatrix[2][3] = 1.f;
         projectionMatrix[3][2] = -(_far * _near) / (_far - _near);
+        //projectionMatrix[1][1] *= -1.0f;
     }
 
     const glm::mat4& Camera::getProjection() {
@@ -62,8 +63,9 @@ namespace z0 {
         auto newDirection = rotationQuat * direction;
         auto position = getPositionGlobal();
 
-        const glm::vec3 w{glm::normalize(newDirection)};
-        const glm::vec3 u{glm::normalize(glm::cross(w, up))};
+        glm::vec3 w{glm::normalize(newDirection)};
+        w *= -1;
+        const glm::vec3 u{glm::normalize(glm::cross(w, AXIS_UP))};
         const glm::vec3 v{glm::cross(w, u)};
 
         viewMatrix = glm::mat4{1.f};
