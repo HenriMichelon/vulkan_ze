@@ -426,34 +426,6 @@ namespace z0 {
                                                       VK_IMAGE_ASPECT_COLOR_BIT,
                                                       1);
 
-        // For resolving multisampling image to swapchain
-        colorImageResolve.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-        colorImageResolve.srcOffset = {0, 0, 0};
-        colorImageResolve.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-        colorImageResolve.dstOffset = {0, 0, 0};
-        colorImageResolve.extent = {
-                vulkanDevice.getSwapChainExtent().width,
-                vulkanDevice.getSwapChainExtent().height,
-                1};
-
-        // For bliting image to swapchain
-        colorImageBlit.srcOffsets[0] = {0, 0, 0 };
-        colorImageBlit.srcOffsets[1] = {
-                static_cast<int32_t>(vulkanDevice.getSwapChainExtent().width),
-                static_cast<int32_t>(vulkanDevice.getSwapChainExtent().height), 1 };
-        colorImageBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        colorImageBlit.srcSubresource.mipLevel = 0;
-        colorImageBlit.srcSubresource.baseArrayLayer = 0;
-        colorImageBlit.srcSubresource.layerCount = 1;
-        colorImageBlit.dstOffsets[0] = {0, 0, 0 };
-        colorImageBlit.dstOffsets[1] = {
-                static_cast<int32_t>(vulkanDevice.getSwapChainExtent().width),
-                static_cast<int32_t>(vulkanDevice.getSwapChainExtent().height), 1 };
-        colorImageBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        colorImageBlit.dstSubresource.mipLevel = 0;
-        colorImageBlit.dstSubresource.baseArrayLayer = 0;
-        colorImageBlit.dstSubresource.layerCount = 1;
-
         if (depthBuffer == nullptr) {
             depthBuffer = std::make_shared<DepthBuffer>(vulkanDevice);
             depthPrepassRenderer = std::make_shared<DepthPrepassRenderer>(vulkanDevice, shaderDirectory);

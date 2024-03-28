@@ -84,8 +84,6 @@ namespace z0 {
         VkImage colorImage;
         VkDeviceMemory colorImageMemory;
         VkImageView colorImageView;
-        VkImageBlit colorImageBlit{};
-        VkImageResolve colorImageResolve{};
 
         // Depth prepass buffer
         std::shared_ptr<DepthPrepassRenderer> depthPrepassRenderer;
