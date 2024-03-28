@@ -470,18 +470,26 @@ namespace z0 {
     }
 
     // https://lesleylai.info/en/vk-khr-dynamic-rendering/
-    void SceneRenderer::beginRendering(VkCommandBuffer commandBuffer) {
+    void SceneRenderer::beginRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage, VkImageView swapChainImageView) {
         vulkanDevice.transitionImageLayout(commandBuffer, colorImage,
                                            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                                            0, VK_ACCESS_TRANSFER_WRITE_BIT,
                                            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
                                            VK_IMAGE_ASPECT_COLOR_BIT);
+        vulkanDevice.transitionImageLayout(commandBuffer, swapChainImage,
+                                           VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                           0, VK_ACCESS_TRANSFER_WRITE_BIT,
+                                           VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                           VK_IMAGE_ASPECT_COLOR_BIT);
+
         // Color attachement : where the rendering is done (multisampled memory image)
         const VkRenderingAttachmentInfo colorAttachmentInfo{
                 .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
                 .imageView = colorImageView,
                 .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                .resolveMode = VK_RESOLVE_MODE_NONE,
+                .resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT ,
+                .resolveImageView = swapChainImageView,
+                .resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                 .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
                 .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
                 .clearValue = clearColor,
@@ -508,39 +516,11 @@ namespace z0 {
         vkCmdBeginRendering(commandBuffer, &renderingInfo);
     }
 
-    void SceneRenderer::endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage) {
+        void SceneRenderer::endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage) {
         vkCmdEndRendering(commandBuffer);
         vulkanDevice.transitionImageLayout(
                 commandBuffer,swapChainImage,
-                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                0, VK_ACCESS_TRANSFER_WRITE_BIT,
-                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                VK_IMAGE_ASPECT_COLOR_BIT);
-        // Since we render in a memory image we need to manually present the image in the swap chain
-        if (vulkanDevice.getSamples() == VK_SAMPLE_COUNT_1_BIT) {
-            // Blit image to swap chain if MSAA is disabled
-            vkCmdBlitImage(commandBuffer,
-                           colorImage,
-                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                           swapChainImage,
-                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                           1,
-                           &colorImageBlit,
-                           VK_FILTER_LINEAR );
-        } else {
-            // Resolve multisample image to a non-multisample swap chain image if MSAA is enabled
-            vkCmdResolveImage(commandBuffer,
-                              colorImage,
-                              VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                              swapChainImage,
-                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                              1,
-                              &colorImageResolve);
-
-        }
-        vulkanDevice.transitionImageLayout(
-                commandBuffer,swapChainImage,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
                 VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, 0,
                 VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
                 VK_IMAGE_ASPECT_COLOR_BIT);

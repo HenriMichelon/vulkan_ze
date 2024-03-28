@@ -127,7 +127,7 @@ namespace z0 {
         }
     }
 
-    void ShadowMapRenderer::beginRendering(VkCommandBuffer commandBuffer) {
+    void ShadowMapRenderer::beginRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage, VkImageView swapChainImageView) {
         vulkanDevice.transitionImageLayout(commandBuffer, shadowMap->getImage(),
                                            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                                            0, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT,

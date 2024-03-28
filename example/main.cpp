@@ -86,8 +86,8 @@ public:
 
     void onReady() override {
         captureMouse();
-        setPosition({0.0, 0.5, 2.0});
-        //rotateX(glm::radians(-45.));
+        setPosition({0.0, 2.5, -2.0});
+        //rotateY(glm::radians(-45.));
 
         /*auto markup = z0::Loader::loadModelFromFile("models/light.glb", true);
         markup->setScale(glm::vec3{0.25});
@@ -145,20 +145,28 @@ public:
 
         z0::DirectionalLight directionalLight{glm::vec3{0.0f, -1.0f, -1.0f}};
         directionalLight.setColorAndIntensity({1.0f, 1.0f, 1.0f, 0.2f});
-        directionalLight.setCastShadow(false);
+        directionalLight.setCastShadow(true);
         addChild(directionalLight);
 
         z0::SpotLight spotLight1{{-.25, -1.25, 1.0},
-                                 20.0, 25.0,
+                                 40.0, 45.0,
                                  0.027, 0.0028};
         spotLight1.setPosition({.2, 2.0, -1.5});
         spotLight1.setColorAndIntensity({1.0f, 1.0f, 1.0f, 1.0f});
-        spotLight1.setCastShadow(true);
+        spotLight1.setCastShadow(false);
         addChild(spotLight1);
         light1 = z0::Loader::loadModelFromFile("models/light.glb", true);
         light1->setScale(glm::vec3{0.25});
         light1->setPosition(spotLight1.getPosition());
         addChild(light1);
+
+        addChild(spotLight1.duplicate());
+        addChild(spotLight1.duplicate());
+        addChild(spotLight1.duplicate());
+        addChild(spotLight1.duplicate());
+        addChild(spotLight1.duplicate());
+        addChild(spotLight1.duplicate());
+        addChild(spotLight1.duplicate());
 
         model1 = z0::Loader::loadModelFromFile("models/sphere.glb", false);
         //model1->setScale(glm::vec3{0.01});

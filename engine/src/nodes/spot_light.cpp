@@ -28,4 +28,8 @@ namespace z0 {
         SpotLight::outerCutOff = glm::cos(fov);
     }
 
+    std::shared_ptr<Node> SpotLight::duplicateInstance() {
+        return std::make_shared<SpotLight>(*this);
+    }
+
 }

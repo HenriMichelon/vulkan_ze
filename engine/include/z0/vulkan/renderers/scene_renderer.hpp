@@ -90,6 +90,11 @@ namespace z0 {
         // Depth prepass buffer
         std::shared_ptr<DepthPrepassRenderer> depthPrepassRenderer;
 
+        // HDR tone mapping
+        // Table 47. Mandatory format support : 16 - bit channels
+        // https://www.khronos.org/registry/vulkan/specs/1.0/pdf/vkspec.pdf
+        VkFormat renderFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
+
         // Shadow mapping
         std::vector<std::shared_ptr<ShadowMap>> shadowMaps;
         std::vector<std::shared_ptr<ShadowMapRenderer>> shadowMapRenderers;
@@ -105,7 +110,7 @@ namespace z0 {
         void createImagesResources() override;
         void cleanupImagesResources() override;
         void recreateImagesResources() override;
-        void beginRendering(VkCommandBuffer commandBuffer) override;
+        void beginRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage, VkImageView swapChainImageView) override;
         void endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage) override;
 
         void loadNode(std::shared_ptr<Node>& parent);

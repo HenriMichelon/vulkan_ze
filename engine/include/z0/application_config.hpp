@@ -8,11 +8,10 @@
 
 namespace z0 {
     enum MSAA {
-        //MSAA_DISABLED   = 0,
+        MSAA_AUTO       = 0,
         MSAA_2X         = 1,
         MSAA_4X         = 2,
         MSAA_8X         = 3,
-        MSAA_AUTO       = 4,
     };
 
     struct ApplicationConfig {
