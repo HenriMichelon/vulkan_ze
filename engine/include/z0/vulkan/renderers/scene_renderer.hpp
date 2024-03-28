@@ -66,10 +66,7 @@ namespace z0 {
         void cleanup() override;
 
     private:
-        // HDR tone mapping
-        // Table 47. Mandatory format support : 16 - bit channels
-        // https://www.khronos.org/registry/vulkan/specs/1.0/pdf/vkspec.pdf
-        const VkFormat renderFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
+
 
         DirectionalLight* directionalLight{nullptr};
         Environment* environement{nullptr};
@@ -113,7 +110,6 @@ namespace z0 {
         void createImagesList(std::shared_ptr<Node>& node);
         void createImagesIndex(std::shared_ptr<Node>& node);
         void drawMeshes(VkCommandBuffer commandBuffer, uint32_t currentFrame, const std::vector<MeshInstance*>& meshesToDraw);
-        void drawSkybox(VkCommandBuffer commandBuffer);
 
     public:
         SceneRenderer(const SceneRenderer&) = delete;

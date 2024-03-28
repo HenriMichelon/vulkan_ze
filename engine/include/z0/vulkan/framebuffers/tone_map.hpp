@@ -6,7 +6,7 @@ namespace z0 {
 
     class ToneMap: public BaseFrameBuffer {
     public:
-        explicit ToneMap(VulkanDevice &dev, VkFormat format);
+        explicit ToneMap(VulkanDevice &dev);
         void createImagesResources();
     };
 

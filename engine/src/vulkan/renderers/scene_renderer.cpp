@@ -13,8 +13,8 @@ namespace z0 {
 
     SceneRenderer::SceneRenderer(VulkanDevice &dev, std::string sDir) :
         BaseMeshesRenderer{dev, sDir},
-        multisampled(dev, renderFormat),
-        toneMap(dev, renderFormat) {
+        multisampled(dev),
+        toneMap(dev) {
          createImagesResources();
      }
 
@@ -186,7 +186,6 @@ namespace z0 {
             .shadowMapsCount = static_cast<uint32_t>(shadowMaps.size()),
         };
 
-        // TODO if empty
         auto shadowMapArray =  std::make_unique<ShadowMapUniform[]>(globalUbo.shadowMapsCount);
         for(int i=0; i < globalUbo.shadowMapsCount; i++) {
             shadowMapArray[i].lightSpace = shadowMaps[i]->getLightSpace();
@@ -208,7 +207,6 @@ namespace z0 {
         globalUbo.pointLightsCount = omniLights.size();
         writeUniformBuffer(globalBuffers, currentFrame, &globalUbo);
 
-        // TODO if empty
         auto pointLightsArray =  std::make_unique<PointLightUniform[]>(globalUbo.pointLightsCount);
         for(int i=0; i < globalUbo.pointLightsCount; i++) {
             pointLightsArray[i].position = omniLights[i]->getPosition();
@@ -265,7 +263,6 @@ namespace z0 {
             vkCmdSetDepthWriteEnable(commandBuffer, VK_FALSE); // we have a depth prepass
             vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_EQUAL); // comparing with the depth prepass
             drawMeshes(commandBuffer, currentFrame, opaquesMeshes);
-
             vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
             vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_LESS_OR_EQUAL);
             drawMeshes(commandBuffer, currentFrame, transparentsMeshes);
@@ -410,8 +407,6 @@ namespace z0 {
         createImagesResources();
     }
 
-    // Create Color Resources (where we draw)
-    // https://vulkan-tutorial.com/Multisampling#page_Setting-up-a-render-target
     void SceneRenderer::createImagesResources() {
         // offscreen frame buffers created in the constructor
 

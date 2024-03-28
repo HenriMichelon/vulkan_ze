@@ -6,7 +6,6 @@ namespace z0 {
 
     class BaseFrameBuffer {
     public:
-        const VkFormat& getFormat() const { return format; }
         const VkImage& getImage() const { return image; }
         const VkImageView& getImageView() const { return imageView; }
 
@@ -15,12 +14,17 @@ namespace z0 {
 
     protected:
         VulkanDevice& vulkanDevice;
-        VkFormat format;
         VkImage image;
         VkImageView imageView;
         VkDeviceMemory imageMemory;
 
-        BaseFrameBuffer(VulkanDevice &dev, VkFormat fmt): vulkanDevice{dev}, format{fmt} {};
+        BaseFrameBuffer(VulkanDevice &dev): vulkanDevice{dev} {};
+        void createImage(uint32_t width,
+                         uint32_t height,
+                         VkFormat format,
+                         VkSampleCountFlagBits samples,
+                         VkImageUsageFlags usage,
+                         VkImageAspectFlags flags = VK_IMAGE_ASPECT_COLOR_BIT);
 
     public:
         BaseFrameBuffer(const BaseFrameBuffer&) = delete;

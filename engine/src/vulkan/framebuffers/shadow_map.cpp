@@ -2,17 +2,9 @@
 #include "z0/log.hpp"
 #include "z0/nodes/directional_light.hpp"
 
-#include "glm/gtc/quaternion.hpp"
-#include "glm/gtx/quaternion.hpp"
-
 namespace z0 {
 
-    ShadowMap::ShadowMap(VulkanDevice &dev, Light* spotLight) :
-            BaseFrameBuffer{dev, dev.findImageTilingSupportedFormat(
-                    {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D16_UNORM, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT,},
-                    VK_IMAGE_TILING_OPTIMAL,
-                    VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)},
-            light(spotLight) {
+    ShadowMap::ShadowMap(VulkanDevice &dev, Light* spotLight) : BaseFrameBuffer{dev}, light(spotLight) {
          createImagesResources();
      }
 
@@ -47,7 +39,6 @@ namespace z0 {
         } else {
             return glm::mat4{};
         }
-
         // Combine the projecttion and view matrix to form the light's space matrix
         return lightProjection * glm::lookAt(lightPosition, sceneCenter, AXIS_UP);
     }
@@ -55,18 +46,16 @@ namespace z0 {
     void ShadowMap::createImagesResources() {
         // https://github.com/SaschaWillems/Vulkan/blob/master/examples/shadowmapping/shadowmapping.cpp#L192
         // For shadow mapping we only need a depth attachment
-        vulkanDevice.createImage(size, size,
-                                 1,
-                                 VK_SAMPLE_COUNT_1_BIT,
-                                 format,
-                                 VK_IMAGE_TILING_OPTIMAL,
-                                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                 image, imageMemory);
-        imageView = vulkanDevice.createImageView(image,
-                                                 format,
-                                                 VK_IMAGE_ASPECT_DEPTH_BIT,
-                                                 1);
+        auto format = vulkanDevice.findImageTilingSupportedFormat(
+                {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D16_UNORM, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT,},
+                VK_IMAGE_TILING_OPTIMAL,
+                VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+        createImage(size,
+                    size,
+                    format,
+                    VK_SAMPLE_COUNT_1_BIT,
+                    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                    VK_IMAGE_ASPECT_DEPTH_BIT);
 
         // Create sampler to sample from to depth attachment
         // Used to sample in the fragment shader for shadowed rendering
