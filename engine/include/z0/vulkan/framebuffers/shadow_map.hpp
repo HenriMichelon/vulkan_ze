@@ -30,7 +30,7 @@ namespace z0 {
 
     private:
         Light* light;
-        VkSampler sampler;
+        VkSampler sampler{VK_NULL_HANDLE};
     };
 
 }

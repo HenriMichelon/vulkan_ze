@@ -9,6 +9,7 @@
 #include "z0/nodes/directional_light.hpp"
 #include "z0/nodes/environment.hpp"
 #include "z0/nodes/omni_light.hpp"
+#include "tonemapping_renderer.hpp"
 
 #include <map>
 
@@ -65,9 +66,9 @@ namespace z0 {
         void loadScene(std::shared_ptr<Node>& rootNode);
         void cleanup() override;
 
+        const std::shared_ptr<TonemappingRenderer>& getTonemappingRenderer() const { return tonemappingRenderer; }
+
     private:
-
-
         DirectionalLight* directionalLight{nullptr};
         Environment* environement{nullptr};
 
@@ -95,6 +96,8 @@ namespace z0 {
         std::vector<std::unique_ptr<VulkanBuffer>> shadowMapsBuffers{MAX_FRAMES_IN_FLIGHT};
         // Skybox
         std::unique_ptr<SkyboxRenderer> skyboxRenderer {nullptr};
+        // HDR -> LDR
+        std::shared_ptr<TonemappingRenderer> tonemappingRenderer;
 
         void update(uint32_t currentFrame) override;
         void recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) override;

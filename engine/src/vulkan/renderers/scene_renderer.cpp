@@ -13,9 +13,10 @@ namespace z0 {
 
     SceneRenderer::SceneRenderer(VulkanDevice &dev, std::string sDir) :
         BaseMeshesRenderer{dev, sDir},
-        multisampled(dev),
-        toneMap(dev) {
-         createImagesResources();
+        multisampled{dev},
+        toneMap{dev} {
+        createImagesResources();
+        tonemappingRenderer = std::make_shared<TonemappingRenderer>(dev, sDir, toneMap);
      }
 
     void SceneRenderer::cleanup() {
@@ -23,6 +24,7 @@ namespace z0 {
             shadowMapRenderer->cleanup();
         }
         if (skyboxRenderer != nullptr) skyboxRenderer->cleanup();
+        tonemappingRenderer->cleanup();
         shadowMapRenderers.clear();
         shadowMaps.clear();
         opaquesMeshes.clear();
