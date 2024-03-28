@@ -15,6 +15,8 @@ namespace z0 {
     const glm::vec3 AXIS_Z { 0.0, 0.0f, 1.0f };
     const glm::vec3 AXIS_UP = AXIS_Y;
     const glm::vec3 AXIS_FRONT = -AXIS_Z;
+    const glm::vec2 VEC2ZERO{0.0};
+    const glm::vec3 VEC3ZERO{0.0};
 
     class Node: public Object {
     public:
@@ -93,8 +95,6 @@ namespace z0 {
         std::list<std::shared_ptr<Node>>& getChildren() { return children; }
 
         const glm::mat3 transformBasis{1, 0, 0, 0, 1, 0, 0, 0, 1};
-        const glm::vec3 vec3Zero{0.0};
-        const glm::vec2 vec2Zero{0.0};
 
     protected:
         std::string name;

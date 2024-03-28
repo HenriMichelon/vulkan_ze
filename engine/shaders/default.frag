@@ -11,10 +11,9 @@ vec4 color;
 
 // https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
 float shadowFactor(int shadowMapIndex) {
-    vec4 SHADOW_COORD = shadowMapsInfos.shadowMaps[shadowMapIndex].lightSpace * fs_in.GLOBAL_POSITION;
-    vec3 LIGHT_DIR = normalize(shadowMapsInfos.shadowMaps[shadowMapIndex].lightPos - fs_in.POSITION);
+    vec4 ShadowCoord = shadowMapsInfos.shadowMaps[shadowMapIndex].lightSpace * fs_in.GLOBAL_POSITION;
 
-    vec3 projCoords = SHADOW_COORD.xyz / SHADOW_COORD.w;
+    vec3 projCoords = ShadowCoord.xyz / ShadowCoord.w;
     if (projCoords.z > 1.0) return 1.0f;
     // Remap xy to [0.0, 1.0]
     projCoords.xy = projCoords.xy * 0.5 + 0.5;
@@ -48,7 +47,7 @@ void main() {
         discard;
     }
 
-    if ((material.normalIndex != -1) && (fs_in.tangent != vec4(0.0, 0.0, 0.0, 0.0))) {
+    if (material.normalIndex != -1) {
         normal = texture(texSampler[material.normalIndex], fs_in.UV).rgb * 2.0 - 1.0;
         normal = normalize(fs_in.TBN * normal);
     } else {

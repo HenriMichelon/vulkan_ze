@@ -47,12 +47,12 @@ public:
         glm::vec2 input;
         if (gamepad != -1) {
             input = z0::Input::getGamepadVector(gamepad, z0::GAMEPAD_AXIS_LEFT);
-            if (input == vec2Zero) input = z0::Input::getKeyboardVector(z0::KEY_A, z0::KEY_D, z0::KEY_W, z0::KEY_S);
+            if (input == z0::VEC2ZERO) input = z0::Input::getKeyboardVector(z0::KEY_A, z0::KEY_D, z0::KEY_W, z0::KEY_S);
         } else {
             input = z0::Input::getKeyboardVector(z0::KEY_A, z0::KEY_D, z0::KEY_W, z0::KEY_S);
         }
         glm::vec3 velocity{};
-        if (input != vec2Zero) {
+        if (input != z0::VEC2ZERO) {
             auto direction = transformBasis * glm::vec3{input.x, 0, input.y};
             velocity.x = direction.x * translationSpeed;
             velocity.z = direction.z * translationSpeed;
@@ -62,7 +62,7 @@ public:
         } else if (z0::Input::isKeyPressed(z0::KEY_Z)) {
             velocity.y -= translationSpeed / 2;
         }
-        if (velocity != vec3Zero) {
+        if (velocity != z0::VEC3ZERO) {
             velocity = velocity * delta;
             captureMouse();
             translate(velocity);
@@ -71,11 +71,11 @@ public:
             glm::vec2 inputDir;
             if (gamepad != -1) {
                 inputDir = z0::Input::getGamepadVector(gamepad, z0::GAMEPAD_AXIS_RIGHT);
-                if (inputDir == vec2Zero) inputDir = z0::Input::getKeyboardVector(z0::KEY_LEFT, z0::KEY_RIGHT, z0::KEY_UP, z0::KEY_DOWN);
+                if (inputDir == z0::VEC2ZERO) inputDir = z0::Input::getKeyboardVector(z0::KEY_LEFT, z0::KEY_RIGHT, z0::KEY_UP, z0::KEY_DOWN);
             } else {
                 inputDir = z0::Input::getKeyboardVector(z0::KEY_LEFT, z0::KEY_RIGHT, z0::KEY_UP, z0::KEY_DOWN);
             }
-            if (inputDir != vec2Zero) {
+            if (inputDir != z0::VEC2ZERO) {
                 auto look_dir = inputDir * delta;
                 rotateY(-look_dir.x * 2.0f);
                 camera->rotateX(-look_dir.y * mouseInvertedAxisY);
@@ -144,30 +144,30 @@ public:
         addChild(skybox);
 
         z0::DirectionalLight directionalLight{glm::vec3{0.0f, -1.0f, -1.0f}};
-        directionalLight.setColorAndIntensity({1.0f, 1.0f, 1.0f, 1.0f});
+        directionalLight.setColorAndIntensity({1.0f, 1.0f, 1.0f, 0.2f});
         directionalLight.setCastShadow(false);
         addChild(directionalLight);
 
-        z0::SpotLight spotLight1{{-.25, -1.25, -1.0},
+        z0::SpotLight spotLight1{{-.25, -1.25, 1.0},
                                  20.0, 25.0,
                                  0.027, 0.0028};
-        spotLight1.setPosition({.2, 2.5, 1.});
-        spotLight1.setColorAndIntensity({1.0f, 1.0f, 1.0f, 2.0f});
-        spotLight1.setCastShadow(false);
-        /*addChild(spotLight1);
+        spotLight1.setPosition({.2, 2.0, -1.5});
+        spotLight1.setColorAndIntensity({1.0f, 1.0f, 1.0f, 1.0f});
+        spotLight1.setCastShadow(true);
+        addChild(spotLight1);
         light1 = z0::Loader::loadModelFromFile("models/light.glb", true);
         light1->setScale(glm::vec3{0.25});
         light1->setPosition(spotLight1.getPosition());
-        addChild(light1);*/
+        addChild(light1);
 
         model1 = z0::Loader::loadModelFromFile("models/sphere.glb", false);
         //model1->setScale(glm::vec3{0.01});
         //model1->rotateZ(glm::radians(10.0));
         addChild(model1);
 
-        /*floor = z0::Loader::loadModelFromFile("models/floor.glb", true);
+        floor = z0::Loader::loadModelFromFile("models/floor.glb", true);
         floor->setPosition({0.0, -2.0, 0.0});
-        addChild(floor);*/
+        addChild(floor);
 
         addChild(std::make_shared<Player>());
         //printTree(std::cout);
