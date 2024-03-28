@@ -28,7 +28,7 @@ namespace z0 {
         void createImagesResources() override;
         void cleanupImagesResources() override;
         void recreateImagesResources() override;
-        void beginRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage, VkImageView swapChainImageView) override;
+        void beginRendering(VkCommandBuffer commandBuffer) override;
         void endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage) override;
 
     };

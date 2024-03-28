@@ -80,10 +80,15 @@ namespace z0 {
         std::map<Resource::rid_t, uint32_t> surfacesIndices {};
         std::vector<std::unique_ptr<VulkanBuffer>> surfacesBuffers{MAX_FRAMES_IN_FLIGHT};
 
-        // Offscreen frame buffer for MSAA
+        // Multisampled Offscreen frame buffer
         VkImage colorImage;
         VkDeviceMemory colorImageMemory;
         VkImageView colorImageView;
+
+        // Non multisampled Offscreen frame buffer
+        VkImage resolvedColorImage;
+        VkDeviceMemory resolvedColorImageMemory;
+        VkImageView resolvedColorImageView;
 
         // Depth prepass buffer
         std::shared_ptr<DepthPrepassRenderer> depthPrepassRenderer;
@@ -92,6 +97,7 @@ namespace z0 {
         // Table 47. Mandatory format support : 16 - bit channels
         // https://www.khronos.org/registry/vulkan/specs/1.0/pdf/vkspec.pdf
         VkFormat renderFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
+        VkImageBlit colorImageBlit{};
 
         // Shadow mapping
         std::vector<std::shared_ptr<ShadowMap>> shadowMaps;
@@ -108,7 +114,7 @@ namespace z0 {
         void createImagesResources() override;
         void cleanupImagesResources() override;
         void recreateImagesResources() override;
-        void beginRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage, VkImageView swapChainImageView) override;
+        void beginRendering(VkCommandBuffer commandBuffer) override;
         void endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage) override;
 
         void loadNode(std::shared_ptr<Node>& parent);

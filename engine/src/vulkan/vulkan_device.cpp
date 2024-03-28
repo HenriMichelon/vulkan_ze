@@ -166,7 +166,7 @@ namespace z0 {
 
             setInitialState(commandBuffers[currentFrame]);
             for (auto& renderer: renderers) {
-                renderer->beginRendering(commandBuffers[currentFrame], swapChainImages[imageIndex], swapChainImageViews[imageIndex]);
+                renderer->beginRendering(commandBuffers[currentFrame]);
                 renderer->recordCommands(commandBuffers[currentFrame], currentFrame);
                 renderer->endRendering(commandBuffers[currentFrame], swapChainImages[imageIndex]);
             }
