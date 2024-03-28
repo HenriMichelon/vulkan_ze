@@ -4,14 +4,14 @@
 
 namespace z0 {
 
-    class BaseSharedImage {
+    class BaseFrameBuffer {
     public:
         const VkFormat& getFormat() const { return format; }
         const VkImage& getImage() const { return image; }
         const VkImageView& getImageView() const { return imageView; }
 
         virtual void createImagesResources() = 0;
-        virtual void cleanupImagesResources() = 0;
+        virtual void cleanupImagesResources();
 
     protected:
         VulkanDevice& vulkanDevice;
@@ -20,13 +20,13 @@ namespace z0 {
         VkImageView imageView;
         VkDeviceMemory imageMemory;
 
-        BaseSharedImage(VulkanDevice &dev, VkFormat fmt): vulkanDevice{dev}, format{fmt} {};
+        BaseFrameBuffer(VulkanDevice &dev, VkFormat fmt): vulkanDevice{dev}, format{fmt} {};
 
     public:
-        BaseSharedImage(const BaseSharedImage&) = delete;
-        BaseSharedImage &operator=(const BaseSharedImage&) = delete;
-        BaseSharedImage(const BaseSharedImage&&) = delete;
-        BaseSharedImage &&operator=(const BaseSharedImage&&) = delete;
+        BaseFrameBuffer(const BaseFrameBuffer&) = delete;
+        BaseFrameBuffer &operator=(const BaseFrameBuffer&) = delete;
+        BaseFrameBuffer(const BaseFrameBuffer&&) = delete;
+        BaseFrameBuffer &&operator=(const BaseFrameBuffer&&) = delete;
     };
 
 }

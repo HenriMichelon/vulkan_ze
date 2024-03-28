@@ -1,11 +1,11 @@
 #pragma once
 
-#include "z0/vulkan/renderers//base_shared_image.hpp"
+#include "base_frame_buffer.hpp"
 #include "z0/nodes/spot_light.hpp"
 
 namespace z0 {
 
-    class ShadowMap: public BaseSharedImage {
+    class ShadowMap: public BaseFrameBuffer {
     public:
         explicit ShadowMap(VulkanDevice &dev, Light* light);
         ~ShadowMap();

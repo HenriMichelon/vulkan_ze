@@ -6,14 +6,15 @@
 #include "z0/nodes/skybox.hpp"
 #include "z0/log.hpp"
 
-#include <glm/gtc/matrix_inverse.hpp>
-
 #include <array>
 #include <set>
 
 namespace z0 {
 
-    SceneRenderer::SceneRenderer(VulkanDevice &dev, std::string sDir) : BaseMeshesRenderer{dev, sDir} {
+    SceneRenderer::SceneRenderer(VulkanDevice &dev, std::string sDir) :
+        BaseMeshesRenderer{dev, sDir},
+        multisampled(dev, renderFormat),
+        toneMap(dev, renderFormat) {
          createImagesResources();
      }
 
@@ -412,34 +413,7 @@ namespace z0 {
     // Create Color Resources (where we draw)
     // https://vulkan-tutorial.com/Multisampling#page_Setting-up-a-render-target
     void SceneRenderer::createImagesResources() {
-        // Multisampled offscreen buffer
-        vulkanDevice.createImage(vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height,
-                                 1,
-                                 vulkanDevice.getSamples(),
-                                 renderFormat,
-                                 VK_IMAGE_TILING_OPTIMAL,
-                                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                 colorImage, colorImageMemory);
-        colorImageView = vulkanDevice.createImageView(colorImage,
-                                                      renderFormat,
-                                                      VK_IMAGE_ASPECT_COLOR_BIT,
-                                                      1);
-
-        // Non multisampled offscreen buffer
-        vulkanDevice.createImage(vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height,
-                                 1,
-                                 VK_SAMPLE_COUNT_1_BIT,
-                                 renderFormat,
-                                 VK_IMAGE_TILING_OPTIMAL,
-                                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                 resolvedColorImage, resolvedColorImageMemory);
-        resolvedColorImageView = vulkanDevice.createImageView(resolvedColorImage,
-                                                      renderFormat,
-                                                      VK_IMAGE_ASPECT_COLOR_BIT,
-                                                      1);
-
+        // offscreen frame buffers created in the constructor
 
         // Depth buffer
         if (depthBuffer == nullptr) {
@@ -471,22 +445,18 @@ namespace z0 {
 
     void SceneRenderer::cleanupImagesResources() {
         if (depthBuffer != nullptr) depthBuffer->cleanupImagesResources();
-        vkDestroyImageView(device, resolvedColorImageView, nullptr);
-        vkDestroyImage(device, resolvedColorImage, nullptr);
-        vkFreeMemory(device, resolvedColorImageMemory, nullptr);
-        vkDestroyImageView(device, colorImageView, nullptr);
-        vkDestroyImage(device, colorImage, nullptr);
-        vkFreeMemory(device, colorImageMemory, nullptr);
+        toneMap.cleanupImagesResources();
+        multisampled.cleanupImagesResources();
     }
 
     // https://lesleylai.info/en/vk-khr-dynamic-rendering/
     void SceneRenderer::beginRendering(VkCommandBuffer commandBuffer) {
-        vulkanDevice.transitionImageLayout(commandBuffer, colorImage,
+        vulkanDevice.transitionImageLayout(commandBuffer, multisampled.getImage(),
                                            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                                            0, VK_ACCESS_TRANSFER_WRITE_BIT,
                                            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
                                            VK_IMAGE_ASPECT_COLOR_BIT);
-        vulkanDevice.transitionImageLayout(commandBuffer, resolvedColorImage,
+        vulkanDevice.transitionImageLayout(commandBuffer, toneMap.getImage(),
                                            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                                            0, VK_ACCESS_TRANSFER_WRITE_BIT,
                                            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
@@ -495,10 +465,10 @@ namespace z0 {
         // Resolved into a non multisampled image
         const VkRenderingAttachmentInfo colorAttachmentInfo{
                 .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
-                .imageView = colorImageView,
+                .imageView = multisampled.getImageView(),
                 .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                 .resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT ,
-                .resolveImageView = resolvedColorImageView,
+                .resolveImageView = toneMap.getImageView(),
                 .resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                 .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
                 .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
@@ -537,7 +507,7 @@ namespace z0 {
         // Blit image to swap chain to change format VK_FORMAT_R16G16B16A16_SFLOAT -> VK_FORMAT_B8G8R8A8_SRGB
         // https://www.reddit.com/r/vulkan/comments/e0hsth/whats_the_best_way_to_copy_between_images_with/
         vkCmdBlitImage(commandBuffer,
-                       resolvedColorImage,
+                       toneMap.getImage(),
                        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                        swapChainImage,
                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,

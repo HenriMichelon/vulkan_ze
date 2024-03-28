@@ -1,14 +1,14 @@
-#include "z0/vulkan/renderers/shadow_map.hpp"
+#include "z0/vulkan/framebuffers/shadow_map.hpp"
 #include "z0/log.hpp"
 #include "z0/nodes/directional_light.hpp"
 
-#include <glm/gtc/quaternion.hpp>
-#include <glm/gtx/quaternion.hpp>
+#include "glm/gtc/quaternion.hpp"
+#include "glm/gtx/quaternion.hpp"
 
 namespace z0 {
 
     ShadowMap::ShadowMap(VulkanDevice &dev, Light* spotLight) :
-            BaseSharedImage{dev, dev.findImageTilingSupportedFormat(
+            BaseFrameBuffer{dev, dev.findImageTilingSupportedFormat(
                     {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D16_UNORM, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT,},
                     VK_IMAGE_TILING_OPTIMAL,
                     VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)},
@@ -92,17 +92,11 @@ namespace z0 {
     }
 
     void ShadowMap::cleanupImagesResources() {
-        if (imageMemory != VK_NULL_HANDLE) {
+        if (sampler != VK_NULL_HANDLE) {
             vkDestroySampler(vulkanDevice.getDevice(), sampler, nullptr);
-            vkDestroyImageView(vulkanDevice.getDevice(), imageView, nullptr);
-            vkDestroyImage(vulkanDevice.getDevice(), image, nullptr);
-            vkFreeMemory(vulkanDevice.getDevice(), imageMemory, nullptr);
             sampler = VK_NULL_HANDLE;
-            imageView = VK_NULL_HANDLE;
-            image = VK_NULL_HANDLE;
-            imageMemory = VK_NULL_HANDLE;
         }
+        BaseFrameBuffer::cleanupImagesResources();
     }
-
 
 }

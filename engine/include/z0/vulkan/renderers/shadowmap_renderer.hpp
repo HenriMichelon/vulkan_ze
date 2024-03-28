@@ -1,7 +1,7 @@
 #pragma once
 
 #include "base_renderer.hpp"
-#include "z0/vulkan/renderers/shadow_map.hpp"
+#include "z0/vulkan/framebuffers/shadow_map.hpp"
 #include "z0/nodes/mesh_instance.hpp"
 
 namespace z0 {

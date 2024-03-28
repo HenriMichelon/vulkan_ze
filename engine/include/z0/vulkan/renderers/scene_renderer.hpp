@@ -3,6 +3,8 @@
 #include "z0/vulkan/renderers/shadowmap_renderer.hpp"
 #include "z0/vulkan/renderers/depth_prepass_renderer.hpp"
 #include "z0/vulkan/renderers/skybox_renderer.hpp"
+#include "z0/vulkan/framebuffers/tone_map.hpp"
+#include "z0/vulkan/framebuffers/multisampled.hpp"
 #include "z0/nodes/camera.hpp"
 #include "z0/nodes/directional_light.hpp"
 #include "z0/nodes/environment.hpp"
@@ -64,46 +66,36 @@ namespace z0 {
         void cleanup() override;
 
     private:
+        // HDR tone mapping
+        // Table 47. Mandatory format support : 16 - bit channels
+        // https://www.khronos.org/registry/vulkan/specs/1.0/pdf/vkspec.pdf
+        const VkFormat renderFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
+
         DirectionalLight* directionalLight{nullptr};
         Environment* environement{nullptr};
 
         std::map<Node::id_t, uint32_t> modelIndices {};
         std::vector<MeshInstance*> opaquesMeshes {};
         std::vector<MeshInstance*> transparentsMeshes {};
-
         std::vector<OmniLight*> omniLights;
         std::vector<std::unique_ptr<VulkanBuffer>> pointLightBuffers{MAX_FRAMES_IN_FLIGHT};
-
         std::map<Resource::rid_t, int32_t> imagesIndices {};
         std::unordered_set<std::shared_ptr<VulkanImage>> images {};
-
         std::map<Resource::rid_t, uint32_t> surfacesIndices {};
         std::vector<std::unique_ptr<VulkanBuffer>> surfacesBuffers{MAX_FRAMES_IN_FLIGHT};
 
-        // Multisampled Offscreen frame buffer
-        VkImage colorImage;
-        VkDeviceMemory colorImageMemory;
-        VkImageView colorImageView;
-
-        // Non multisampled Offscreen frame buffer
-        VkImage resolvedColorImage;
-        VkDeviceMemory resolvedColorImageMemory;
-        VkImageView resolvedColorImageView;
-
+        // Multisampled offscreen frame buffer
+        Multisampled multisampled;
+        // Non multisampled offscreen frame buffer
+        ToneMap toneMap;
+        // Blit last offscreen frame buffer to swapchain
+        VkImageBlit colorImageBlit{};
         // Depth prepass buffer
         std::shared_ptr<DepthPrepassRenderer> depthPrepassRenderer;
-
-        // HDR tone mapping
-        // Table 47. Mandatory format support : 16 - bit channels
-        // https://www.khronos.org/registry/vulkan/specs/1.0/pdf/vkspec.pdf
-        VkFormat renderFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
-        VkImageBlit colorImageBlit{};
-
         // Shadow mapping
         std::vector<std::shared_ptr<ShadowMap>> shadowMaps;
         std::vector<std::shared_ptr<ShadowMapRenderer>> shadowMapRenderers;
         std::vector<std::unique_ptr<VulkanBuffer>> shadowMapsBuffers{MAX_FRAMES_IN_FLIGHT};
-
         // Skybox
         std::unique_ptr<SkyboxRenderer> skyboxRenderer {nullptr};
 
