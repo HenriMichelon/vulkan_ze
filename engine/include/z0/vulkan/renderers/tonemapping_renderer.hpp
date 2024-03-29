@@ -16,12 +16,15 @@ namespace z0 {
 
         TonemappingRenderer(VulkanDevice& device,
                             std::string shaderDirectory,
-                            std::shared_ptr<ColorAttachmentHDR>& inputColorAttachmentHdr);
+                            std::shared_ptr<ColorAttachmentHDR>& inputColorAttachmentHdr,
+                            std::shared_ptr<DepthBuffer> depthBuffer);
 
         void update(uint32_t currentFrame) override;
         void loadShaders() override;
         void createDescriptorSetLayout() override;
 
+    private:
+        std::shared_ptr<DepthBuffer> resolvedDepthBuffer;
 
     };
 

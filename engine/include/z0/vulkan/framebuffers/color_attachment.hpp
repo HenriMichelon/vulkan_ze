@@ -4,10 +4,14 @@
 
 namespace z0 {
 
+    // Rendering attachments
     class ColorAttachment: public BaseFrameBuffer {
     public:
-        explicit ColorAttachment(VulkanDevice &dev);
+        // If multisampled==true attachment will support multisampling *and* HDR
+        explicit ColorAttachment(VulkanDevice &dev, bool multisampled);
         void createImagesResources() override;
+    private:
+        bool multisampled;
     };
 
 }

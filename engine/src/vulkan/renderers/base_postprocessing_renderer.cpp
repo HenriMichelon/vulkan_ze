@@ -23,7 +23,7 @@ namespace z0 {
     void BasePostprocessingRenderer::recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) {
         bindShaders(commandBuffer);
         vkCmdSetRasterizationSamplesEXT(commandBuffer, VK_SAMPLE_COUNT_1_BIT);
-        vkCmdSetDepthTestEnable(commandBuffer, VK_TRUE);
+        vkCmdSetDepthTestEnable(commandBuffer, VK_FALSE);
         setViewport(commandBuffer, vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height);
         vkCmdSetVertexInputEXT(commandBuffer, 0, nullptr, 0, nullptr);
         vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_NONE);

@@ -4,6 +4,8 @@
  */
 #include "z0/vulkan/renderers/scene_renderer.hpp"
 #include "z0/nodes/skybox.hpp"
+#include "z0/nodes/spot_light.hpp"
+#include "z0/nodes/directional_light.hpp"
 #include "z0/log.hpp"
 
 #include <array>
@@ -13,7 +15,7 @@ namespace z0 {
 
     SceneRenderer::SceneRenderer(VulkanDevice &dev, std::string sDir) :
             BaseMeshesRenderer{dev, sDir},
-            colorAttachmentMultisampled{dev} {
+            colorAttachmentMultisampled{dev, true} {
         createImagesResources();
      }
 
@@ -405,13 +407,17 @@ namespace z0 {
         cleanupImagesResources();
         colorAttachmentHdr->createImagesResources();
         colorAttachmentMultisampled.createImagesResources();
-        if (depthBuffer != nullptr) { depthBuffer->createImagesResources(); }
+        if (depthBuffer != nullptr) {
+            depthBuffer->createImagesResources();
+            resolvedDepthBuffer->createImagesResources();
+        }
     }
 
     void SceneRenderer::createImagesResources() {
         colorAttachmentHdr = std::make_shared<ColorAttachmentHDR>(vulkanDevice);
         if (depthBuffer == nullptr) {
-            depthBuffer = std::make_shared<DepthBuffer>(vulkanDevice);
+            depthBuffer = std::make_shared<DepthBuffer>(vulkanDevice, true);
+            resolvedDepthBuffer = std::make_shared<DepthBuffer>(vulkanDevice, false);
             depthPrepassRenderer = std::make_shared<DepthPrepassRenderer>(vulkanDevice, shaderDirectory);
         } else {
             depthBuffer->createImagesResources();
@@ -419,7 +425,10 @@ namespace z0 {
     }
 
     void SceneRenderer::cleanupImagesResources() {
-        if (depthBuffer != nullptr) depthBuffer->cleanupImagesResources();
+        if (depthBuffer != nullptr) {
+            depthBuffer->cleanupImagesResources();
+            resolvedDepthBuffer->cleanupImagesResources();
+        }
         colorAttachmentHdr->cleanupImagesResources();
         colorAttachmentMultisampled.cleanupImagesResources();
     }
@@ -453,7 +462,9 @@ namespace z0 {
                 .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
                 .imageView = depthBuffer->getImageView(),
                 .imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                .resolveMode = VK_RESOLVE_MODE_NONE,
+                .resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT,
+                .resolveImageView = resolvedDepthBuffer->getImageView(),
+                .resolveImageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
                 .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
                 .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
                 .clearValue = depthClearValue,
@@ -481,6 +492,14 @@ namespace z0 {
                                            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                                            isLast ? VK_PIPELINE_STAGE_TRANSFER_BIT : VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                                            VK_IMAGE_ASPECT_COLOR_BIT);
+        vulkanDevice.transitionImageLayout(commandBuffer, resolvedDepthBuffer->getImage(),
+                                           VK_IMAGE_LAYOUT_UNDEFINED,
+                                           VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
+                                           0,
+                                           VK_ACCESS_SHADER_READ_BIT,
+                                           VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                                           VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                           VK_IMAGE_ASPECT_DEPTH_BIT);
     }
 
 

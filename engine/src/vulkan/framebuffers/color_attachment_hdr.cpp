@@ -1,5 +1,5 @@
+#include "z0/vulkan/framebuffers/color_attachment.hpp"
 #include "z0/vulkan/framebuffers/color_attachment_hdr.hpp"
-#include "z0/vulkan/framebuffers/color_attachment_multisampled.hpp"
 #include "z0/log.hpp"
 
 namespace z0 {
@@ -27,31 +27,30 @@ namespace z0 {
     void ColorAttachmentHDR::createImagesResources() {
         createImage(vulkanDevice.getSwapChainExtent().width,
                     vulkanDevice.getSwapChainExtent().height,
-                    ColorAttachmentMultisampled::renderFormat,
-                    VK_SAMPLE_COUNT_1_BIT,
+                    renderFormat,
+                    VK_SAMPLE_COUNT_1_BIT, // Always resolved, only used for post-processing or display
                     VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
         VkPhysicalDeviceProperties properties{};
         vkGetPhysicalDeviceProperties(vulkanDevice.getPhysicalDevice(), &properties);
-        VkSamplerCreateInfo samplerInfo{};
-        samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-        samplerInfo.magFilter = VK_FILTER_LINEAR;
-        samplerInfo.minFilter = VK_FILTER_LINEAR;
-        samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-        samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-        samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-        samplerInfo.anisotropyEnable = VK_TRUE;
-        samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
-        samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-        samplerInfo.unnormalizedCoordinates = VK_FALSE;
-        samplerInfo.compareEnable = VK_FALSE;
-        samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-        samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-        samplerInfo.minLod =  0.0f;
-        samplerInfo.maxLod = 1.0f;
-        samplerInfo.mipLodBias = 0.0f;
+        VkSamplerCreateInfo samplerInfo{
+                .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+                .magFilter = VK_FILTER_LINEAR,
+                .minFilter = VK_FILTER_LINEAR,
+                .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+                .addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+                .addressModeV = samplerInfo.addressModeU,
+                .addressModeW = samplerInfo.addressModeU,
+                .mipLodBias = 0.0f,
+                .anisotropyEnable = VK_TRUE,
+                .maxAnisotropy = properties.limits.maxSamplerAnisotropy,
+                .minLod = 0.0f,
+                .maxLod = 1.0f,
+                .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+                .unnormalizedCoordinates = VK_FALSE,
+        };
         if (vkCreateSampler(vulkanDevice.getDevice(), &samplerInfo, nullptr, &sampler) != VK_SUCCESS) {
-            die("failed to create tone mapping sampler!");
+            die("failed to create color attachment sampler!");
         }
 
     }

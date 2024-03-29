@@ -3,8 +3,8 @@
 #include "z0/vulkan/renderers/shadowmap_renderer.hpp"
 #include "z0/vulkan/renderers/depth_prepass_renderer.hpp"
 #include "z0/vulkan/renderers/skybox_renderer.hpp"
+#include "z0/vulkan/framebuffers/color_attachment.hpp"
 #include "z0/vulkan/framebuffers/color_attachment_hdr.hpp"
-#include "z0/vulkan/framebuffers/color_attachment_multisampled.hpp"
 #include "z0/nodes/camera.hpp"
 #include "z0/nodes/directional_light.hpp"
 #include "z0/nodes/environment.hpp"
@@ -65,6 +65,7 @@ namespace z0 {
         std::shared_ptr<ColorAttachmentHDR>& getColorAttachment() { return colorAttachmentHdr; }
         VkImage getImage() const override { return colorAttachmentHdr->getImage(); }
         VkImageView getImageView() const override { return colorAttachmentHdr->getImageView(); }
+        std::shared_ptr<DepthBuffer> getResolvedDepthBuffer() const  { return resolvedDepthBuffer; }
 
         void loadScene(std::shared_ptr<Node>& rootNode);
         void cleanup() override;
@@ -84,10 +85,11 @@ namespace z0 {
         std::vector<std::unique_ptr<VulkanBuffer>> surfacesBuffers{MAX_FRAMES_IN_FLIGHT};
 
         // Offscreen frame buffers
-        ColorAttachmentMultisampled colorAttachmentMultisampled;
+        ColorAttachment colorAttachmentMultisampled;
         std::shared_ptr<ColorAttachmentHDR> colorAttachmentHdr;
         // Depth prepass buffer
         std::shared_ptr<DepthPrepassRenderer> depthPrepassRenderer;
+        std::shared_ptr<DepthBuffer> resolvedDepthBuffer;
         // Shadow mapping
         std::vector<std::shared_ptr<ShadowMap>> shadowMaps;
         std::vector<std::shared_ptr<ShadowMapRenderer>> shadowMapRenderers;

@@ -30,12 +30,13 @@ namespace z0 {
         sceneRenderer = std::make_shared<SceneRenderer>(*vulkanDevice, sDir);
         tonemappingRenderer = std::make_shared<TonemappingRenderer>(*vulkanDevice,
                                                                     sDir,
-                                                                    sceneRenderer->getColorAttachment());
-        postprocessingRenderer = std::make_shared<SimplePostprocessingRenderer>(*vulkanDevice,
+                                                                    sceneRenderer->getColorAttachment(),
+                                                                    sceneRenderer->getResolvedDepthBuffer());
+        /*postprocessingRenderer = std::make_shared<SimplePostprocessingRenderer>(*vulkanDevice,
                                                                                 sDir,
                                                                                 "grayscale",
                                                                                 tonemappingRenderer->getColorAttachment());
-        vulkanDevice->registerRenderer(postprocessingRenderer);
+        vulkanDevice->registerRenderer(postprocessingRenderer);*/
         vulkanDevice->registerRenderer(tonemappingRenderer);
         vulkanDevice->registerRenderer(sceneRenderer);
     }

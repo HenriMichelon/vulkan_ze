@@ -198,7 +198,8 @@ int main() {
         .windowMode = z0::WINDOW_MODE_WINDOWED,
         .windowWidth = 1024,
         .windowHeight = 768,
-        .msaa = z0::MSAA_AUTO
+        .msaa = z0::MSAA_AUTO,
+        .gamma = 1.0f,
     };
     z0::MainLoop app{applicationConfig};
     app.start(std::make_shared<z0::Scene>(std::make_shared<RootNode>()));
