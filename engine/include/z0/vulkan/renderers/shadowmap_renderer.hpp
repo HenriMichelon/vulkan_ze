@@ -1,12 +1,12 @@
 #pragma once
 
-#include "base_renderer.hpp"
+#include "base_renderpass.hpp"
 #include "z0/vulkan/framebuffers/shadow_map.hpp"
 #include "z0/nodes/mesh_instance.hpp"
 
 namespace z0 {
 
-    class ShadowMapRenderer: public BaseRenderer, public VulkanRenderer {
+    class ShadowMapRenderer: public BaseRenderpass, public VulkanRenderer {
     public:
         struct GlobalUniformBufferObject {
             glm::mat4 lightSpace;
@@ -37,8 +37,8 @@ namespace z0 {
         void createImagesResources() override;
         void cleanupImagesResources() override;
         void recreateImagesResources() override;
-        void beginRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage, VkImageView swapChainImageView) override;
-        void endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage) override;
+        void beginRendering(VkCommandBuffer commandBufferw) override;
+        void endRendering(VkCommandBuffer commandBuffer, bool isLast) override;
 
     public:
         ShadowMapRenderer(const ShadowMapRenderer&) = delete;

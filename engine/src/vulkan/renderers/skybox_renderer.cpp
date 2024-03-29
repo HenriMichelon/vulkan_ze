@@ -4,7 +4,7 @@
 
 namespace z0 {
 
-    SkyboxRenderer::SkyboxRenderer(VulkanDevice &dev, std::string shaderDirectory): BaseRenderer{dev, shaderDirectory} {
+    SkyboxRenderer::SkyboxRenderer(VulkanDevice &dev, std::string shaderDirectory): BaseRenderpass{dev, shaderDirectory} {
         float skyboxVertices[] = {
                 // positions
                 -1.0f,  1.0f, -1.0f,
@@ -71,7 +71,7 @@ namespace z0 {
     void SkyboxRenderer::cleanup() {
         vertexBuffer.reset();
         cubemap.reset();
-        BaseRenderer::cleanup();
+        BaseRenderpass::cleanup();
     }
 
     void SkyboxRenderer::loadScene(std::shared_ptr<VulkanCubemap>& _cubemap) {

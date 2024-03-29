@@ -35,7 +35,7 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_descriptors.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_instance.hpp
 		${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_cubemap.hpp
-		${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/base_renderer.hpp
+		${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/base_renderpass.hpp
 		${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/scene_renderer.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/shadowmap_renderer.hpp
 		${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/depth_prepass_renderer.hpp
@@ -88,7 +88,7 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_image.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_stats.cpp
 		${Z0_ENGINE_DIR}/src/vulkan/vulkan_cubemap.cpp
-		${Z0_ENGINE_DIR}/src/vulkan/renderers/base_renderer.cpp
+		${Z0_ENGINE_DIR}/src/vulkan/renderers/base_renderpass.cpp
 		${Z0_ENGINE_DIR}/src/vulkan/renderers/scene_renderer.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/renderers/shadowmap_renderer.cpp
 		${Z0_ENGINE_DIR}/src/vulkan/renderers/depth_prepass_renderer.cpp

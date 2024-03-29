@@ -63,6 +63,8 @@ namespace z0 {
         SceneRenderer(VulkanDevice& device, std::string shaderDirectory);
 
         std::shared_ptr<ColorAttachmentHDR>& getColorAttachment() { return colorAttachmentHdr; }
+        VkImage getImage() const override { return colorAttachmentHdr->getImage(); }
+        VkImageView getImageView() const override { return colorAttachmentHdr->getImageView(); }
 
         void loadScene(std::shared_ptr<Node>& rootNode);
         void cleanup() override;
@@ -100,8 +102,8 @@ namespace z0 {
         void createImagesResources() override;
         void cleanupImagesResources() override;
         void recreateImagesResources() override;
-        void beginRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage, VkImageView swapChainImageView) override;
-        void endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage) override;
+        void beginRendering(VkCommandBuffer commandBuffer) override;
+        void endRendering(VkCommandBuffer commandBuffer, bool isLast) override;
 
         void loadNode(std::shared_ptr<Node>& parent);
         void createImagesList(std::shared_ptr<Node>& node);

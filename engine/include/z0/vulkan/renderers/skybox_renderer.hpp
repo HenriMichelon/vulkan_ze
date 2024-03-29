@@ -1,13 +1,13 @@
 #pragma once
 
-#include "z0/vulkan/renderers/base_renderer.hpp"
+#include "z0/vulkan/renderers/base_renderpass.hpp"
 #include "z0/vulkan/vulkan_cubemap.hpp"
 #include "z0/vulkan/vulkan_buffer.hpp"
 #include "z0/nodes/camera.hpp"
 
 namespace z0 {
 
-    class SkyboxRenderer: public BaseRenderer {
+    class SkyboxRenderer: public BaseRenderpass {
     public:
         struct GobalUniformBufferObject {
             glm::mat4 projection{1.0f};

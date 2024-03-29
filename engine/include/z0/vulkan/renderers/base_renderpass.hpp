@@ -9,7 +9,7 @@
 namespace z0 {
 
 
-    class BaseRenderer {
+    class BaseRenderpass {
     public:
         virtual void cleanup();
 
@@ -32,7 +32,7 @@ namespace z0 {
                     1.0f}}};
         const VkClearValue depthClearValue { .depthStencil = {1.0f, 0} };
 
-        BaseRenderer(VulkanDevice& device, std::string shaderDirectory);
+        BaseRenderpass(VulkanDevice& device, std::string shaderDirectory);
 
         // Helpers function for children classes
         void setViewport(VkCommandBuffer commandBuffer, uint32_t width, uint32_t height);
@@ -56,10 +56,10 @@ namespace z0 {
         void bindShader(VkCommandBuffer commandBuffer, VulkanShader& shader);
 
     public:
-        BaseRenderer(const BaseRenderer&) = delete;
-        BaseRenderer &operator=(const BaseRenderer&) = delete;
-        BaseRenderer(const BaseRenderer&&) = delete;
-        BaseRenderer &&operator=(const BaseRenderer&&) = delete;
+        BaseRenderpass(const BaseRenderpass&) = delete;
+        BaseRenderpass &operator=(const BaseRenderpass&) = delete;
+        BaseRenderpass(const BaseRenderpass&&) = delete;
+        BaseRenderpass &&operator=(const BaseRenderpass&&) = delete;
     };
 
 }

@@ -1,4 +1,4 @@
-#include "z0/vulkan/renderers/base_renderer.hpp"
+#include "z0/vulkan/renderers/base_renderpass.hpp"
 #include "z0/vulkan/vulkan_model.hpp"
 #include "z0/vulkan/vulkan_descriptors.hpp"
 #include "z0/log.hpp"
@@ -8,12 +8,12 @@
 
 namespace z0 {
 
-    BaseRenderer::BaseRenderer(VulkanDevice &dev, std::string sDir) :
+    BaseRenderpass::BaseRenderpass(VulkanDevice &dev, std::string sDir) :
         vulkanDevice{dev}, device(dev.getDevice()), shaderDirectory(std::move(sDir))
     {
     }
 
-    void BaseRenderer::cleanup() {
+    void BaseRenderpass::cleanup() {
 
         globalBuffers.clear();
         if (vertShader != nullptr) vertShader.reset();
@@ -26,7 +26,7 @@ namespace z0 {
         globalPool.reset();
     }
 
-    void BaseRenderer::bindShaders(VkCommandBuffer commandBuffer) {
+    void BaseRenderpass::bindShaders(VkCommandBuffer commandBuffer) {
         if (vertShader != nullptr) {
             vkCmdBindShadersEXT(commandBuffer, 1, vertShader->getStage(), vertShader->getShader());
         } else {
@@ -41,12 +41,12 @@ namespace z0 {
         }
     }
 
-    void BaseRenderer::writeUniformBuffer(const std::vector<std::unique_ptr<VulkanBuffer>>& buffers, uint32_t currentFrame, void *data, uint32_t index) {
+    void BaseRenderpass::writeUniformBuffer(const std::vector<std::unique_ptr<VulkanBuffer>>& buffers, uint32_t currentFrame, void *data, uint32_t index) {
         uint32_t size = buffers[currentFrame]->getAlignmentSize();
         buffers[currentFrame]->writeToBuffer(data, size, size * index);
     }
 
-    void BaseRenderer::createUniformBuffers(std::vector<std::unique_ptr<VulkanBuffer>>& buffers, VkDeviceSize size, uint32_t count) {
+    void BaseRenderpass::createUniformBuffers(std::vector<std::unique_ptr<VulkanBuffer>>& buffers, VkDeviceSize size, uint32_t count) {
         for (auto &uboBuffer: buffers) {
             uboBuffer = std::make_unique<VulkanBuffer>(
                     vulkanDevice,
@@ -59,7 +59,7 @@ namespace z0 {
         }
     }
 
-    void BaseRenderer::bindDescriptorSets(VkCommandBuffer commandBuffer, uint32_t currentFrame, uint32_t count, uint32_t *offsets) {
+    void BaseRenderpass::bindDescriptorSets(VkCommandBuffer commandBuffer, uint32_t currentFrame, uint32_t count, uint32_t *offsets) {
         vkCmdBindDescriptorSets(commandBuffer,
                                 VK_PIPELINE_BIND_POINT_GRAPHICS,
                                 pipelineLayout,
@@ -68,7 +68,7 @@ namespace z0 {
                                 count, offsets);
     }
 
-    void BaseRenderer::createResources() {
+    void BaseRenderpass::createResources() {
         createDescriptorSetLayout();
         if (globalSetLayout != nullptr) {
             createPipelineLayout();
@@ -76,7 +76,7 @@ namespace z0 {
         }
     };
 
-    void BaseRenderer::createPipelineLayout() {
+    void BaseRenderpass::createPipelineLayout() {
         const VkPipelineLayoutCreateInfo pipelineLayoutInfo{
                 .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
                 .setLayoutCount = 1,
@@ -89,9 +89,9 @@ namespace z0 {
         }
     }
 
-    std::unique_ptr<VulkanShader> BaseRenderer::createShader(const std::string& filename,
-                                                             VkShaderStageFlagBits stage,
-                                                             VkShaderStageFlags next_stage) {
+    std::unique_ptr<VulkanShader> BaseRenderpass::createShader(const std::string& filename,
+                                                               VkShaderStageFlagBits stage,
+                                                               VkShaderStageFlags next_stage) {
         auto code = readFile(filename);
         std::unique_ptr<VulkanShader> shader  = std::make_unique<VulkanShader>(
                 vulkanDevice,
@@ -106,7 +106,7 @@ namespace z0 {
     }
 
     // https://docs.vulkan.org/samples/latest/samples/extensions/shader_object/README.html
-    void BaseRenderer::buildShader(VulkanShader& shader) {
+    void BaseRenderpass::buildShader(VulkanShader& shader) {
         VkShaderEXT shaderEXT;
         VkShaderCreateInfoEXT shaderCreateInfo = shader.getShaderCreateInfo();
         if (vkCreateShadersEXT(device, 1, &shaderCreateInfo, nullptr, &shaderEXT) != VK_SUCCESS) {
@@ -115,7 +115,7 @@ namespace z0 {
         shader.setShader(shaderEXT);
     }
 
-    void BaseRenderer::setViewport(VkCommandBuffer commandBuffer, uint32_t width, uint32_t height) {
+    void BaseRenderpass::setViewport(VkCommandBuffer commandBuffer, uint32_t width, uint32_t height) {
         const VkExtent2D extent = { width, height };
         const VkViewport viewport{
                 .x = 0.0f,
@@ -133,7 +133,7 @@ namespace z0 {
         vkCmdSetScissorWithCount(commandBuffer, 1, &scissor);
     }
 
-    std::vector<char> BaseRenderer::readFile(const std::string &fileName) {
+    std::vector<char> BaseRenderpass::readFile(const std::string &fileName) {
         std::filesystem::path filepath = shaderDirectory;
         filepath /= fileName;
         filepath += ".spv";

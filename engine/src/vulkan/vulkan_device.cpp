@@ -165,11 +165,42 @@ namespace z0 {
             }
 
             setInitialState(commandBuffers[currentFrame]);
+            auto lastRenderer = renderers.back();
             for (auto& renderer: renderers) {
-                renderer->beginRendering(commandBuffers[currentFrame], swapChainImages[imageIndex], swapChainImageViews[imageIndex]);
+                renderer->beginRendering(commandBuffers[currentFrame]);
                 renderer->recordCommands(commandBuffers[currentFrame], currentFrame);
-                renderer->endRendering(commandBuffers[currentFrame], swapChainImages[imageIndex]);
+                renderer->endRendering(commandBuffers[currentFrame], renderer == lastRenderer);
             }
+
+            transitionImageLayout(
+                    commandBuffers[currentFrame],
+                    swapChainImages[imageIndex],
+                    VK_IMAGE_LAYOUT_UNDEFINED,
+                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                    0,
+                    VK_ACCESS_TRANSFER_WRITE_BIT,
+                    VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                    VK_PIPELINE_STAGE_TRANSFER_BIT,
+                    VK_IMAGE_ASPECT_COLOR_BIT);
+            vkCmdBlitImage(commandBuffers[currentFrame],
+                           lastRenderer->getImage(),
+                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                           swapChainImages[imageIndex],
+                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                           1,
+                           &colorImageBlit,
+                           VK_FILTER_LINEAR );
+            transitionImageLayout(
+                    commandBuffers[currentFrame],
+                    swapChainImages[imageIndex],
+                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                    VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                    0,
+                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                    VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                    VK_IMAGE_ASPECT_COLOR_BIT);
+
 
             debugUI->drawFrame(commandBuffers[currentFrame], swapChainImageViews[imageIndex], swapChainExtent);
 
@@ -444,6 +475,24 @@ namespace z0 {
             swapChainImageViews[i] = createImageView(swapChainImages[i], swapChainImageFormat,
                                                      VK_IMAGE_ASPECT_COLOR_BIT, 1);
         }
+
+        // For bliting image to swapchain
+        colorImageBlit.srcOffsets[0] = {0, 0, 0 };
+        colorImageBlit.srcOffsets[1] = {
+                static_cast<int32_t>(swapChainExtent.width),
+                static_cast<int32_t>(swapChainExtent.height), 1 };
+        colorImageBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        colorImageBlit.srcSubresource.mipLevel = 0;
+        colorImageBlit.srcSubresource.baseArrayLayer = 0;
+        colorImageBlit.srcSubresource.layerCount = 1;
+        colorImageBlit.dstOffsets[0] = {0, 0, 0 };
+        colorImageBlit.dstOffsets[1] = {
+                static_cast<int32_t>(swapChainExtent.width),
+                static_cast<int32_t>(swapChainExtent.height), 1 };
+        colorImageBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        colorImageBlit.dstSubresource.mipLevel = 0;
+        colorImageBlit.dstSubresource.baseArrayLayer = 0;
+        colorImageBlit.dstSubresource.layerCount = 1;
 
     }
 
