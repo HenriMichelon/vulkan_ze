@@ -1,14 +1,14 @@
-#include "z0/vulkan/framebuffers/color_attachement_hdr.hpp"
-#include "z0/vulkan/framebuffers/color_attachement_multisampled.hpp"
+#include "z0/vulkan/framebuffers/color_attachment_hdr.hpp"
+#include "z0/vulkan/framebuffers/color_attachment_multisampled.hpp"
 #include "z0/log.hpp"
 
 namespace z0 {
 
-    ColorAttachementHDR::ColorAttachementHDR(VulkanDevice &dev) : BaseFrameBuffer{dev } {
+    ColorAttachmentHDR::ColorAttachmentHDR(VulkanDevice &dev) : BaseFrameBuffer{dev } {
          createImagesResources();
      }
 
-    void ColorAttachementHDR::cleanupImagesResources() {
+    void ColorAttachmentHDR::cleanupImagesResources() {
         if (sampler != VK_NULL_HANDLE) {
             vkDestroySampler(vulkanDevice.getDevice(), sampler, nullptr);
             sampler = VK_NULL_HANDLE;
@@ -16,7 +16,7 @@ namespace z0 {
         BaseFrameBuffer::cleanupImagesResources();
     }
 
-    VkDescriptorImageInfo ColorAttachementHDR::imageInfo() {
+    VkDescriptorImageInfo ColorAttachmentHDR::imageInfo() {
         return VkDescriptorImageInfo {
                 .sampler = sampler,
                 .imageView = imageView,
@@ -24,10 +24,10 @@ namespace z0 {
         };
     }
 
-    void ColorAttachementHDR::createImagesResources() {
+    void ColorAttachmentHDR::createImagesResources() {
         createImage(vulkanDevice.getSwapChainExtent().width,
                     vulkanDevice.getSwapChainExtent().height,
-                    ColorAttachementMultisampled::renderFormat,
+                    ColorAttachmentMultisampled::renderFormat,
                     VK_SAMPLE_COUNT_1_BIT,
                     VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 

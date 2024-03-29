@@ -3,8 +3,8 @@
 #include "z0/vulkan/renderers/shadowmap_renderer.hpp"
 #include "z0/vulkan/renderers/depth_prepass_renderer.hpp"
 #include "z0/vulkan/renderers/skybox_renderer.hpp"
-#include "z0/vulkan/framebuffers/color_attachement_hdr.hpp"
-#include "z0/vulkan/framebuffers/color_attachement_multisampled.hpp"
+#include "z0/vulkan/framebuffers/color_attachment_hdr.hpp"
+#include "z0/vulkan/framebuffers/color_attachment_multisampled.hpp"
 #include "z0/nodes/camera.hpp"
 #include "z0/nodes/directional_light.hpp"
 #include "z0/nodes/environment.hpp"
@@ -60,7 +60,9 @@ namespace z0 {
             alignas(4) float shininess{32.0f};
         };
 
-        SceneRenderer(VulkanDevice& device, std::string shaderDirectory, std::shared_ptr<ColorAttachementHDR> colorAttachementHdr);
+        SceneRenderer(VulkanDevice& device, std::string shaderDirectory);
+
+        std::shared_ptr<ColorAttachmentHDR>& getColorAttachment() { return colorAttachmentHdr; }
 
         void loadScene(std::shared_ptr<Node>& rootNode);
         void cleanup() override;
@@ -80,8 +82,8 @@ namespace z0 {
         std::vector<std::unique_ptr<VulkanBuffer>> surfacesBuffers{MAX_FRAMES_IN_FLIGHT};
 
         // Offscreen frame buffers
-        ColorAttachementMultisampled colorAttachementMultisampled;
-        std::shared_ptr<ColorAttachementHDR> colorAttachementHdr;
+        ColorAttachmentMultisampled colorAttachmentMultisampled;
+        std::shared_ptr<ColorAttachmentHDR> colorAttachmentHdr;
         // Depth prepass buffer
         std::shared_ptr<DepthPrepassRenderer> depthPrepassRenderer;
         // Shadow mapping

@@ -4,9 +4,9 @@
 
 namespace z0 {
 
-    class ColorAttachementHDR: public BaseFrameBuffer {
+    class ColorAttachmentHDR: public BaseFrameBuffer {
     public:
-        explicit ColorAttachementHDR(VulkanDevice &dev);
+        explicit ColorAttachmentHDR(VulkanDevice &dev);
         void createImagesResources() override;
         void cleanupImagesResources() override;
         VkDescriptorImageInfo imageInfo();

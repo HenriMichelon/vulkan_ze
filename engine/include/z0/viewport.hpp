@@ -9,6 +9,7 @@ namespace z0 {
 
     class SceneRenderer;
     class TonemappingRenderer;
+    class PostprocessingRenderer;
 
     class Viewport: public Object {
     public:
@@ -33,6 +34,7 @@ namespace z0 {
         std::unique_ptr<VulkanDevice> vulkanDevice;
         std::shared_ptr<SceneRenderer> sceneRenderer;
         std::shared_ptr<TonemappingRenderer> tonemappingRenderer;
+        std::shared_ptr<PostprocessingRenderer> postprocessingRenderer;
 
     public:
         VulkanDevice& _getDevice() { return *vulkanDevice; }

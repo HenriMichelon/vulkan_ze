@@ -7,8 +7,8 @@
 
 namespace z0 {
 
-    TonemappingRenderer::TonemappingRenderer(VulkanDevice &dev, std::string shaderDirectory):
-    BaseRenderer{dev, shaderDirectory} {
+    TonemappingRenderer::TonemappingRenderer(VulkanDevice &dev, std::string shaderDirectory, std::shared_ptr<ColorAttachmentHDR> _inputColorAttachmentHdr):
+    BaseRenderer{dev, shaderDirectory}, inputColorAttachmentHdr{_inputColorAttachmentHdr}  {
         createImagesResources();
         createResources();
     }
@@ -62,7 +62,7 @@ namespace z0 {
             .build();
         for (int i = 0; i < descriptorSets.size(); i++) {
             auto globalBufferInfo = globalBuffers[i]->descriptorInfo(sizeof(GobalUniformBufferObject));
-            auto imageInfo = colorAttachementHdr->imageInfo();
+            auto imageInfo = inputColorAttachmentHdr->imageInfo();
             auto writer = VulkanDescriptorWriter(*globalSetLayout, *globalPool)
                     .writeBuffer(0, &globalBufferInfo)
                     .writeImage(1, &imageInfo);
@@ -73,16 +73,12 @@ namespace z0 {
     }
 
     void TonemappingRenderer::createImagesResources() {
-        colorAttachementHdr = std::make_shared<ColorAttachementHDR>(vulkanDevice);
     }
 
     void TonemappingRenderer::cleanupImagesResources() {
-        colorAttachementHdr->cleanupImagesResources();
     }
 
     void TonemappingRenderer::recreateImagesResources() {
-        colorAttachementHdr->cleanupImagesResources();
-        colorAttachementHdr->createImagesResources();
     }
 
     void TonemappingRenderer::beginRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage, VkImageView swapChainImageView) {

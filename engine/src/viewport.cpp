@@ -1,5 +1,6 @@
 #include "z0/vulkan/renderers/scene_renderer.hpp"
 #include "z0/vulkan/renderers/tonemapping_renderer.hpp"
+#include "z0/vulkan/renderers/postprocessing_renderer.hpp"
 #include "z0/mainloop.hpp"
 #include "z0/log.hpp"
 
@@ -26,9 +27,11 @@ namespace z0 {
                 cfg.msaa == MSAA_AUTO,
                 MSAA_VULKAN.at(cfg.msaa));
         const std::string sDir{(cfg.appDir / "shaders").string()};
-        tonemappingRenderer = std::make_shared<TonemappingRenderer>(*vulkanDevice, sDir);
-        sceneRenderer = std::make_shared<SceneRenderer>(*vulkanDevice, sDir, tonemappingRenderer->getColorAttachement());
+        sceneRenderer = std::make_shared<SceneRenderer>(*vulkanDevice, sDir);
+        //postprocessingRenderer = std::make_shared<PostprocessingRenderer>(*vulkanDevice, sDir, sceneRenderer->getColorAttachment());
+        tonemappingRenderer = std::make_shared<TonemappingRenderer>(*vulkanDevice, sDir, sceneRenderer->getColorAttachment());
         vulkanDevice->registerRenderer(sceneRenderer);
+        //vulkanDevice->registerRenderer(postprocessingRenderer);
         vulkanDevice->registerRenderer(tonemappingRenderer);
     }
 

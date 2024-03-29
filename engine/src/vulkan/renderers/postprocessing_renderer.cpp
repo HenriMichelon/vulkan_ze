@@ -5,8 +5,8 @@
 
 namespace z0 {
 
-    PostprocessingRenderer::PostprocessingRenderer(VulkanDevice &dev, std::string shaderDirectory):
-    BaseRenderer{dev, shaderDirectory} {
+    PostprocessingRenderer::PostprocessingRenderer(VulkanDevice &dev, std::string shaderDirectory, std::shared_ptr<ColorAttachmentHDR> colorAttachmentHdr):
+            BaseRenderer{dev, shaderDirectory}, inputColorAttachmentHdr{colorAttachmentHdr} {
         createImagesResources();
         createResources();
     }
@@ -22,6 +22,9 @@ namespace z0 {
     }
 
     void PostprocessingRenderer::update(uint32_t currentFrame) {
+        GobalUniformBufferObject globalUbo {
+        };
+        writeUniformBuffer(globalBuffers, currentFrame, &globalUbo);
     }
 
     void PostprocessingRenderer::recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) {
@@ -29,8 +32,6 @@ namespace z0 {
         vkCmdSetRasterizationSamplesEXT(commandBuffer, VK_SAMPLE_COUNT_1_BIT);
         vkCmdSetDepthTestEnable(commandBuffer, VK_FALSE);
         setViewport(commandBuffer, vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height);
-
-        // quad renderer
         vkCmdSetVertexInputEXT(commandBuffer, 0, nullptr, 0, nullptr);
         vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_NONE);
         bindDescriptorSets(commandBuffer, currentFrame);
@@ -55,7 +56,7 @@ namespace z0 {
             .build();
         for (int i = 0; i < descriptorSets.size(); i++) {
             auto globalBufferInfo = globalBuffers[i]->descriptorInfo(sizeof(GobalUniformBufferObject));
-            auto imageInfo = colorAttachementHdr->imageInfo();
+            auto imageInfo = inputColorAttachmentHdr->imageInfo();
             auto writer = VulkanDescriptorWriter(*globalSetLayout, *globalPool)
                     .writeBuffer(0, &globalBufferInfo)
                     .writeImage(1, &imageInfo);
@@ -66,27 +67,27 @@ namespace z0 {
     }
 
     void PostprocessingRenderer::createImagesResources() {
-        colorAttachementHdr = std::make_shared<ColorAttachementHDR>(vulkanDevice);
+        colorAttachmentHdr = std::make_shared<ColorAttachmentHDR>(vulkanDevice);
     }
 
     void PostprocessingRenderer::cleanupImagesResources() {
-        colorAttachementHdr->cleanupImagesResources();
+        colorAttachmentHdr->cleanupImagesResources();
     }
 
     void PostprocessingRenderer::recreateImagesResources() {
-        colorAttachementHdr->cleanupImagesResources();
-        colorAttachementHdr->createImagesResources();
+        colorAttachmentHdr->cleanupImagesResources();
+        colorAttachmentHdr->createImagesResources();
     }
 
     void PostprocessingRenderer::beginRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage, VkImageView swapChainImageView) {
-        vulkanDevice.transitionImageLayout(commandBuffer, swapChainImage,
+        vulkanDevice.transitionImageLayout(commandBuffer, colorAttachmentHdr->getImage(),
                                            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                                            0, VK_ACCESS_TRANSFER_WRITE_BIT,
                                            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
                                            VK_IMAGE_ASPECT_COLOR_BIT);
         const VkRenderingAttachmentInfo colorAttachmentInfo{
                 .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
-                .imageView = swapChainImageView,
+                .imageView = colorAttachmentHdr->getImageView(),
                 .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                 .resolveMode = VK_RESOLVE_MODE_NONE ,
                 .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
@@ -108,12 +109,14 @@ namespace z0 {
 
     void PostprocessingRenderer::endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage) {
         vkCmdEndRendering(commandBuffer);
-        vulkanDevice.transitionImageLayout(
-                commandBuffer,swapChainImage,
-                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, 0,
-                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                VK_IMAGE_ASPECT_COLOR_BIT);
+        vulkanDevice.transitionImageLayout(commandBuffer, colorAttachmentHdr->getImage(),
+                                           VK_IMAGE_LAYOUT_UNDEFINED,
+                                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                           VK_ACCESS_TRANSFER_WRITE_BIT,
+                                           VK_ACCESS_SHADER_READ_BIT,
+                                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                           VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                           VK_IMAGE_ASPECT_COLOR_BIT);
     }
 
 

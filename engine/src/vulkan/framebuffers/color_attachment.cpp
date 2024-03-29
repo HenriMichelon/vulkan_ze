@@ -1,12 +1,12 @@
-#include "z0/vulkan/framebuffers/color_attachement.hpp"
+#include "z0/vulkan/framebuffers/color_attachment.hpp"
 
 namespace z0 {
 
-    ColorAttachement::ColorAttachement(VulkanDevice &dev) : BaseFrameBuffer{dev} {
+    ColorAttachment::ColorAttachment(VulkanDevice &dev) : BaseFrameBuffer{dev} {
          createImagesResources();
      }
 
-    void ColorAttachement::createImagesResources() {
+    void ColorAttachment::createImagesResources() {
         createImage(vulkanDevice.getSwapChainExtent().width,
                     vulkanDevice.getSwapChainExtent().height,
                     vulkanDevice.getSwapChainImageFormat(),

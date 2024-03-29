@@ -1,8 +1,8 @@
 #pragma once
 
 #include "z0/vulkan/renderers/base_renderer.hpp"
-#include "z0/vulkan/framebuffers/color_attachement_hdr.hpp"
-#include "z0/vulkan/framebuffers/color_attachement.hpp"
+#include "z0/vulkan/framebuffers/color_attachment_hdr.hpp"
+#include "z0/vulkan/framebuffers/color_attachment.hpp"
 
 namespace z0 {
 
@@ -13,9 +13,7 @@ namespace z0 {
             alignas(4) float exposure{1.0};
         };
 
-        TonemappingRenderer(VulkanDevice& device, std::string shaderDirectory);
-
-        std::shared_ptr<ColorAttachementHDR>& getColorAttachement() { return colorAttachementHdr; }
+        TonemappingRenderer(VulkanDevice& device, std::string shaderDirectory, std::shared_ptr<ColorAttachmentHDR> inputColorAttachmentHdr);
 
         void cleanup();
         void update(uint32_t currentFrame);
@@ -29,7 +27,7 @@ namespace z0 {
         void recreateImagesResources();
 
     private:
-        std::shared_ptr<ColorAttachementHDR> colorAttachementHdr;
+        std::shared_ptr<ColorAttachmentHDR> inputColorAttachmentHdr;
     };
 
 }

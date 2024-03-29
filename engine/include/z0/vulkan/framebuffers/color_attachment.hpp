@@ -4,9 +4,9 @@
 
 namespace z0 {
 
-    class ColorAttachement: public BaseFrameBuffer {
+    class ColorAttachment: public BaseFrameBuffer {
     public:
-        explicit ColorAttachement(VulkanDevice &dev);
+        explicit ColorAttachment(VulkanDevice &dev);
         void createImagesResources() override;
     };
 
