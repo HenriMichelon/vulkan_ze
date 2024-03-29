@@ -1,14 +1,14 @@
-#include "z0/vulkan/framebuffers/tone_map.hpp"
+#include "z0/vulkan/framebuffers/color_attachement_hdr.hpp"
 #include "z0/vulkan/framebuffers/color_attachement_multisampled.hpp"
 #include "z0/log.hpp"
 
 namespace z0 {
 
-    ToneMap::ToneMap(VulkanDevice &dev) : BaseFrameBuffer{dev } {
+    ColorAttachementHDR::ColorAttachementHDR(VulkanDevice &dev) : BaseFrameBuffer{dev } {
          createImagesResources();
      }
 
-    void ToneMap::cleanupImagesResources() {
+    void ColorAttachementHDR::cleanupImagesResources() {
         if (sampler != VK_NULL_HANDLE) {
             vkDestroySampler(vulkanDevice.getDevice(), sampler, nullptr);
             sampler = VK_NULL_HANDLE;
@@ -16,7 +16,7 @@ namespace z0 {
         BaseFrameBuffer::cleanupImagesResources();
     }
 
-    VkDescriptorImageInfo ToneMap::imageInfo() {
+    VkDescriptorImageInfo ColorAttachementHDR::imageInfo() {
         return VkDescriptorImageInfo {
                 .sampler = sampler,
                 .imageView = imageView,
@@ -24,7 +24,7 @@ namespace z0 {
         };
     }
 
-    void ToneMap::createImagesResources() {
+    void ColorAttachementHDR::createImagesResources() {
         createImage(vulkanDevice.getSwapChainExtent().width,
                     vulkanDevice.getSwapChainExtent().height,
                     ColorAttachementMultisampled::renderFormat,

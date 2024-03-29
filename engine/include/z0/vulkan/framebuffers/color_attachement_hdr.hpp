@@ -4,12 +4,11 @@
 
 namespace z0 {
 
-    class ToneMap: public BaseFrameBuffer {
+    class ColorAttachementHDR: public BaseFrameBuffer {
     public:
-        explicit ToneMap(VulkanDevice &dev);
+        explicit ColorAttachementHDR(VulkanDevice &dev);
         void createImagesResources() override;
         void cleanupImagesResources() override;
-        const VkSampler& getSampler() const { return sampler; }
         VkDescriptorImageInfo imageInfo();
     private:
         VkSampler sampler{VK_NULL_HANDLE};

@@ -11,11 +11,11 @@
 
 namespace z0 {
 
-    SceneRenderer::SceneRenderer(VulkanDevice &dev, std::string sDir) :
+    SceneRenderer::SceneRenderer(VulkanDevice &dev, std::string sDir, std::shared_ptr<ColorAttachementHDR> _colorAttachementHdr) :
             BaseMeshesRenderer{dev, sDir},
-            colorAttachementMultisampled{dev} {
+            colorAttachementMultisampled{dev},
+            colorAttachementHdr{_colorAttachementHdr} {
         createImagesResources();
-        tonemappingRenderer = std::make_shared<TonemappingRenderer>(dev, sDir);
      }
 
     void SceneRenderer::cleanup() {
@@ -431,7 +431,7 @@ namespace z0 {
                                            0, VK_ACCESS_TRANSFER_WRITE_BIT,
                                            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
                                            VK_IMAGE_ASPECT_COLOR_BIT);
-        vulkanDevice.transitionImageLayout(commandBuffer, tonemappingRenderer->getToneMap()->getImage(),
+        vulkanDevice.transitionImageLayout(commandBuffer, colorAttachementHdr->getImage(),
                                            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                                            0, VK_ACCESS_TRANSFER_WRITE_BIT,
                                            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
@@ -443,7 +443,7 @@ namespace z0 {
                 .imageView = colorAttachementMultisampled.getImageView(),
                 .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                 .resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT ,
-                .resolveImageView = tonemappingRenderer->getToneMap()->getImageView(),
+                .resolveImageView = colorAttachementHdr->getImageView(),
                 .resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                 .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
                 .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
@@ -473,7 +473,7 @@ namespace z0 {
 
     void SceneRenderer::endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage) {
         vkCmdEndRendering(commandBuffer);
-        vulkanDevice.transitionImageLayout(commandBuffer, tonemappingRenderer->getToneMap()->getImage(),
+        vulkanDevice.transitionImageLayout(commandBuffer, colorAttachementHdr->getImage(),
                                            VK_IMAGE_LAYOUT_UNDEFINED,
                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                            VK_ACCESS_TRANSFER_WRITE_BIT,

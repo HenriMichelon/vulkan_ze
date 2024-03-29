@@ -1,37 +1,30 @@
 #include <array>
-#include "z0/vulkan/renderers/tonemapping_renderer.hpp"
+#include "z0/vulkan/renderers/postprocessing_renderer.hpp"
 #include "z0/vulkan/vulkan_descriptors.hpp"
 #include "z0/log.hpp"
-#include "z0/application_config.hpp"
-#include "z0/application.hpp"
 
 namespace z0 {
 
-    TonemappingRenderer::TonemappingRenderer(VulkanDevice &dev, std::string shaderDirectory):
+    PostprocessingRenderer::PostprocessingRenderer(VulkanDevice &dev, std::string shaderDirectory):
     BaseRenderer{dev, shaderDirectory} {
         createImagesResources();
         createResources();
     }
 
-    void TonemappingRenderer::cleanup() {
+    void PostprocessingRenderer::cleanup() {
         cleanupImagesResources();
         BaseRenderer::cleanup();
     }
 
-    void TonemappingRenderer::loadShaders() {
+    void PostprocessingRenderer::loadShaders() {
         vertShader = createShader("quad.vert", VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
-        fragShader = createShader("reinhard.frag", VK_SHADER_STAGE_FRAGMENT_BIT, 0);
+        fragShader = createShader("sepia.frag", VK_SHADER_STAGE_FRAGMENT_BIT, 0);
     }
 
-    void TonemappingRenderer::update(uint32_t currentFrame) {
-        GobalUniformBufferObject globalUbo {
-            .gamma = Application::getConfig().gamma,
-            .exposure = Application::getConfig().exposure,
-        };
-        writeUniformBuffer(globalBuffers, currentFrame, &globalUbo);
+    void PostprocessingRenderer::update(uint32_t currentFrame) {
     }
 
-    void TonemappingRenderer::recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) {
+    void PostprocessingRenderer::recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) {
         bindShaders(commandBuffer);
         vkCmdSetRasterizationSamplesEXT(commandBuffer, VK_SAMPLE_COUNT_1_BIT);
         vkCmdSetDepthTestEnable(commandBuffer, VK_FALSE);
@@ -44,7 +37,7 @@ namespace z0 {
         vkCmdDraw(commandBuffer, 3, 1, 0, 0);
     }
 
-    void TonemappingRenderer::createDescriptorSetLayout() {
+    void PostprocessingRenderer::createDescriptorSetLayout() {
         globalPool = VulkanDescriptorPool::Builder(vulkanDevice)
                 .setMaxSets(MAX_FRAMES_IN_FLIGHT)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, MAX_FRAMES_IN_FLIGHT)
@@ -72,20 +65,20 @@ namespace z0 {
         }
     }
 
-    void TonemappingRenderer::createImagesResources() {
+    void PostprocessingRenderer::createImagesResources() {
         colorAttachementHdr = std::make_shared<ColorAttachementHDR>(vulkanDevice);
     }
 
-    void TonemappingRenderer::cleanupImagesResources() {
+    void PostprocessingRenderer::cleanupImagesResources() {
         colorAttachementHdr->cleanupImagesResources();
     }
 
-    void TonemappingRenderer::recreateImagesResources() {
+    void PostprocessingRenderer::recreateImagesResources() {
         colorAttachementHdr->cleanupImagesResources();
         colorAttachementHdr->createImagesResources();
     }
 
-    void TonemappingRenderer::beginRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage, VkImageView swapChainImageView) {
+    void PostprocessingRenderer::beginRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage, VkImageView swapChainImageView) {
         vulkanDevice.transitionImageLayout(commandBuffer, swapChainImage,
                                            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                                            0, VK_ACCESS_TRANSFER_WRITE_BIT,
@@ -113,7 +106,7 @@ namespace z0 {
         vkCmdBeginRendering(commandBuffer, &renderingInfo);
     }
 
-    void TonemappingRenderer::endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage) {
+    void PostprocessingRenderer::endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage) {
         vkCmdEndRendering(commandBuffer);
         vulkanDevice.transitionImageLayout(
                 commandBuffer,swapChainImage,

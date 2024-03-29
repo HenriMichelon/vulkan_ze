@@ -3,13 +3,12 @@
 #include "z0/vulkan/renderers/shadowmap_renderer.hpp"
 #include "z0/vulkan/renderers/depth_prepass_renderer.hpp"
 #include "z0/vulkan/renderers/skybox_renderer.hpp"
-#include "z0/vulkan/framebuffers/tone_map.hpp"
+#include "z0/vulkan/framebuffers/color_attachement_hdr.hpp"
 #include "z0/vulkan/framebuffers/color_attachement_multisampled.hpp"
 #include "z0/nodes/camera.hpp"
 #include "z0/nodes/directional_light.hpp"
 #include "z0/nodes/environment.hpp"
 #include "z0/nodes/omni_light.hpp"
-#include "tonemapping_renderer.hpp"
 
 #include <map>
 
@@ -61,12 +60,10 @@ namespace z0 {
             alignas(4) float shininess{32.0f};
         };
 
-        SceneRenderer(VulkanDevice& device, std::string shaderDirectory);
+        SceneRenderer(VulkanDevice& device, std::string shaderDirectory, std::shared_ptr<ColorAttachementHDR> colorAttachementHdr);
 
         void loadScene(std::shared_ptr<Node>& rootNode);
         void cleanup() override;
-
-        const std::shared_ptr<TonemappingRenderer>& getTonemappingRenderer() const { return tonemappingRenderer; }
 
     private:
         DirectionalLight* directionalLight{nullptr};
@@ -82,8 +79,9 @@ namespace z0 {
         std::map<Resource::rid_t, uint32_t> surfacesIndices {};
         std::vector<std::unique_ptr<VulkanBuffer>> surfacesBuffers{MAX_FRAMES_IN_FLIGHT};
 
-        // ColorAttachementMultisampled offscreen frame buffer
+        // Offscreen frame buffers
         ColorAttachementMultisampled colorAttachementMultisampled;
+        std::shared_ptr<ColorAttachementHDR> colorAttachementHdr;
         // Depth prepass buffer
         std::shared_ptr<DepthPrepassRenderer> depthPrepassRenderer;
         // Shadow mapping
@@ -92,8 +90,6 @@ namespace z0 {
         std::vector<std::unique_ptr<VulkanBuffer>> shadowMapsBuffers{MAX_FRAMES_IN_FLIGHT};
         // Skybox
         std::unique_ptr<SkyboxRenderer> skyboxRenderer {nullptr};
-        // HDR -> LDR
-        std::shared_ptr<TonemappingRenderer> tonemappingRenderer;
 
         void update(uint32_t currentFrame) override;
         void recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) override;

@@ -46,7 +46,7 @@ add_executable(${PROJECT_NAME}
 		${Z0_ENGINE_DIR}/include/z0/vulkan/framebuffers/depth_buffer.hpp
 		${Z0_ENGINE_DIR}/include/z0/vulkan/framebuffers/base_frame_buffer.hpp
 		${Z0_ENGINE_DIR}/include/z0/vulkan/framebuffers/color_attachement_multisampled.hpp
-		${Z0_ENGINE_DIR}/include/z0/vulkan/framebuffers/tone_map.hpp
+		${Z0_ENGINE_DIR}/include/z0/vulkan/framebuffers/color_attachement_hdr.hpp
 		${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_stats.hpp
         ${Z0_ENGINE_DIR}/include/z0/nodes/node.hpp
         ${Z0_ENGINE_DIR}/include/z0/nodes/camera.hpp
@@ -96,7 +96,7 @@ add_executable(${PROJECT_NAME}
 		${Z0_ENGINE_DIR}/src/vulkan/renderers/skybox_renderer.cpp
 		${Z0_ENGINE_DIR}/src/vulkan/framebuffers/depth_buffer.cpp
 		${Z0_ENGINE_DIR}/src/vulkan/framebuffers/shadow_map.cpp
-		${Z0_ENGINE_DIR}/src/vulkan/framebuffers/tone_map.cpp
+		${Z0_ENGINE_DIR}/src/vulkan/framebuffers/color_attachement_hdr.cpp
 		${Z0_ENGINE_DIR}/src/vulkan/framebuffers/base_frame_buffer.cpp
 		${Z0_ENGINE_DIR}/src/vulkan/framebuffers/color_attachement_multisampled.cpp
 		${Z0_ENGINE_DIR}/src/ui/debug_ui.cpp
@@ -125,6 +125,8 @@ add_executable(${PROJECT_NAME}
 		engine/include/z0/vulkan/framebuffers/color_attachement.hpp
 		engine/src/vulkan/framebuffers/color_attachement.cpp
 		engine/src/vulkan/framebuffers/color_attachement.cpp
+		engine/include/z0/vulkan/renderers/postprocessing_renderer.hpp
+		engine/src/vulkan/renderers/postprocessing_renderer.cpp
 )
 
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_shaders)

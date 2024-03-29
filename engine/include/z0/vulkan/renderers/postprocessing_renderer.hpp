@@ -6,16 +6,16 @@
 
 namespace z0 {
 
-    class TonemappingRenderer: public BaseRenderer, public VulkanRenderer {
+    class PostprocessingRenderer: public BaseRenderer, public VulkanRenderer {
     public:
         struct GobalUniformBufferObject {
             alignas(4) float gamma{2.2};
             alignas(4) float exposure{1.0};
         };
 
-        TonemappingRenderer(VulkanDevice& device, std::string shaderDirectory);
+        PostprocessingRenderer(VulkanDevice& device, std::string shaderDirectory);
 
-        std::shared_ptr<ColorAttachementHDR>& getColorAttachement() { return colorAttachementHdr; }
+        std::shared_ptr<ColorAttachementHDR>& getToneMap() { return colorAttachementHdr; }
 
         void cleanup();
         void update(uint32_t currentFrame);
