@@ -103,6 +103,7 @@ namespace z0 {
         std::vector<VkSemaphore> imageAvailableSemaphores;
         std::vector<VkSemaphore> renderFinishedSemaphores;
         std::vector<VkFence> inFlightFences;
+        VkImageBlit colorImageBlit{};
         void setInitialState(VkCommandBuffer commandBuffer);
 
         // Swap chain management

@@ -1,6 +1,7 @@
 #include "z0/vulkan/framebuffers/shadow_map.hpp"
-#include "z0/log.hpp"
+#include "z0/nodes/spot_light.hpp"
 #include "z0/nodes/directional_light.hpp"
+#include "z0/log.hpp"
 
 namespace z0 {
 
@@ -39,8 +40,8 @@ namespace z0 {
         return lightProjection * glm::lookAt(lightPosition, sceneCenter, AXIS_UP);
     }
 
+    // https://github.com/SaschaWillems/Vulkan/blob/master/examples/shadowmapping/shadowmapping.cpp#L192
     void ShadowMap::createImagesResources() {
-        // https://github.com/SaschaWillems/Vulkan/blob/master/examples/shadowmapping/shadowmapping.cpp#L192
         // For shadow mapping we only need a depth attachment
         auto format = vulkanDevice.findImageTilingSupportedFormat(
                 {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D16_UNORM, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT,},

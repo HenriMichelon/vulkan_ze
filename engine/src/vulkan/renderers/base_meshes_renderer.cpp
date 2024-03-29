@@ -7,7 +7,7 @@
 
 namespace z0 {
 
-    BaseMeshesRenderer::BaseMeshesRenderer(VulkanDevice &dev, std::string sDir) : BaseRenderer(dev, sDir)
+    BaseMeshesRenderer::BaseMeshesRenderer(VulkanDevice &dev, std::string sDir) : BaseRenderpass(dev, sDir)
     {
     }
 
@@ -15,7 +15,7 @@ namespace z0 {
         cleanupImagesResources();
         depthBuffer.reset();
         modelsBuffers.clear();
-        BaseRenderer::cleanup();
+        BaseRenderpass::cleanup();
     }
 
     void BaseMeshesRenderer::setInitialState(VkCommandBuffer commandBuffer) {

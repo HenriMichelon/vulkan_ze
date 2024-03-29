@@ -86,7 +86,7 @@ public:
 
     void onReady() override {
         captureMouse();
-        setPosition({0.0, 2.5, -2.0});
+        setPosition({0.0, 0.5, 2.0});
         //rotateY(glm::radians(-45.));
 
         /*auto markup = z0::Loader::loadModelFromFile("models/light.glb", true);
@@ -144,9 +144,9 @@ public:
         addChild(skybox);
 
         z0::DirectionalLight directionalLight{glm::vec3{0.0f, -1.0f, -1.0f}};
-        directionalLight.setColorAndIntensity({1.0f, 1.0f, 1.0f, 0.2f});
+        directionalLight.setColorAndIntensity({1.0f, 1.0f, 1.0f, 0.5f});
         directionalLight.setCastShadow(true);
-        //addChild(directionalLight);
+        addChild(directionalLight);
 
         z0::SpotLight spotLight1{{-.25, -1.25, 1.0},
                                  40.0, 45.0,
@@ -160,6 +160,9 @@ public:
         light1->setPosition(spotLight1.getPosition());
         addChild(light1);
 
+        addChild(spotLight1.duplicate());
+        addChild(spotLight1.duplicate());
+        addChild(spotLight1.duplicate());
         addChild(spotLight1.duplicate());
         addChild(spotLight1.duplicate());
 
@@ -195,7 +198,8 @@ int main() {
         .windowMode = z0::WINDOW_MODE_WINDOWED,
         .windowWidth = 1024,
         .windowHeight = 768,
-        .msaa = z0::MSAA_AUTO
+        .msaa = z0::MSAA_AUTO,
+        .gamma = 1.0f,
     };
     z0::MainLoop app{applicationConfig};
     app.start(std::make_shared<z0::Scene>(std::make_shared<RootNode>()));

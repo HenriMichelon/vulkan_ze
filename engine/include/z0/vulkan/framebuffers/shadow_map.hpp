@@ -1,10 +1,11 @@
 #pragma once
 
-#include "base_frame_buffer.hpp"
-#include "z0/nodes/spot_light.hpp"
+#include "z0/vulkan/framebuffers/base_frame_buffer.hpp"
+#include "z0/nodes/light.hpp"
 
 namespace z0 {
 
+    // Rendering attachment or resolved offscreen depth buffer
     class ShadowMap: public BaseFrameBuffer {
     public:
         explicit ShadowMap(VulkanDevice &dev, Light* light);
@@ -12,7 +13,7 @@ namespace z0 {
         // Keep depth range as small as possible
         // for better shadow map precision const
         const float zNear = .1f;
-        const float zFar = 100.0f;
+        const float zFar = 50.0f;
 
 #if defined(__ANDROID__)
 	    const uint32_t size{ 1024 };

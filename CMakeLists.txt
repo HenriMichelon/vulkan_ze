@@ -20,8 +20,8 @@ set(CMAKE_CXX_STANDARD 23)
 add_compile_definitions(VULKAN_STATS)
 
 file(GLOB_RECURSE Z0_GLSL_SOURCE_FILES
-		"${Z0_SHADERS_DIR}/*.frag"
-		"${Z0_SHADERS_DIR}/*.vert"
+        "${Z0_SHADERS_DIR}/*.frag"
+        "${Z0_SHADERS_DIR}/*.vert"
 )
 add_shaders(${PROJECT_NAME}_shaders ${Z0_GLSL_SOURCE_FILES})
 
@@ -34,20 +34,22 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_shader.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_descriptors.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_instance.hpp
-		${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_cubemap.hpp
-		${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/base_renderer.hpp
-		${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/scene_renderer.hpp
+        ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_cubemap.hpp
+        ${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/base_renderpass.hpp
+        ${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/scene_renderer.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/shadowmap_renderer.hpp
-		${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/depth_prepass_renderer.hpp
-		${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/base_meshes_renderer.hpp
-		${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/skybox_renderer.hpp
-		${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/tonemapping_renderer.hpp
-		${Z0_ENGINE_DIR}/include/z0/vulkan/framebuffers/shadow_map.hpp
-		${Z0_ENGINE_DIR}/include/z0/vulkan/framebuffers/depth_buffer.hpp
-		${Z0_ENGINE_DIR}/include/z0/vulkan/framebuffers/base_frame_buffer.hpp
-		${Z0_ENGINE_DIR}/include/z0/vulkan/framebuffers/color_attachement_multisampled.hpp
-		${Z0_ENGINE_DIR}/include/z0/vulkan/framebuffers/tone_map.hpp
-		${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_stats.hpp
+        ${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/depth_prepass_renderer.hpp
+        ${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/base_meshes_renderer.hpp
+        ${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/skybox_renderer.hpp
+        ${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/tonemapping_renderer.hpp
+		${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/simple_postprocessing_renderer.hpp
+		${Z0_ENGINE_DIR}/include/z0/vulkan/renderers/base_postprocessing_renderer.hpp
+        ${Z0_ENGINE_DIR}/include/z0/vulkan/framebuffers/shadow_map.hpp
+        ${Z0_ENGINE_DIR}/include/z0/vulkan/framebuffers/depth_buffer.hpp
+        ${Z0_ENGINE_DIR}/include/z0/vulkan/framebuffers/base_frame_buffer.hpp
+        ${Z0_ENGINE_DIR}/include/z0/vulkan/framebuffers/color_attachment_hdr.hpp
+		${Z0_ENGINE_DIR}/include/z0/vulkan/framebuffers/color_attachment.hpp
+        ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_stats.hpp
         ${Z0_ENGINE_DIR}/include/z0/nodes/node.hpp
         ${Z0_ENGINE_DIR}/include/z0/nodes/camera.hpp
         ${Z0_ENGINE_DIR}/include/z0/nodes/mesh_instance.hpp
@@ -56,8 +58,8 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/include/z0/nodes/environment.hpp
         ${Z0_ENGINE_DIR}/include/z0/nodes/omni_light.hpp
         ${Z0_ENGINE_DIR}/include/z0/nodes/spot_light.hpp
-		${Z0_ENGINE_DIR}/include/z0/nodes/skybox.hpp
-		${Z0_ENGINE_DIR}/include/z0/ui/debug_ui.hpp
+        ${Z0_ENGINE_DIR}/include/z0/nodes/skybox.hpp
+        ${Z0_ENGINE_DIR}/include/z0/ui/debug_ui.hpp
         ${Z0_ENGINE_DIR}/include/z0/application_config.hpp
         ${Z0_ENGINE_DIR}/include/z0/mainloop.hpp
         ${Z0_ENGINE_DIR}/include/z0/log.hpp
@@ -74,10 +76,10 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/include/z0/vertex.hpp
         ${Z0_ENGINE_DIR}/include/z0/scene.hpp
         ${Z0_ENGINE_DIR}/include/z0/loader.hpp
-		${Z0_ENGINE_DIR}/include/z0/input.hpp
-		${Z0_ENGINE_DIR}/include/z0/cubemap.hpp
-		${Z0_ENGINE_DIR}/include/z0/application.hpp
-		${Z0_ENGINE_DIR}/include/z0/input_event.hpp
+        ${Z0_ENGINE_DIR}/include/z0/input.hpp
+        ${Z0_ENGINE_DIR}/include/z0/cubemap.hpp
+        ${Z0_ENGINE_DIR}/include/z0/application.hpp
+        ${Z0_ENGINE_DIR}/include/z0/input_event.hpp
         ${Z0_ENGINE_DIR}/src/helpers/window_helper_glfw.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_device.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_buffer.cpp
@@ -87,25 +89,29 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_instance.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_image.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/vulkan_stats.cpp
-		${Z0_ENGINE_DIR}/src/vulkan/vulkan_cubemap.cpp
-		${Z0_ENGINE_DIR}/src/vulkan/renderers/base_renderer.cpp
-		${Z0_ENGINE_DIR}/src/vulkan/renderers/scene_renderer.cpp
+        ${Z0_ENGINE_DIR}/src/vulkan/vulkan_cubemap.cpp
+        ${Z0_ENGINE_DIR}/src/vulkan/renderers/base_renderpass.cpp
+        ${Z0_ENGINE_DIR}/src/vulkan/renderers/scene_renderer.cpp
         ${Z0_ENGINE_DIR}/src/vulkan/renderers/shadowmap_renderer.cpp
-		${Z0_ENGINE_DIR}/src/vulkan/renderers/depth_prepass_renderer.cpp
-		${Z0_ENGINE_DIR}/src/vulkan/renderers/base_meshes_renderer.cpp
-		${Z0_ENGINE_DIR}/src/vulkan/renderers/skybox_renderer.cpp
-		${Z0_ENGINE_DIR}/src/vulkan/framebuffers/depth_buffer.cpp
-		${Z0_ENGINE_DIR}/src/vulkan/framebuffers/shadow_map.cpp
-		${Z0_ENGINE_DIR}/src/vulkan/framebuffers/tone_map.cpp
-		${Z0_ENGINE_DIR}/src/vulkan/framebuffers/base_frame_buffer.cpp
-		${Z0_ENGINE_DIR}/src/vulkan/framebuffers/color_attachement_multisampled.cpp
-		${Z0_ENGINE_DIR}/src/ui/debug_ui.cpp
+        ${Z0_ENGINE_DIR}/src/vulkan/renderers/depth_prepass_renderer.cpp
+        ${Z0_ENGINE_DIR}/src/vulkan/renderers/base_meshes_renderer.cpp
+        ${Z0_ENGINE_DIR}/src/vulkan/renderers/skybox_renderer.cpp
+		${Z0_ENGINE_DIR}/src/vulkan/renderers/tonemapping_renderer.cpp
+		${Z0_ENGINE_DIR}/src/vulkan/renderers/simple_postprocessing_renderer.cpp
+		${Z0_ENGINE_DIR}/src/vulkan/renderers/base_postprocessing_renderer.cpp
+        ${Z0_ENGINE_DIR}/src/vulkan/framebuffers/depth_buffer.cpp
+        ${Z0_ENGINE_DIR}/src/vulkan/framebuffers/shadow_map.cpp
+        ${Z0_ENGINE_DIR}/src/vulkan/framebuffers/color_attachment_hdr.cpp
+        ${Z0_ENGINE_DIR}/src/vulkan/framebuffers/base_frame_buffer.cpp
+		${Z0_ENGINE_DIR}/src/vulkan/framebuffers/color_attachment.cpp
+		${Z0_ENGINE_DIR}/src/vulkan/framebuffers/color_attachment.cpp
+        ${Z0_ENGINE_DIR}/src/ui/debug_ui.cpp
         ${Z0_ENGINE_DIR}/src/nodes/node.cpp
         ${Z0_ENGINE_DIR}/src/nodes/camera.cpp
         ${Z0_ENGINE_DIR}/src/nodes/mesh_instance.cpp
         ${Z0_ENGINE_DIR}/src/nodes/omni_light.cpp
         ${Z0_ENGINE_DIR}/src/nodes/spot_light.cpp
-		${Z0_ENGINE_DIR}/src/nodes/skybox.cpp
+        ${Z0_ENGINE_DIR}/src/nodes/skybox.cpp
         ${Z0_ENGINE_DIR}/src/mainloop.cpp
         ${Z0_ENGINE_DIR}/src/object.cpp
         ${Z0_ENGINE_DIR}/src/viewport.cpp
@@ -115,16 +121,12 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/texture.cpp
         ${Z0_ENGINE_DIR}/src/resource.cpp
         ${Z0_ENGINE_DIR}/src/loader.cpp
-		${Z0_ENGINE_DIR}/src/cubemap.cpp
-		${Z0_ENGINE_DIR}/src/input.cpp
-		${Z0_ENGINE_DIR}/src/input_event.cpp
-		${Z0_ENGINE_DIR}/src/libraries.cpp
-		${IMGUI_SOURCES}
-		example/main.cpp
-		engine/src/vulkan/renderers/tonemapping_renderer.cpp
-		engine/include/z0/vulkan/framebuffers/color_attachement.hpp
-		engine/src/vulkan/framebuffers/color_attachement.cpp
-		engine/src/vulkan/framebuffers/color_attachement.cpp
+        ${Z0_ENGINE_DIR}/src/cubemap.cpp
+        ${Z0_ENGINE_DIR}/src/input.cpp
+        ${Z0_ENGINE_DIR}/src/input_event.cpp
+        ${Z0_ENGINE_DIR}/src/libraries.cpp
+        ${IMGUI_SOURCES}
+        example/main.cpp
 )
 
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_shaders)

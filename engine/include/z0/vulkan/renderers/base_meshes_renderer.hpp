@@ -1,6 +1,6 @@
 #pragma once
 
-#include "z0/vulkan/renderers/base_renderer.hpp"
+#include "z0/vulkan/renderers/base_renderpass.hpp"
 #include "z0/vulkan/framebuffers/depth_buffer.hpp"
 #include "z0/nodes/mesh_instance.hpp"
 #include "z0/nodes/camera.hpp"
@@ -8,9 +8,11 @@
 namespace z0 {
 
 
-    class BaseMeshesRenderer: public BaseRenderer, public VulkanRenderer {
+    class BaseMeshesRenderer: public BaseRenderpass, public VulkanRenderer {
     public:
         void cleanup() override;
+
+        std::shared_ptr<DepthBuffer>& getDepthBuffer() { return depthBuffer; }
 
     protected:
         Camera* currentCamera {nullptr};

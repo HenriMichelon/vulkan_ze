@@ -4,6 +4,7 @@
 
 namespace z0 {
 
+    // Base class for all offscreen fame buffers & rendering attachements
     class BaseFrameBuffer {
     public:
         const VkImage& getImage() const { return image; }
@@ -19,6 +20,8 @@ namespace z0 {
         VkDeviceMemory imageMemory;
 
         BaseFrameBuffer(VulkanDevice &dev): vulkanDevice{dev} {};
+
+        // Helper function for children classes
         void createImage(uint32_t width,
                          uint32_t height,
                          VkFormat format,

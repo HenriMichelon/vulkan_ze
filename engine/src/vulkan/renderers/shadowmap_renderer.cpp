@@ -12,13 +12,13 @@
 namespace z0 {
 
     ShadowMapRenderer::ShadowMapRenderer(VulkanDevice &dev,
-                                         const std::string& sDir) : BaseRenderer{dev, sDir} {}
+                                         const std::string& sDir) : BaseRenderpass{dev, sDir} {}
 
     void ShadowMapRenderer::cleanup() {
         cleanupImagesResources();
         shadowMap.reset();
         modelsBuffers.clear();
-        BaseRenderer::cleanup();
+        BaseRenderpass::cleanup();
     }
 
     void ShadowMapRenderer::loadScene(std::shared_ptr<ShadowMap>& _shadowMap, std::vector<MeshInstance*>& _meshes) {
@@ -127,7 +127,7 @@ namespace z0 {
         }
     }
 
-    void ShadowMapRenderer::beginRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage, VkImageView swapChainImageView) {
+    void ShadowMapRenderer::beginRendering(VkCommandBuffer commandBuffer) {
         vulkanDevice.transitionImageLayout(commandBuffer, shadowMap->getImage(),
                                            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                                            0, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT,
@@ -156,7 +156,7 @@ namespace z0 {
         vkCmdBeginRendering(commandBuffer, &renderingInfo);
     }
 
-    void ShadowMapRenderer::endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage) {
+    void ShadowMapRenderer::endRendering(VkCommandBuffer commandBuffer, bool isLast) {
         vkCmdEndRendering(commandBuffer);
         vulkanDevice.transitionImageLayout(
                 commandBuffer, shadowMap->getImage(),
