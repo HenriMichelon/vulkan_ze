@@ -4,7 +4,7 @@
 #include "z0/vulkan/renderers/depth_prepass_renderer.hpp"
 #include "z0/vulkan/renderers/skybox_renderer.hpp"
 #include "z0/vulkan/framebuffers/tone_map.hpp"
-#include "z0/vulkan/framebuffers/multisampled.hpp"
+#include "z0/vulkan/framebuffers/color_attachement_multisampled.hpp"
 #include "z0/nodes/camera.hpp"
 #include "z0/nodes/directional_light.hpp"
 #include "z0/nodes/environment.hpp"
@@ -82,12 +82,8 @@ namespace z0 {
         std::map<Resource::rid_t, uint32_t> surfacesIndices {};
         std::vector<std::unique_ptr<VulkanBuffer>> surfacesBuffers{MAX_FRAMES_IN_FLIGHT};
 
-        // Multisampled offscreen frame buffer
-        Multisampled multisampled;
-        // Non multisampled offscreen frame buffer
-        ToneMap toneMap;
-        // Blit last offscreen frame buffer to swapchain
-        VkImageBlit colorImageBlit{};
+        // ColorAttachementMultisampled offscreen frame buffer
+        ColorAttachementMultisampled colorAttachementMultisampled;
         // Depth prepass buffer
         std::shared_ptr<DepthPrepassRenderer> depthPrepassRenderer;
         // Shadow mapping

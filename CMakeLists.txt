@@ -45,7 +45,7 @@ add_executable(${PROJECT_NAME}
 		${Z0_ENGINE_DIR}/include/z0/vulkan/framebuffers/shadow_map.hpp
 		${Z0_ENGINE_DIR}/include/z0/vulkan/framebuffers/depth_buffer.hpp
 		${Z0_ENGINE_DIR}/include/z0/vulkan/framebuffers/base_frame_buffer.hpp
-		${Z0_ENGINE_DIR}/include/z0/vulkan/framebuffers/multisampled.hpp
+		${Z0_ENGINE_DIR}/include/z0/vulkan/framebuffers/color_attachement_multisampled.hpp
 		${Z0_ENGINE_DIR}/include/z0/vulkan/framebuffers/tone_map.hpp
 		${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_stats.hpp
         ${Z0_ENGINE_DIR}/include/z0/nodes/node.hpp
@@ -98,7 +98,7 @@ add_executable(${PROJECT_NAME}
 		${Z0_ENGINE_DIR}/src/vulkan/framebuffers/shadow_map.cpp
 		${Z0_ENGINE_DIR}/src/vulkan/framebuffers/tone_map.cpp
 		${Z0_ENGINE_DIR}/src/vulkan/framebuffers/base_frame_buffer.cpp
-		${Z0_ENGINE_DIR}/src/vulkan/framebuffers/multisampled.cpp
+		${Z0_ENGINE_DIR}/src/vulkan/framebuffers/color_attachement_multisampled.cpp
 		${Z0_ENGINE_DIR}/src/ui/debug_ui.cpp
         ${Z0_ENGINE_DIR}/src/nodes/node.cpp
         ${Z0_ENGINE_DIR}/src/nodes/camera.cpp
@@ -122,6 +122,9 @@ add_executable(${PROJECT_NAME}
 		${IMGUI_SOURCES}
 		example/main.cpp
 		engine/src/vulkan/renderers/tonemapping_renderer.cpp
+		engine/include/z0/vulkan/framebuffers/color_attachement.hpp
+		engine/src/vulkan/framebuffers/color_attachement.cpp
+		engine/src/vulkan/framebuffers/color_attachement.cpp
 )
 
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_shaders)

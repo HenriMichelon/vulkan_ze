@@ -26,7 +26,7 @@ namespace z0 {
                 MSAA_VULKAN.at(cfg.msaa));
         sceneRenderer = std::make_shared<SceneRenderer>(*vulkanDevice, (cfg.appDir / "shaders").string());
         vulkanDevice->registerRenderer(sceneRenderer);
-        //vulkanDevice->registerRenderer(sceneRenderer->getTonemappingRenderer());
+        vulkanDevice->registerRenderer(sceneRenderer->getTonemappingRenderer());
     }
 
     void Viewport::wait() {

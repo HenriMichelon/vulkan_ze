@@ -1,13 +1,13 @@
 #version 450
 
-out vec4 FragColor;
+layout (location = 0) out vec4 COLOR;
 
-in vec2 TexCoords;
+layout (location = 0) in vec2 UV;
 
-uniform sampler2D hdrBuffer;
+layout(set = 0, binding = 1) uniform sampler2D hdrBuffer;
 
 void main()
 {
-    vec3 hdrColor = texture(hdrBuffer, TexCoords).rgb;
-    FragColor = vec4(hdrColor, 1.0);
+    vec3 hdrColor = texture(hdrBuffer, UV).rgb;
+    COLOR = vec4(hdrColor, 1.0);
 }

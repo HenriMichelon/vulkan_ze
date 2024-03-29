@@ -1,5 +1,5 @@
 #include "z0/vulkan/framebuffers/tone_map.hpp"
-#include "z0/vulkan/framebuffers/multisampled.hpp"
+#include "z0/vulkan/framebuffers/color_attachement_multisampled.hpp"
 #include "z0/log.hpp"
 
 namespace z0 {
@@ -27,9 +27,9 @@ namespace z0 {
     void ToneMap::createImagesResources() {
         createImage(vulkanDevice.getSwapChainExtent().width,
                     vulkanDevice.getSwapChainExtent().height,
-                    Multisampled::renderFormat,
+                    ColorAttachementMultisampled::renderFormat,
                     VK_SAMPLE_COUNT_1_BIT,
-                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+                    VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
         VkSamplerCreateInfo samplerCreateInfo{
                 .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
@@ -46,7 +46,7 @@ namespace z0 {
                 .borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK
         };
         if (vkCreateSampler(vulkanDevice.getDevice(), &samplerCreateInfo, nullptr, &sampler) != VK_SUCCESS) {
-            die("failed to create shadowmap sampler!");
+            die("failed to create tone mapping sampler!");
         }
 
     }

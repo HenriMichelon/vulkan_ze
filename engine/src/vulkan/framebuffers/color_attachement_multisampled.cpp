@@ -1,13 +1,13 @@
-#include "z0/vulkan/framebuffers/multisampled.hpp"
+#include "z0/vulkan/framebuffers/color_attachement_multisampled.hpp"
 
 namespace z0 {
 
-    Multisampled::Multisampled(VulkanDevice &dev) : BaseFrameBuffer{dev} {
+    ColorAttachementMultisampled::ColorAttachementMultisampled(VulkanDevice &dev) : BaseFrameBuffer{dev} {
          createImagesResources();
      }
 
     // https://vulkan-tutorial.com/Multisampling#page_Setting-up-a-render-target
-    void Multisampled::createImagesResources() {
+    void ColorAttachementMultisampled::createImagesResources() {
         createImage(vulkanDevice.getSwapChainExtent().width,
                     vulkanDevice.getSwapChainExtent().height,
                     renderFormat,
