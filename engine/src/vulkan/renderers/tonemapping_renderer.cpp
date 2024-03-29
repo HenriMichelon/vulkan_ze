@@ -2,6 +2,8 @@
 #include "z0/vulkan/renderers/tonemapping_renderer.hpp"
 #include "z0/vulkan/vulkan_descriptors.hpp"
 #include "z0/log.hpp"
+#include "z0/application_config.hpp"
+#include "z0/application.hpp"
 
 namespace z0 {
 
@@ -22,9 +24,9 @@ namespace z0 {
     }
 
     void TonemappingRenderer::update(uint32_t currentFrame) {
-        GobalUniformBufferObject globalUbo{
-            .gamma = 2.2f,
-            .exposure = 1.0f,
+        GobalUniformBufferObject globalUbo {
+            .gamma = Application::getConfig().gamma,
+            .exposure = Application::getConfig().exposure,
         };
         writeUniformBuffer(globalBuffers, currentFrame, &globalUbo);
     }
@@ -52,7 +54,7 @@ namespace z0 {
         globalSetLayout = VulkanDescriptorSetLayout::Builder(vulkanDevice)
                 .addBinding(0,
                             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                            VK_SHADER_STAGE_VERTEX_BIT)
+                            VK_SHADER_STAGE_FRAGMENT_BIT)
                 .addBinding(1,
                             VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                             VK_SHADER_STAGE_FRAGMENT_BIT,

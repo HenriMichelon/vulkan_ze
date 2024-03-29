@@ -21,5 +21,7 @@ namespace z0 {
         uint32_t windowWidth            = 800;
         uint32_t windowHeight           = 600;
         MSAA msaa                       = MSAA_2X;
+        float gamma                     = 1.0f;
+        float exposure                  = 1.0f;
     };
 }
