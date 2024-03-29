@@ -125,8 +125,8 @@ add_executable(${PROJECT_NAME}
 		engine/include/z0/vulkan/framebuffers/color_attachment.hpp
 		engine/src/vulkan/framebuffers/color_attachment.cpp
 		engine/src/vulkan/framebuffers/color_attachment.cpp
-		engine/include/z0/vulkan/renderers/postprocessing_renderer.hpp
-		engine/src/vulkan/renderers/postprocessing_renderer.cpp
+		engine/include/z0/vulkan/renderers/simple_postprocessing_renderer.hpp
+		engine/src/vulkan/renderers/simple_postprocessing_renderer.cpp
 		engine/include/z0/vulkan/renderers/base_postprocessing_renderer.hpp
 		engine/src/vulkan/renderers/base_postprocessing_renderer.cpp
 )

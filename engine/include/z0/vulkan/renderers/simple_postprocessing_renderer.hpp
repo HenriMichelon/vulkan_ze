@@ -4,13 +4,13 @@
 
 namespace z0 {
 
-    class PostprocessingRenderer: public BasePostprocessingRenderer {
+    class SimplePostprocessingRenderer: public BasePostprocessingRenderer {
     public:
         struct GobalUniformBufferObject {
             alignas(4) float dummy;
         };
 
-        PostprocessingRenderer(VulkanDevice& device, std::string shaderDirectory, std::shared_ptr<ColorAttachmentHDR>& inputColorAttachmentHdr);
+        SimplePostprocessingRenderer(VulkanDevice& device, std::string shaderDirectory, const std::string shaderName, std::shared_ptr<ColorAttachmentHDR>& inputColorAttachmentHdr);
 
         std::shared_ptr<ColorAttachmentHDR>& getColorAttachment() { return colorAttachmentHdr; }
 
@@ -26,6 +26,7 @@ namespace z0 {
 
     private:
         std::shared_ptr<ColorAttachmentHDR> colorAttachmentHdr;
+        const std::string shaderName;
     };
 
 }

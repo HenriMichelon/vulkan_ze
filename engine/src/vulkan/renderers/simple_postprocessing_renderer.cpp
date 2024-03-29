@@ -1,50 +1,53 @@
 #include <array>
-#include "z0/vulkan/renderers/postprocessing_renderer.hpp"
+#include "z0/vulkan/renderers/simple_postprocessing_renderer.hpp"
 #include "z0/vulkan/vulkan_descriptors.hpp"
 #include "z0/log.hpp"
 
 namespace z0 {
 
-    PostprocessingRenderer::PostprocessingRenderer(VulkanDevice &dev, std::string shaderDirectory, std::shared_ptr<ColorAttachmentHDR>& colorAttachmentHdr):
-            BasePostprocessingRenderer{dev, shaderDirectory, colorAttachmentHdr} {
+    SimplePostprocessingRenderer::SimplePostprocessingRenderer(VulkanDevice &dev,
+                                                               std::string shaderDirectory,
+                                                               const std::string _shaderName,
+                                                               std::shared_ptr<ColorAttachmentHDR>& colorAttachmentHdr):
+            BasePostprocessingRenderer{dev, shaderDirectory, colorAttachmentHdr}, shaderName{_shaderName} {
         createImagesResources();
         createResources();
     }
 
-    void PostprocessingRenderer::cleanup() {
+    void SimplePostprocessingRenderer::cleanup() {
         cleanupImagesResources();
         BaseRenderer::cleanup();
     }
 
-    void PostprocessingRenderer::loadShaders() {
+    void SimplePostprocessingRenderer::loadShaders() {
         BasePostprocessingRenderer::loadShaders();
-        fragShader = createShader("sepia.frag", VK_SHADER_STAGE_FRAGMENT_BIT, 0);
+        fragShader = createShader(shaderName + ".frag", VK_SHADER_STAGE_FRAGMENT_BIT, 0);
     }
 
-    void PostprocessingRenderer::update(uint32_t currentFrame) {
+    void SimplePostprocessingRenderer::update(uint32_t currentFrame) {
         GobalUniformBufferObject globalUbo {
         };
         writeUniformBuffer(globalBuffers, currentFrame, &globalUbo);
     }
 
-    void PostprocessingRenderer::createDescriptorSetLayout() {
+    void SimplePostprocessingRenderer::createDescriptorSetLayout() {
         BasePostprocessingRenderer::createDescriptorSetLayout(sizeof(GobalUniformBufferObject));
     }
 
-    void PostprocessingRenderer::createImagesResources() {
+    void SimplePostprocessingRenderer::createImagesResources() {
         colorAttachmentHdr = std::make_shared<ColorAttachmentHDR>(vulkanDevice);
     }
 
-    void PostprocessingRenderer::cleanupImagesResources() {
+    void SimplePostprocessingRenderer::cleanupImagesResources() {
         colorAttachmentHdr->cleanupImagesResources();
     }
 
-    void PostprocessingRenderer::recreateImagesResources() {
+    void SimplePostprocessingRenderer::recreateImagesResources() {
         colorAttachmentHdr->cleanupImagesResources();
         colorAttachmentHdr->createImagesResources();
     }
 
-    void PostprocessingRenderer::beginRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage, VkImageView swapChainImageView) {
+    void SimplePostprocessingRenderer::beginRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage, VkImageView swapChainImageView) {
         vulkanDevice.transitionImageLayout(commandBuffer, colorAttachmentHdr->getImage(),
                                            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                                            0, VK_ACCESS_TRANSFER_WRITE_BIT,
@@ -72,7 +75,7 @@ namespace z0 {
         vkCmdBeginRendering(commandBuffer, &renderingInfo);
     }
 
-    void PostprocessingRenderer::endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage) {
+    void SimplePostprocessingRenderer::endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage) {
         vkCmdEndRendering(commandBuffer);
         vulkanDevice.transitionImageLayout(commandBuffer, colorAttachmentHdr->getImage(),
                                            VK_IMAGE_LAYOUT_UNDEFINED,
