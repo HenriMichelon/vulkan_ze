@@ -23,7 +23,8 @@ namespace z0 {
 
     void TonemappingRenderer::update(uint32_t currentFrame) {
         GobalUniformBufferObject globalUbo{
-            .gamma = 2.2f
+            .gamma = 2.2f,
+            .exposure = 1.0f,
         };
         writeUniformBuffer(globalBuffers, currentFrame, &globalUbo);
     }

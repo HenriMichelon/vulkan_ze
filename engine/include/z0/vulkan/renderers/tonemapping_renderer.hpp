@@ -9,7 +9,8 @@ namespace z0 {
     class TonemappingRenderer: public BaseRenderer, public VulkanRenderer {
     public:
         struct GobalUniformBufferObject {
-            alignas(4) float gamma;
+            alignas(4) float gamma{2.2};
+            alignas(4) float exposure{1.0};
         };
 
         TonemappingRenderer(VulkanDevice& device, std::string shaderDirectory);

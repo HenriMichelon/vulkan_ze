@@ -5,10 +5,11 @@ ZeroZero is a 3D game engine based on the Vulkan 1.3 API
 **Current state**
 - Scene tree & nodes using classical OO approch
 - Depth pre-pass
-- glTF scene loading
+- glTF scene loading (diffuse, specular & normal maps)
 - Directionals, omnidirectionals & spots lights
 - Simple shadows for directionals & spots ligths
 - Skybox using cubemap
+- HDR tone mapping
 
 **Please note**
 - This project was made for learning purpose
