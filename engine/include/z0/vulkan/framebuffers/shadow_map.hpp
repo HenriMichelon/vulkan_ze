@@ -1,14 +1,13 @@
 #pragma once
 
-#include "z0/vulkan/renderers//base_shared_image.hpp"
+#include "base_frame_buffer.hpp"
 #include "z0/nodes/spot_light.hpp"
 
 namespace z0 {
 
-    class ShadowMap: public BaseSharedImage {
+    class ShadowMap: public BaseFrameBuffer {
     public:
         explicit ShadowMap(VulkanDevice &dev, Light* light);
-        ~ShadowMap();
 
         // Keep depth range as small as possible
         // for better shadow map precision const
@@ -30,7 +29,7 @@ namespace z0 {
 
     private:
         Light* light;
-        VkSampler sampler;
+        VkSampler sampler{VK_NULL_HANDLE};
     };
 
 }

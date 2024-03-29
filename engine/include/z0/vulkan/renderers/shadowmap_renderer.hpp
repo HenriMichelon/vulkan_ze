@@ -1,7 +1,7 @@
 #pragma once
 
 #include "base_renderer.hpp"
-#include "z0/vulkan/renderers/shadow_map.hpp"
+#include "z0/vulkan/framebuffers/shadow_map.hpp"
 #include "z0/nodes/mesh_instance.hpp"
 
 namespace z0 {
@@ -37,7 +37,7 @@ namespace z0 {
         void createImagesResources() override;
         void cleanupImagesResources() override;
         void recreateImagesResources() override;
-        void beginRendering(VkCommandBuffer commandBuffer) override;
+        void beginRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage, VkImageView swapChainImageView) override;
         void endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage) override;
 
     public:

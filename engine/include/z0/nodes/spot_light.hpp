@@ -30,6 +30,7 @@ namespace z0 {
         float fov{0.0f};
         float cutOff { glm::cos(glm::radians(10.f)) };
         float outerCutOff { glm::cos(glm::radians(15.f)) };
+        std::shared_ptr<Node> duplicateInstance() override;
     };
 
 }

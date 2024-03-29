@@ -6,15 +6,16 @@
 #include "z0/nodes/skybox.hpp"
 #include "z0/log.hpp"
 
-#include <glm/gtc/matrix_inverse.hpp>
-
 #include <array>
 #include <set>
 
 namespace z0 {
 
-    SceneRenderer::SceneRenderer(VulkanDevice &dev, std::string sDir) : BaseMeshesRenderer{dev, sDir} {
-         createImagesResources();
+    SceneRenderer::SceneRenderer(VulkanDevice &dev, std::string sDir) :
+            BaseMeshesRenderer{dev, sDir},
+            colorAttachementMultisampled{dev} {
+        createImagesResources();
+        tonemappingRenderer = std::make_shared<TonemappingRenderer>(dev, sDir);
      }
 
     void SceneRenderer::cleanup() {
@@ -185,7 +186,6 @@ namespace z0 {
             .shadowMapsCount = static_cast<uint32_t>(shadowMaps.size()),
         };
 
-        // TODO if empty
         auto shadowMapArray =  std::make_unique<ShadowMapUniform[]>(globalUbo.shadowMapsCount);
         for(int i=0; i < globalUbo.shadowMapsCount; i++) {
             shadowMapArray[i].lightSpace = shadowMaps[i]->getLightSpace();
@@ -207,7 +207,6 @@ namespace z0 {
         globalUbo.pointLightsCount = omniLights.size();
         writeUniformBuffer(globalBuffers, currentFrame, &globalUbo);
 
-        // TODO if empty
         auto pointLightsArray =  std::make_unique<PointLightUniform[]>(globalUbo.pointLightsCount);
         for(int i=0; i < globalUbo.pointLightsCount; i++) {
             pointLightsArray[i].position = omniLights[i]->getPosition();
@@ -264,7 +263,6 @@ namespace z0 {
             vkCmdSetDepthWriteEnable(commandBuffer, VK_FALSE); // we have a depth prepass
             vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_EQUAL); // comparing with the depth prepass
             drawMeshes(commandBuffer, currentFrame, opaquesMeshes);
-
             vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
             vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_LESS_OR_EQUAL);
             drawMeshes(commandBuffer, currentFrame, transparentsMeshes);
@@ -410,50 +408,9 @@ namespace z0 {
     }
 
     void SceneRenderer::createImagesResources() {
-        // Create Color Resources (where we draw)
-        // https://vulkan-tutorial.com/Multisampling#page_Setting-up-a-render-target
-        VkFormat colorFormat = vulkanDevice.getSwapChainImageFormat();
-        vulkanDevice.createImage(vulkanDevice.getSwapChainExtent().width, vulkanDevice.getSwapChainExtent().height,
-                                 1,
-                                 vulkanDevice.getSamples(),
-                                 colorFormat,
-                                 VK_IMAGE_TILING_OPTIMAL,
-                                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                 colorImage, colorImageMemory);
-        colorImageView = vulkanDevice.createImageView(colorImage,
-                                                      colorFormat,
-                                                      VK_IMAGE_ASPECT_COLOR_BIT,
-                                                      1);
+        // offscreen frame buffers created in the constructor
 
-        // For resolving multisampling image to swapchain
-        colorImageResolve.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-        colorImageResolve.srcOffset = {0, 0, 0};
-        colorImageResolve.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-        colorImageResolve.dstOffset = {0, 0, 0};
-        colorImageResolve.extent = {
-                vulkanDevice.getSwapChainExtent().width,
-                vulkanDevice.getSwapChainExtent().height,
-                1};
-
-        // For bliting image to swapchain
-        colorImageBlit.srcOffsets[0] = {0, 0, 0 };
-        colorImageBlit.srcOffsets[1] = {
-                static_cast<int32_t>(vulkanDevice.getSwapChainExtent().width),
-                static_cast<int32_t>(vulkanDevice.getSwapChainExtent().height), 1 };
-        colorImageBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        colorImageBlit.srcSubresource.mipLevel = 0;
-        colorImageBlit.srcSubresource.baseArrayLayer = 0;
-        colorImageBlit.srcSubresource.layerCount = 1;
-        colorImageBlit.dstOffsets[0] = {0, 0, 0 };
-        colorImageBlit.dstOffsets[1] = {
-                static_cast<int32_t>(vulkanDevice.getSwapChainExtent().width),
-                static_cast<int32_t>(vulkanDevice.getSwapChainExtent().height), 1 };
-        colorImageBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        colorImageBlit.dstSubresource.mipLevel = 0;
-        colorImageBlit.dstSubresource.baseArrayLayer = 0;
-        colorImageBlit.dstSubresource.layerCount = 1;
-
+        // Depth buffer
         if (depthBuffer == nullptr) {
             depthBuffer = std::make_shared<DepthBuffer>(vulkanDevice);
             depthPrepassRenderer = std::make_shared<DepthPrepassRenderer>(vulkanDevice, shaderDirectory);
@@ -464,24 +421,30 @@ namespace z0 {
 
     void SceneRenderer::cleanupImagesResources() {
         if (depthBuffer != nullptr) depthBuffer->cleanupImagesResources();
-        vkDestroyImageView(device, colorImageView, nullptr);
-        vkDestroyImage(device, colorImage, nullptr);
-        vkFreeMemory(device, colorImageMemory, nullptr);
+        colorAttachementMultisampled.cleanupImagesResources();
     }
 
     // https://lesleylai.info/en/vk-khr-dynamic-rendering/
-    void SceneRenderer::beginRendering(VkCommandBuffer commandBuffer) {
-        vulkanDevice.transitionImageLayout(commandBuffer, colorImage,
+    void SceneRenderer::beginRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage, VkImageView swapChainImageView) {
+        vulkanDevice.transitionImageLayout(commandBuffer, colorAttachementMultisampled.getImage(),
+                                           VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                           0, VK_ACCESS_TRANSFER_WRITE_BIT,
+                                           VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                           VK_IMAGE_ASPECT_COLOR_BIT);
+        vulkanDevice.transitionImageLayout(commandBuffer, tonemappingRenderer->getToneMap()->getImage(),
                                            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                                            0, VK_ACCESS_TRANSFER_WRITE_BIT,
                                            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
                                            VK_IMAGE_ASPECT_COLOR_BIT);
         // Color attachement : where the rendering is done (multisampled memory image)
+        // Resolved into a non multisampled image
         const VkRenderingAttachmentInfo colorAttachmentInfo{
                 .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
-                .imageView = colorImageView,
+                .imageView = colorAttachementMultisampled.getImageView(),
                 .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                .resolveMode = VK_RESOLVE_MODE_NONE,
+                .resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT ,
+                .resolveImageView = tonemappingRenderer->getToneMap()->getImageView(),
+                .resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                 .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
                 .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
                 .clearValue = clearColor,
@@ -510,40 +473,14 @@ namespace z0 {
 
     void SceneRenderer::endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage) {
         vkCmdEndRendering(commandBuffer);
-        vulkanDevice.transitionImageLayout(
-                commandBuffer,swapChainImage,
-                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                0, VK_ACCESS_TRANSFER_WRITE_BIT,
-                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                VK_IMAGE_ASPECT_COLOR_BIT);
-        // Since we render in a memory image we need to manually present the image in the swap chain
-        if (vulkanDevice.getSamples() == VK_SAMPLE_COUNT_1_BIT) {
-            // Blit image to swap chain if MSAA is disabled
-            vkCmdBlitImage(commandBuffer,
-                           colorImage,
-                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                           swapChainImage,
-                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                           1,
-                           &colorImageBlit,
-                           VK_FILTER_LINEAR );
-        } else {
-            // Resolve multisample image to a non-multisample swap chain image if MSAA is enabled
-            vkCmdResolveImage(commandBuffer,
-                              colorImage,
-                              VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                              swapChainImage,
-                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                              1,
-                              &colorImageResolve);
-
-        }
-        vulkanDevice.transitionImageLayout(
-                commandBuffer,swapChainImage,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, 0,
-                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                VK_IMAGE_ASPECT_COLOR_BIT);
+        vulkanDevice.transitionImageLayout(commandBuffer, tonemappingRenderer->getToneMap()->getImage(),
+                                           VK_IMAGE_LAYOUT_UNDEFINED,
+                                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                           VK_ACCESS_TRANSFER_WRITE_BIT,
+                                           VK_ACCESS_SHADER_READ_BIT,
+                                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                           VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                           VK_IMAGE_ASPECT_COLOR_BIT);
     }
 
 

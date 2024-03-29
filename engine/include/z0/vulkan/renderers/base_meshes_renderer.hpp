@@ -1,7 +1,7 @@
 #pragma once
 
 #include "z0/vulkan/renderers/base_renderer.hpp"
-#include "z0/vulkan/renderers/depth_buffer.hpp"
+#include "z0/vulkan/framebuffers/depth_buffer.hpp"
 #include "z0/nodes/mesh_instance.hpp"
 #include "z0/nodes/camera.hpp"
 

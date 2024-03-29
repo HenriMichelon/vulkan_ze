@@ -5,14 +5,12 @@
 namespace z0 {
 
     static const std::map<MSAA, VkSampleCountFlagBits> MSAA_VULKAN {
-            //{ MSAA_DISABLED, VK_SAMPLE_COUNT_1_BIT },
             { MSAA_2X, VK_SAMPLE_COUNT_2_BIT },
             { MSAA_4X, VK_SAMPLE_COUNT_4_BIT },
             { MSAA_8X, VK_SAMPLE_COUNT_8_BIT },
             { MSAA_AUTO, VK_SAMPLE_COUNT_1_BIT },
     };
     static const std::map<VkSampleCountFlagBits, MSAA> VULKAN_MSAA {
-            //{ VK_SAMPLE_COUNT_1_BIT, MSAA_DISABLED },
             { VK_SAMPLE_COUNT_2_BIT, MSAA_2X },
             { VK_SAMPLE_COUNT_4_BIT, MSAA_4X },
             { VK_SAMPLE_COUNT_8_BIT, MSAA_8X },
@@ -28,6 +26,7 @@ namespace z0 {
                 MSAA_VULKAN.at(cfg.msaa));
         sceneRenderer = std::make_shared<SceneRenderer>(*vulkanDevice, (cfg.appDir / "shaders").string());
         vulkanDevice->registerRenderer(sceneRenderer);
+        vulkanDevice->registerRenderer(sceneRenderer->getTonemappingRenderer());
     }
 
     void Viewport::wait() {

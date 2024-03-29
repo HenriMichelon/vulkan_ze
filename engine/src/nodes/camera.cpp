@@ -38,7 +38,6 @@ namespace z0 {
         projectionMatrix[2][2] = _far / (_far - _near);
         projectionMatrix[2][3] = 1.f;
         projectionMatrix[3][2] = -(_far * _near) / (_far - _near);
-        //projectionMatrix[1][1] *= -1.0f;
     }
 
     const glm::mat4& Camera::getProjection() {

@@ -10,5 +10,6 @@ namespace z0 {
         static Scene& getCurrentScene() { return *MainLoop::get().currentScene; }
         static Viewport& getViewport() { return *MainLoop::get().viewport; }
         static const std::filesystem::path getDirectory() { return MainLoop::get().applicationConfig.appDir; }
+        static const ApplicationConfig& getConfig() { return MainLoop::get().applicationConfig; }
     };
 }
