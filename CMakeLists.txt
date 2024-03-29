@@ -127,6 +127,8 @@ add_executable(${PROJECT_NAME}
 		engine/src/vulkan/framebuffers/color_attachment.cpp
 		engine/include/z0/vulkan/renderers/postprocessing_renderer.hpp
 		engine/src/vulkan/renderers/postprocessing_renderer.cpp
+		engine/include/z0/vulkan/renderers/base_postprocessing_renderer.hpp
+		engine/src/vulkan/renderers/base_postprocessing_renderer.cpp
 )
 
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_shaders)

@@ -16,12 +16,12 @@ namespace z0 {
 
         SkyboxRenderer(VulkanDevice& device, std::string shaderDirectory);
 
-        void cleanup();
+        void cleanup() override;
         void loadScene(std::shared_ptr<VulkanCubemap>& cubemap);
         void update(Camera* currentCamera, uint32_t currentFrame);
-        void loadShaders();
-        void createDescriptorSetLayout() ;
-        void recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame);
+        void loadShaders() override;
+        void createDescriptorSetLayout() override;
+        void recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) override;
 
     private:
         uint32_t vertexCount;
