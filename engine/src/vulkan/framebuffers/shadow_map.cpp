@@ -8,10 +8,6 @@ namespace z0 {
          createImagesResources();
      }
 
-    ShadowMap::~ShadowMap() {
-        cleanupImagesResources();
-    }
-
     glm::mat4 ShadowMap::getLightSpace() const {
         glm::vec3 lightPosition;
         glm::vec3 sceneCenter;

@@ -8,7 +8,6 @@ namespace z0 {
     class ShadowMap: public BaseFrameBuffer {
     public:
         explicit ShadowMap(VulkanDevice &dev, Light* light);
-        ~ShadowMap();
 
         // Keep depth range as small as possible
         // for better shadow map precision const

@@ -425,7 +425,7 @@ namespace z0 {
     }
 
     // https://lesleylai.info/en/vk-khr-dynamic-rendering/
-    void SceneRenderer::beginRendering(VkCommandBuffer commandBuffer) {
+    void SceneRenderer::beginRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage, VkImageView swapChainImageView) {
         vulkanDevice.transitionImageLayout(commandBuffer, colorAttachementMultisampled.getImage(),
                                            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                                            0, VK_ACCESS_TRANSFER_WRITE_BIT,

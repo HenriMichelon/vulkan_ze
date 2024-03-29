@@ -108,7 +108,7 @@ namespace z0 {
         }
     }
 
-    void DepthPrepassRenderer::beginRendering(VkCommandBuffer commandBuffer) {
+    void DepthPrepassRenderer::beginRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage, VkImageView swapChainImageView) {
         vulkanDevice.transitionImageLayout(
                 commandBuffer,
                depthBuffer->getImage(),

@@ -21,17 +21,14 @@ namespace z0 {
         void loadShaders();
         void createDescriptorSetLayout() ;
         void recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame);
-        void beginRendering(VkCommandBuffer commandBuffer);
+        void beginRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage, VkImageView swapChainImageView);
         void endRendering(VkCommandBuffer commandBuffer, VkImage swapChainImage);
         void createImagesResources();
         void cleanupImagesResources();
         void recreateImagesResources();
 
     private:
-        ColorAttachement colorAttachement;
         std::shared_ptr<ToneMap> toneMap;
-        // Blit last offscreen frame buffer to swapchain
-        VkImageBlit colorImageBlit{};
     };
 
 }
