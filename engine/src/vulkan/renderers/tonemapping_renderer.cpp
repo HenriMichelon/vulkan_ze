@@ -26,9 +26,24 @@ namespace z0 {
         writeUniformBuffer(globalBuffers, currentFrame, &globalUbo);
     }
 
-    /*void TonemappingRenderer::createDescriptorSetLayout() {
-        BasePostprocessingRenderer::createDescriptorSetLayout(sizeof(GobalUniformBufferObject));
-    }*/
+    void TonemappingRenderer::recreateImagesResources() {
+        colorAttachmentHdr->cleanupImagesResources();
+        colorAttachmentHdr->createImagesResources();
+        for (int i = 0; i < descriptorSets.size(); i++) {
+            auto globalBufferInfo = globalBuffers[i]->descriptorInfo(sizeof(GobalUniformBufferObject));
+            auto imageInfo = inputColorAttachmentHdr->imageInfo();
+            VkDescriptorImageInfo depthImageInfo {
+                    .sampler = imageInfo.sampler,
+                    .imageView = resolvedDepthBuffer->getImageView(),
+                    .imageLayout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
+            };
+            auto writer = VulkanDescriptorWriter(*globalSetLayout, *globalPool)
+                    .writeBuffer(0, &globalBufferInfo)
+                    .writeImage(1, &imageInfo)
+                    .writeImage(2, &depthImageInfo);
+            writer.overwrite(descriptorSets[i]);
+        }
+    }
 
     void TonemappingRenderer::createDescriptorSetLayout() {
         globalPool = VulkanDescriptorPool::Builder(vulkanDevice)

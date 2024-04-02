@@ -65,7 +65,7 @@ namespace z0 {
         std::shared_ptr<ColorAttachmentHDR>& getColorAttachment() { return colorAttachmentHdr; }
         VkImage getImage() const override { return colorAttachmentHdr->getImage(); }
         VkImageView getImageView() const override { return colorAttachmentHdr->getImageView(); }
-        std::shared_ptr<DepthBuffer> getResolvedDepthBuffer() const  { return resolvedDepthBuffer; }
+        std::shared_ptr<DepthBuffer>& getResolvedDepthBuffer()  { return resolvedDepthBuffer; }
 
         void loadScene(std::shared_ptr<Node>& rootNode);
         void cleanup() override;

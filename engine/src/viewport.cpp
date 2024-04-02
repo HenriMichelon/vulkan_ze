@@ -32,11 +32,11 @@ namespace z0 {
                                                                     sDir,
                                                                     sceneRenderer->getColorAttachment(),
                                                                     sceneRenderer->getResolvedDepthBuffer());
-        /*postprocessingRenderer = std::make_shared<SimplePostprocessingRenderer>(*vulkanDevice,
+        postprocessingRenderer = std::make_shared<SimplePostprocessingRenderer>(*vulkanDevice,
                                                                                 sDir,
                                                                                 "grayscale",
                                                                                 tonemappingRenderer->getColorAttachment());
-        vulkanDevice->registerRenderer(postprocessingRenderer);*/
+        vulkanDevice->registerRenderer(postprocessingRenderer);
         vulkanDevice->registerRenderer(tonemappingRenderer);
         vulkanDevice->registerRenderer(sceneRenderer);
     }

@@ -85,7 +85,7 @@ public:
 
     void onReady() override {
         captureMouse();
-        setPosition({0.0, 0.5, 2.0});
+        setPosition({0.0, 0.0, 2.6});
         //rotateY(glm::radians(-45.));
 
         /*auto markup = z0::Loader::loadModelFromFile("models/light.glb", true);
@@ -93,7 +93,7 @@ public:
         addChild(markup);*/
 
         camera = std::make_shared<z0::Camera>();
-        camera->setPosition({ 0.0f, 0.0f, 0.5f});
+        camera->setPosition({ 0.0f, 0.0f, 0.0f});
         addChild(camera);
 
         for (int i = 0; i < z0::Input::getConnectedJoypads(); i++) {
@@ -133,8 +133,8 @@ public:
 
     void onProcess(float delta) override {
         float angle = delta * glm::radians(90.0f) / 2;
-        model1->rotateY(angle);
-        model1->rotateX(angle);
+        //model1->rotateY(angle);
+        //model1->rotateX(angle);
     }
 
     void onReady() override {
@@ -150,7 +150,7 @@ public:
         directionalLight->setCastShadow(true);
         addChild(directionalLight);
 
-        std::shared_ptr<z0::SpotLight> spotLight1 = std::make_shared<z0::SpotLight>(
+        /*std::shared_ptr<z0::SpotLight> spotLight1 = std::make_shared<z0::SpotLight>(
                 glm::vec3{-.25, -1.25, 1.0},
                  40.0, 45.0,
                  0.027, 0.0028);
@@ -161,12 +161,16 @@ public:
         light1 = z0::Loader::loadModelFromFile("models/light.glb", true);
         light1->setScale(glm::vec3{0.25});
         light1->setPosition(spotLight1->getPosition());
-        addChild(light1);
+        addChild(light1);*/
 
-        model1 = z0::Loader::loadModelFromFile("models/sphere.glb", false);
-        //model1->setScale(glm::vec3{0.01});
-        //model1->rotateZ(glm::radians(10.0));
+        model1 = z0::Loader::loadModelFromFile("models/crate.glb", false);
         addChild(model1);
+
+        model2 = model1->duplicate();
+        addChild(model2);
+
+        model1->setPosition({-1.0, 0.0, 0.0});
+        model2->setPosition({1.0, 0.0, 0.0});
 
         floor = z0::Loader::loadModelFromFile("models/floor.glb", true);
         floor->setPosition({0.0, -2.0, 0.0});
@@ -175,13 +179,14 @@ public:
         addChild(std::make_shared<Player>());
         //z0::Application::setPaused(true);
 
-        auto child = getNode("Player/Camera");
+        //auto child = getNode("Player/Camera");
         printTree(std::cout);
     }
 
 private:
     float rot = 0.0;
     std::shared_ptr<z0::Node> model1;
+    std::shared_ptr<z0::Node> model2;
     std::shared_ptr<z0::Node> light1;
     std::shared_ptr<z0::Node> floor;
 

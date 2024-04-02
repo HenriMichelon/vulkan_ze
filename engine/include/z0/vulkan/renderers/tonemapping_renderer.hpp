@@ -22,6 +22,7 @@ namespace z0 {
         void update(uint32_t currentFrame) override;
         void loadShaders() override;
         void createDescriptorSetLayout() override;
+        void recreateImagesResources();
 
     private:
         std::shared_ptr<DepthBuffer> resolvedDepthBuffer;
