@@ -14,8 +14,7 @@ namespace z0 {
     Application& Application::get() { return *instance; }
 
     Application::Application(const ApplicationConfig& cfg):
-            applicationConfig{cfg},
-            vulkanInstance{} {
+            vulkanInstance{}, applicationConfig{cfg} {
         viewport = std::make_shared<Viewport>(vulkanInstance, cfg);
         if (instance != nullptr) die("Application already registered");
         instance = this;

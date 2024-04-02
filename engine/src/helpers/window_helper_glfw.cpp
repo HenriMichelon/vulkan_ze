@@ -14,7 +14,6 @@ namespace z0 {
     }
 
     static void glfwKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-        auto windowHelper = reinterpret_cast<WindowHelper*>(glfwGetWindowUserPointer(window));
         Input::injectInputEvent(std::make_shared<InputEventKey>(
                 (Key)key,
                 (action == GLFW_PRESS) || (action == GLFW_REPEAT),

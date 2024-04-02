@@ -11,6 +11,7 @@ namespace z0 {
               float specular = 1.0f,
               const std::string nodeName = "Light"):
             Node{nodeName}, colorAndIntensity{color}, specularIntensity{specular}  {}
+        virtual ~Light() {};
 
         glm::vec4& getColorAndIntensity() { return colorAndIntensity; }
         void setColorAndIntensity(glm::vec4 color) { colorAndIntensity = color; }

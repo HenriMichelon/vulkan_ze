@@ -16,6 +16,7 @@ namespace z0 {
                            glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f},
                            float specular = 1.0f,
                            const std::string nodeName = "SpotLight");
+        virtual ~SpotLight() {};
 
         glm::vec3& getDirection() { return direction; }
         void setDirection(glm::vec3 lightDirection) { direction = lightDirection; }

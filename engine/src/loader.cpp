@@ -218,7 +218,7 @@ namespace z0 {
                 }
                 // calculate tangent for each triangle
                 if (!haveTangents) {
-                    for (int i = 0; i < indices.size(); i += 3) {
+                    for (uint32_t i = 0; i < indices.size(); i += 3) {
                         auto &vertex1 = vertices[indices[i]];
                         auto &vertex2 = vertices[indices[i + 1]];
                         auto &vertex3 = vertices[indices[i + 2]];
@@ -278,7 +278,7 @@ namespace z0 {
             nodes.push_back(newNode);
         }
 
-        for (int i = 0; i < gltf.nodes.size(); i++) {
+        for (uint32_t i = 0; i < gltf.nodes.size(); i++) {
             fastgltf::Node& node = gltf.nodes[i];
             std::shared_ptr<Node>& sceneNode = nodes[i];
             for (auto& c : node.children) {

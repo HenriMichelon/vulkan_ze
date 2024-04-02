@@ -15,15 +15,7 @@
 #include <iostream>
 #include <list>
 
-// For ImGui
-static void check_vk_result(VkResult err)
-{
-    if (err == 0)
-        return;
-    std::cout << "[vulkan] Error: VkResult\n" << std::endl;
-    if (err < 0)
-        abort();
-}
+
 
 #include "z0/window.hpp"
 #include <string>

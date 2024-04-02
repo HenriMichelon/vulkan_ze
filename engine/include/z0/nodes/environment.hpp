@@ -7,6 +7,7 @@ namespace z0 {
     class Environment : public Node {
     public:
         explicit Environment(const std::string nodeName = "Environment"): Node{nodeName} {}
+        virtual ~Environment() {};
 
         glm::vec4& getAmbientColorAndIntensity() { return ambientColorIntensity; }
         void setAmbientColorAndIntensity(glm::vec4 color) { ambientColorIntensity = color; }

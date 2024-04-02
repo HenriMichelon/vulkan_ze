@@ -34,6 +34,7 @@ namespace z0 {
 
         explicit Node(const std::string nodeName = "Node");
         Node(const Node&);
+        virtual ~Node() {};
 
         virtual void onReady() {}
         virtual void onProcess(float delta) {}

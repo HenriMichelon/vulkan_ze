@@ -13,6 +13,7 @@ namespace z0 {
                            glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f},
                            float specular = 1.0f,
                            const std::string nodeName = "OmniLight");
+        virtual ~OmniLight() {};
 
         float getLinear() const { return linear; }
         void setLinear(float _linear) { linear = _linear; }

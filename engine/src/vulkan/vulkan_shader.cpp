@@ -17,7 +17,7 @@ namespace z0 {
                                const std::vector<char> &code,
                                const VkDescriptorSetLayout *pSetLayouts,
                                const VkPushConstantRange *pPushConstantRange):
-            device{dev}, stage{_stage}, shaderName{std::move(_name)}, stageFlags{_next_stage}, spirv{code} {
+            device{dev}, stage{_stage}, stageFlags{_next_stage}, shaderName{std::move(_name)}, spirv{code} {
         shaderCreateInfo.sType                  = VK_STRUCTURE_TYPE_SHADER_CREATE_INFO_EXT;
         shaderCreateInfo.pNext                  = nullptr;
         shaderCreateInfo.flags                  = 0;

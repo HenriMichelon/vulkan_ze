@@ -7,7 +7,7 @@ namespace z0 {
                          float _attenuation,
                          glm::vec4 color, float specular, const std::string nodeName):
             Light{color, specular, nodeName},
-            linear{_linear}, quadratic{_quadratic}, attenuation{_attenuation}
+            attenuation{_attenuation}, linear{_linear}, quadratic{_quadratic}
     {
     }
 

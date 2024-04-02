@@ -9,7 +9,7 @@
 namespace z0 {
 
     BaseRenderpass::BaseRenderpass(VulkanDevice &dev, std::string sDir) :
-        vulkanDevice{dev}, device(dev.getDevice()), shaderDirectory(std::move(sDir))
+            device(dev.getDevice()), vulkanDevice{dev}, shaderDirectory(std::move(sDir))
     {
     }
 

@@ -13,6 +13,7 @@ namespace z0 {
                                   const std::string nodeName = "DirectionalLight"):
                 Light{color, specular, nodeName},
                 direction{glm::normalize(lightDirection)}  {}
+        virtual ~DirectionalLight() {};
 
         glm::vec3& getDirection() { return direction; }
         void setDirection(glm::vec3 lightDirection) { direction = lightDirection; }

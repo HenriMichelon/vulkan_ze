@@ -11,6 +11,120 @@
 
 #include <algorithm>
 
+#include <Jolt/Jolt.h>
+#include <Jolt/RegisterTypes.h>
+#include <Jolt/Physics/PhysicsSystem.h>
+#include <Jolt/Physics/Collision/Shape/BoxShape.h>
+#include <Jolt/Physics/Body/BodyCreationSettings.h>
+#include <Jolt/Physics/Collision/ObjectLayer.h>
+#include <Jolt/Core/JobSystemThreadPool.h>
+#include <Jolt/Physics/PhysicsSettings.h>
+#include <Jolt/Physics/Collision/Shape/SphereShape.h>
+
+
+namespace Layers
+{
+    static constexpr JPH::ObjectLayer NON_MOVING = 0;
+    static constexpr JPH::ObjectLayer MOVING = 1;
+    static constexpr JPH::ObjectLayer NUM_LAYERS = 2;
+};
+
+/// Class that determines if two object layers can collide
+class ObjectLayerPairFilterImpl : public JPH::ObjectLayerPairFilter
+{
+public:
+    virtual bool ShouldCollide(JPH::ObjectLayer inObject1, JPH::ObjectLayer inObject2) const override
+    {
+        switch (inObject1)
+        {
+            case Layers::NON_MOVING:
+                return inObject2 == Layers::MOVING; // Non moving only collides with moving
+            case Layers::MOVING:
+                return true; // Moving collides with everything
+            default:
+                JPH_ASSERT(false);
+                return false;
+        }
+    }
+};
+
+// Each broadphase layer results in a separate bounding volume tree in the broad phase. You at least want to have
+// a layer for non-moving and moving objects to avoid having to update a tree full of static objects every frame.
+// You can have a 1-on-1 mapping between object layers and broadphase layers (like in this case) but if you have
+// many object layers you'll be creating many broad phase trees, which is not efficient. If you want to fine tune
+// your broadphase layers define JPH_TRACK_BROADPHASE_STATS and look at the stats reported on the TTY.
+namespace BroadPhaseLayers
+{
+    static constexpr JPH::BroadPhaseLayer NON_MOVING(0);
+    static constexpr JPH::BroadPhaseLayer MOVING(1);
+    static constexpr uint32_t NUM_LAYERS(2);
+};
+
+// BroadPhaseLayerInterface implementation
+// This defines a mapping between object and broadphase layers.
+class BPLayerInterfaceImpl final : public JPH::BroadPhaseLayerInterface
+{
+public:
+    BPLayerInterfaceImpl()
+    {
+        // Create a mapping table from object to broad phase layer
+        mObjectToBroadPhase[Layers::NON_MOVING] = BroadPhaseLayers::NON_MOVING;
+        mObjectToBroadPhase[Layers::MOVING] = BroadPhaseLayers::MOVING;
+    }
+
+    virtual uint32_t GetNumBroadPhaseLayers() const override
+    {
+        return BroadPhaseLayers::NUM_LAYERS;
+    }
+
+    virtual JPH::BroadPhaseLayer GetBroadPhaseLayer(JPH::ObjectLayer inLayer) const override
+    {
+        JPH_ASSERT(inLayer < Layers::NUM_LAYERS);
+        return mObjectToBroadPhase[inLayer];
+    }
+
+#if defined(JPH_EXTERNAL_PROFILE) || defined(JPH_PROFILE_ENABLED)
+    virtual const char * GetBroadPhaseLayerName(JPH::BroadPhaseLayer inLayer) const override
+    {
+        switch ((JPH::BroadPhaseLayer::Type)inLayer)
+        {
+            case (JPH::BroadPhaseLayer::Type)BroadPhaseLayers::NON_MOVING:	return "NON_MOVING";
+            case (JPH::BroadPhaseLayer::Type)BroadPhaseLayers::MOVING:		return "MOVING";
+            default:													JPH_ASSERT(false); return "INVALID";
+        }
+    }
+#endif // JPH_EXTERNAL_PROFILE || JPH_PROFILE_ENABLED
+
+private:
+    JPH::BroadPhaseLayer					mObjectToBroadPhase[Layers::NUM_LAYERS];
+};
+
+/// Class that determines if an object layer can collide with a broadphase layer
+class ObjectVsBroadPhaseLayerFilterImpl : public JPH::ObjectVsBroadPhaseLayerFilter
+{
+public:
+    virtual bool				ShouldCollide(JPH::ObjectLayer inLayer1, JPH::BroadPhaseLayer inLayer2) const override
+    {
+        switch (inLayer1)
+        {
+            case Layers::NON_MOVING:
+                return inLayer2 == BroadPhaseLayers::MOVING;
+            case Layers::MOVING:
+                return true;
+            default:
+                JPH_ASSERT(false);
+                return false;
+        }
+    }
+};
+
+JPH::PhysicsSystem physicsSystem;
+BPLayerInterfaceImpl broad_phase_layer_interface;
+ObjectVsBroadPhaseLayerFilterImpl object_vs_broadphase_layer_filter;
+ObjectLayerPairFilterImpl object_vs_object_layer_filter;
+std::unique_ptr<JPH::TempAllocatorImpl> temp_allocator;
+std::unique_ptr<JPH::JobSystemThreadPool> job_system;
+
 void printPosition(const z0::Node& node) {
     auto pos = node.getPosition();
     std::cout << node.toString() << " local position : " << pos.x << "," << pos.y << "," << pos.z << std::endl;
@@ -85,7 +199,7 @@ public:
 
     void onReady() override {
         captureMouse();
-        setPosition({0.0, 0.0, 2.6});
+        setPosition({0.0, -1.8, 6.0});
         //rotateY(glm::radians(-45.));
 
         /*auto markup = z0::Loader::loadModelFromFile("models/light.glb", true);
@@ -131,10 +245,13 @@ public:
 
     RootNode(): z0::Node("Main") {}
 
-    void onProcess(float delta) override {
+    void onPhysicsProcess(float delta) override {
         float angle = delta * glm::radians(90.0f) / 2;
-        model1->rotateY(angle);
-        model1->rotateX(angle);
+        //model1->translate({1.5*delta, 0.0, 0.0});
+        JPH::BodyInterface &body_interface = physicsSystem.GetBodyInterface();
+        JPH::RVec3 position = body_interface.GetPosition(box_id);
+        model1->setPosition({position.GetX(), position.GetY(), position.GetZ()});
+        physicsSystem.Update(delta, 1, temp_allocator.get(), job_system.get());
     }
 
     void onReady() override {
@@ -164,16 +281,40 @@ public:
         addChild(light1);*/
 
         model1 = z0::Loader::loadModelFromFile("models/crate.glb", false);
+        model1->setPosition({-3.0, 0.0, 0.0});
         addChild(model1);
 
-        model2 = model1->duplicate();
-        addChild(model2);
+        JPH::BodyInterface &body_interface = physicsSystem.GetBodyInterface();
+        JPH::BoxShapeSettings floor_shape_settings(JPH::Vec3(100.0f, 0.2f, 100.0f));
+        JPH::ShapeSettings::ShapeResult floor_shape_result = floor_shape_settings.Create();
+        JPH::ShapeRefC floor_shape = floor_shape_result.Get();
+        JPH::BodyCreationSettings floor_settings(floor_shape,
+                                                 JPH::RVec3(0.0, -2.0, 0.0),
+                                                 JPH::Quat::sIdentity(),
+                                                 JPH::EMotionType::Static, Layers::NON_MOVING);
+        JPH::Body *floorBody = body_interface.CreateBody(floor_settings);
+        body_interface.AddBody(floorBody->GetID(), JPH::EActivation::DontActivate);
 
-        model1->setPosition({-1.0, 0.0, 0.0});
-        model2->setPosition({1.0, 0.0, 0.0});
+        JPH::BodyCreationSettings box_settings(new JPH::BoxShape(JPH::Vec3(2.0f, 2.0f, 2.0f)),
+                                               JPH::RVec3(0.0, 2.0, 0.0),
+                                               JPH::Quat::sIdentity(), JPH::EMotionType::Dynamic,
+                                               Layers::MOVING);
+        box_settings.mRestitution = 0.5f;
+        box_id = body_interface.CreateAndAddBody(box_settings, JPH::EActivation::Activate);
+        //body_interface.SetLinearVelocity(box_id, JPH::Vec3(0.0f, -1.0f, 0.0f));
+        auto position = body_interface.GetPosition(box_id);
+        model1->setPosition({position.GetX(), position.GetY(), position.GetZ()});
+        //body_interface.SetPosition(box_id, JPH::RVec3(model1->getPositionGlobal().x, model1->getPositionGlobal().y, model1->getPositionGlobal().z), JPH::EActivation::Activate );
+        physicsSystem.OptimizeBroadPhase();
+
+        //model2 = model1->duplicate();
+        //model2->setPosition({1.0, 0.0, 0.0});
+        //addChild(model2);
 
         floor = z0::Loader::loadModelFromFile("models/floor.glb", true);
-        floor->setPosition({0.0, -2.0, 0.0});
+        //floor->setPosition({0.0, -2.0, 0.0});
+        position = body_interface.GetPosition(floorBody->GetID());
+        floor->setPosition({position.GetX(), position.GetY(), position.GetZ()});
         addChild(floor);
 
         addChild(std::make_shared<Player>());
@@ -190,9 +331,29 @@ private:
     std::shared_ptr<z0::Node> light1;
     std::shared_ptr<z0::Node> floor;
 
+    JPH::BodyID box_id;
+
 };
 
 int main() {
+    JPH::RegisterDefaultAllocator();
+    JPH::Factory::sInstance = new JPH::Factory();
+    JPH::RegisterTypes();
+    temp_allocator = std::make_unique<JPH::TempAllocatorImpl>(10 * 1024 * 1024);
+    job_system = std::make_unique<JPH::JobSystemThreadPool>(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, JPH::thread::hardware_concurrency() - 1);
+    const uint32_t cMaxBodies = 1024;
+    const uint32_t cNumBodyMutexes = 0;
+    const uint32_t cMaxBodyPairs = 1024;
+    const uint32_t cMaxContactConstraints = 1024;
+    physicsSystem.Init(cMaxBodies,
+                        cNumBodyMutexes,
+                        cMaxBodyPairs,
+                        cMaxContactConstraints,
+                        broad_phase_layer_interface,
+                        object_vs_broadphase_layer_filter,
+                        object_vs_object_layer_filter);
+
+
     z0::ApplicationConfig applicationConfig {
         .appName = "Example App",
         .appDir = "..",

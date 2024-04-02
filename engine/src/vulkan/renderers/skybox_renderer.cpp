@@ -141,7 +141,7 @@ namespace z0 {
                             VK_SHADER_STAGE_FRAGMENT_BIT,
                             1)
             .build();
-        for (int i = 0; i < descriptorSets.size(); i++) {
+        for (uint32_t i = 0; i < descriptorSets.size(); i++) {
             auto globalBufferInfo = globalBuffers[i]->descriptorInfo(sizeof(GobalUniformBufferObject));
             auto imageInfo = cubemap->imageInfo();
             auto writer = VulkanDescriptorWriter(*globalSetLayout, *globalPool)

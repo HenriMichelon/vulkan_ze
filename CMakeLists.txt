@@ -16,7 +16,8 @@ include(cmake/shaders.cmake)
 include(cmake/imgui.cmake)
 
 set(CMAKE_CXX_STANDARD 23)
-#set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
+set(CMAKE_COMPILE_WARNING_AS_ERROR OFF) # disabled due to fastgltf and VMA
+set(CMAKE_CXX_EXTENSIONS OFF)
 add_compile_definitions(VULKAN_STATS)
 
 file(GLOB_RECURSE Z0_GLSL_SOURCE_FILES
@@ -131,4 +132,5 @@ add_executable(${PROJECT_NAME}
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_shaders)
 target_include_directories(${PROJECT_NAME} PUBLIC ${Z0_ENGINE_DIR}/include)
 
+include(cmake/jolt.cmake)
 include(cmake/libraries.cmake)

@@ -45,14 +45,15 @@ namespace z0 {
                                                    VkShaderStageFlagBits stage,
                                                    VkShaderStageFlags next_stage);
 
+        virtual void loadShaders() = 0;
+        virtual void recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) = 0;
+        virtual void createDescriptorSetLayout() = 0;
+
     private:
         void buildShader(VulkanShader& shader);
         void createPipelineLayout();
         std::vector<char> readFile(const std::string& fileName);
 
-        virtual void loadShaders() = 0;
-        virtual void createDescriptorSetLayout() = 0;
-        virtual void recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) = 0;
         void bindShader(VkCommandBuffer commandBuffer, VulkanShader& shader);
 
     public:

@@ -17,7 +17,7 @@ namespace z0 {
 
         void cleanup() override;
         void loadShaders() override;
-        void createDescriptorSetLayout(VkDeviceSize globalUboSize) ;
+        void createGlobalDescriptorSetLayout(VkDeviceSize globalUboSize) ;
         void recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) override;
         void createImagesResources() override;
         void cleanupImagesResources() override;

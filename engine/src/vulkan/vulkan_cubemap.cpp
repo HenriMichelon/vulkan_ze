@@ -11,7 +11,7 @@
 namespace z0 {
 
     VulkanCubemap::VulkanCubemap(VulkanDevice& device, uint32_t w, uint32_t h, VkDeviceSize imageSize, std::vector<void*>& data):
-        vulkanDevice{device}, width{w}, height{h}
+            width{w}, height{h}, vulkanDevice{device}
     {
         VulkanBuffer textureStagingBuffer{
                 vulkanDevice,

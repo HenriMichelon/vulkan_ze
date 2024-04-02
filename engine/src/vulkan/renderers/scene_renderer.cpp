@@ -188,7 +188,7 @@ namespace z0 {
         };
 
         auto shadowMapArray =  std::make_unique<ShadowMapUniform[]>(globalUbo.shadowMapsCount);
-        for(int i=0; i < globalUbo.shadowMapsCount; i++) {
+        for(uint32_t i=0; i < globalUbo.shadowMapsCount; i++) {
             shadowMapArray[i].lightSpace = shadowMaps[i]->getLightSpace();
             shadowMapArray[i].lightPos = shadowMaps[i]->getLightPosition();
         }
@@ -209,7 +209,7 @@ namespace z0 {
         writeUniformBuffer(globalBuffers, currentFrame, &globalUbo);
 
         auto pointLightsArray =  std::make_unique<PointLightUniform[]>(globalUbo.pointLightsCount);
-        for(int i=0; i < globalUbo.pointLightsCount; i++) {
+        for(uint32_t i=0; i < globalUbo.pointLightsCount; i++) {
             pointLightsArray[i].position = omniLights[i]->getPosition();
             pointLightsArray[i].color = omniLights[i]->getColorAndIntensity();
             pointLightsArray[i].specular = omniLights[i]->getSpecularIntensity();
@@ -366,7 +366,7 @@ namespace z0 {
                         shadowMaps.size())
            .build();
 
-        for (int i = 0; i < descriptorSets.size(); i++) {
+        for (uint32_t i = 0; i < descriptorSets.size(); i++) {
             auto globalBufferInfo = globalBuffers[i]->descriptorInfo(sizeof(GobalUniformBufferObject));
             auto modelBufferInfo = modelsBuffers[i]->descriptorInfo(modelBufferSize);
             auto surfaceBufferInfo = surfacesBuffers[i]->descriptorInfo(surfaceBufferSize);

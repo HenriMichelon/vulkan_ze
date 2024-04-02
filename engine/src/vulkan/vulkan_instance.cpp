@@ -40,7 +40,7 @@ namespace z0 {
 #ifdef GLFW_VERSION_MAJOR
         uint32_t glfwExtensionCount = 0;
         auto glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-        for (int i = 0; i < glfwExtensionCount; i++)  {
+        for (uint32_t i = 0; i < glfwExtensionCount; i++)  {
             instanceExtensions.push_back(glfwExtensions[i]);
         }
 #endif

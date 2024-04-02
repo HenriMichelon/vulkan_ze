@@ -4,7 +4,14 @@
 #include "z0/application.hpp"
 
 namespace z0 {
-
+    static void check_vk_result(VkResult err)
+    {
+        if (err == 0)
+            return;
+        std::cout << "[vulkan] Error: VkResult\n" << std::endl;
+        if (err < 0)
+            abort();
+    }
     void DebugUI::drawUI() {
         statsPanel();
         quitButton();

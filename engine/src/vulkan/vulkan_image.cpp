@@ -19,7 +19,7 @@ namespace z0 {
                              VkDeviceSize imageSize,
                              void* data,
                              VkFormat format):
-        vulkanDevice{device}, width{w}, height{h}
+            width{w}, height{h}, vulkanDevice{device}
     {
         const VulkanBuffer textureStagingBuffer{
                 vulkanDevice,

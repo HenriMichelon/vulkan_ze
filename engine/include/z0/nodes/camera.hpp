@@ -6,6 +6,7 @@ namespace z0 {
     class Camera: public Node {
     public:
         explicit Camera(const std::string nodeName = "Camera");
+        virtual ~Camera() {};
 
         void setOrthographicProjection(float left, float right,
                                        float top, float bottom,

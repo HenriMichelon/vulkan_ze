@@ -22,7 +22,7 @@ namespace z0 {
     }
 
     void SimplePostprocessingRenderer::createDescriptorSetLayout() {
-        BasePostprocessingRenderer::createDescriptorSetLayout(sizeof(GobalUniformBufferObject));
+        BasePostprocessingRenderer::createGlobalDescriptorSetLayout(sizeof(GobalUniformBufferObject));
     }
 
 }

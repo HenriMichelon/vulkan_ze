@@ -95,7 +95,7 @@ namespace z0 {
                         VK_SHADER_STAGE_VERTEX_BIT)
             .build();
 
-        for (int i = 0; i < descriptorSets.size(); i++) {
+        for (uint32_t i = 0; i < descriptorSets.size(); i++) {
             auto globalBufferInfo = globalBuffers[i]->descriptorInfo(sizeof(GlobalUniformBufferObject));
             auto modelBufferInfo = modelsBuffers[i]->descriptorInfo(modelBufferSize);
             std::vector<VkDescriptorImageInfo> imagesInfo{};

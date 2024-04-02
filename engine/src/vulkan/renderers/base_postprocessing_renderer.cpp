@@ -42,7 +42,7 @@ namespace z0 {
     void BasePostprocessingRenderer::recreateImagesResources() {
         colorAttachmentHdr->cleanupImagesResources();
         colorAttachmentHdr->createImagesResources();
-        for (int i = 0; i < descriptorSets.size(); i++) {
+        for (uint32_t i = 0; i < descriptorSets.size(); i++) {
             auto globalBufferInfo = globalBuffers[i]->descriptorInfo(globalUboSize);
             auto imageInfo = inputColorAttachmentHdr->imageInfo();
             auto writer = VulkanDescriptorWriter(*globalSetLayout, *globalPool)
@@ -52,7 +52,7 @@ namespace z0 {
         }
     }
 
-    void BasePostprocessingRenderer::createDescriptorSetLayout(VkDeviceSize _globalUboSize) {
+    void BasePostprocessingRenderer::createGlobalDescriptorSetLayout(VkDeviceSize _globalUboSize) {
         globalUboSize = _globalUboSize;
         globalPool = VulkanDescriptorPool::Builder(vulkanDevice)
                 .setMaxSets(MAX_FRAMES_IN_FLIGHT)
@@ -69,7 +69,7 @@ namespace z0 {
                             VK_SHADER_STAGE_FRAGMENT_BIT,
                             1)
             .build();
-        for (int i = 0; i < descriptorSets.size(); i++) {
+        for (uint32_t i = 0; i < descriptorSets.size(); i++) {
             auto globalBufferInfo = globalBuffers[i]->descriptorInfo(globalUboSize);
             auto imageInfo = inputColorAttachmentHdr->imageInfo();
             auto writer = VulkanDescriptorWriter(*globalSetLayout, *globalPool)

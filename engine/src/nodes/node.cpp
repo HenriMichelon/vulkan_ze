@@ -11,7 +11,7 @@ namespace z0 {
 
     Node::id_t Node::currentId = 0;
 
-    Node::Node(const std::string _name): id{currentId++}, name{_name}   {
+    Node::Node(const std::string _name): name{_name} , id{currentId++}   {
         std::replace(name.begin(), name.end(),  '/', '_');
         localTransform = glm::mat4 {1.0};
         updateTransform(glm::mat4{1.0f});
