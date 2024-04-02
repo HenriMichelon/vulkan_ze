@@ -1,16 +1,28 @@
 #include "z0/nodes/node.hpp"
+#include "z0/application.hpp"
 
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
+
+#include <algorithm>
 
 namespace z0 {
 
     Node::id_t Node::currentId = 0;
 
     Node::Node(const std::string _name): id{currentId++}, name{_name}   {
+        std::replace(name.begin(), name.end(),  '/', '_');
         localTransform = glm::mat4 {1.0};
         updateTransform(glm::mat4{1.0f});
+    }
+
+    Node::Node(const Node& orig) {
+        name = orig.name;
+        parent = orig.parent;
+        localTransform = orig.localTransform;
+        worldTransform = orig.worldTransform;
+        processMode = orig.processMode;
     }
 
     void Node::updateTransform() {
@@ -122,6 +134,10 @@ namespace z0 {
         updateTransform();
     }
 
+    void Node::setScale(float scale) {
+        setScale(glm::vec3{scale, scale, scale});
+    }
+
     void Node::setScale(glm::vec3 scale) {
         localTransform = glm::scale(localTransform, scale);
         updateTransform();
@@ -148,11 +164,38 @@ namespace z0 {
         children.push_back(child);
         child->parent = this;
         child->updateTransform(worldTransform);
+        if (inReady) child->_onReady();
     }
 
     void Node::removeChild(const std::shared_ptr<Node>& node) {
         children.remove(node);
         node->parent = nullptr;
+    }
+
+    void Node::_onReady() {
+        inReady = true;
+        onReady();
+        inReady = false;
+    }
+
+    std::shared_ptr<Node> Node::getChild(std::string name) {
+        auto it = std::find_if(children.begin(), children.end(), [name](std::shared_ptr<Node> elem) {
+            return elem->name == name;
+        });
+        return it == children.end() ? nullptr : *it;
+    }
+
+    std::shared_ptr<Node> Node::getNode(std::string path) {
+        size_t pos = path.find('/');
+        if (pos != std::string::npos) {
+            auto child = getChild(path.substr(0, pos));
+            if (child != nullptr) {
+                return child->getNode(path.substr(pos + 1));
+            }
+            return nullptr;
+        } else {
+            return getChild(path);
+        }
     }
 
     std::shared_ptr<Node> Node::duplicate() {
@@ -162,11 +205,22 @@ namespace z0 {
             dup->addChild(child->duplicate());
         }
         dup->id = currentId++;
+        dup->name = name;
         return dup;
     }
 
     std::shared_ptr<Node> Node::duplicateInstance() {
         return std::make_shared<Node>(*this);
+    }
+
+    bool Node::isProcessed() const {
+        bool paused = Application::isPaused();
+        ProcessMode mode = processMode;
+        if ((parent == nullptr) && (mode == PROCESS_MODE_INHERIT)) mode = PROCESS_MODE_PAUSABLE;
+        return ((mode == PROCESS_MODE_INHERIT) && (parent->isProcessed())) ||
+                (!paused && (mode == PROCESS_MODE_PAUSABLE)) ||
+                (paused && (mode == PROCESS_MODE_WHEN_PAUSED)) ||
+                (mode == PROCESS_MODE_ALWAYS);
     }
 
     void Node::printTree(std::ostream& out, int tab) {

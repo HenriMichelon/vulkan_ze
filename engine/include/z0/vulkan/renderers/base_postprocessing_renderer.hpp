@@ -26,6 +26,7 @@ namespace z0 {
         void endRendering(VkCommandBuffer commandBuffer, bool isLast) override;
 
     protected:
+        VkDeviceSize globalUboSize;
         std::shared_ptr<ColorAttachmentHDR> colorAttachmentHdr;
         std::shared_ptr<ColorAttachmentHDR> inputColorAttachmentHdr;
     };

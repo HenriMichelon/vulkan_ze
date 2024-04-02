@@ -18,14 +18,26 @@ namespace z0 {
     const glm::vec2 VEC2ZERO{0.0};
     const glm::vec3 VEC3ZERO{0.0};
 
+    enum ProcessMode {
+        PROCESS_MODE_INHERIT    = 0,
+        PROCESS_MODE_PAUSABLE   = 1,
+        PROCESS_MODE_WHEN_PAUSED= 2,
+        PROCESS_MODE_ALWAYS     = 3,
+        PROCESS_MODE_DISABLED   = 4,
+    };
+
+    class Application;
+
     class Node: public Object {
     public:
         using id_t = unsigned int;
 
         explicit Node(const std::string nodeName = "Node");
+        Node(const Node&);
 
         virtual void onReady() {}
         virtual void onProcess(float delta) {}
+        virtual void onPhysicsProcess(float delta) {}
         virtual void onInput(InputEvent& inputEvent) {}
 
         id_t getId() const { return id; }
@@ -71,6 +83,7 @@ namespace z0 {
         void rotateGlobalZ(float angle);
 
         virtual void setScale(glm::vec3 scale);
+        void setScale(float scale);
         glm::vec3 getScale() const;
 
         virtual void setTransform(glm::mat4 transform) { localTransform = transform; }
@@ -84,17 +97,16 @@ namespace z0 {
         Node* getParent() { return parent; }
 
         void addChild(const std::shared_ptr<Node> child);
-        template<typename T>
-        void addChild(T& node) {
-            std::shared_ptr<Node> child = std::make_shared<T>(std::move(node));
-            children.push_back(child);
-            child->parent = this;
-            child->updateTransform(worldTransform);
-        }
         void removeChild(const std::shared_ptr<Node>& child);
         std::list<std::shared_ptr<Node>>& getChildren() { return children; }
+        std::shared_ptr<Node> getChild(std::string name);
+        std::shared_ptr<Node> getNode(std::string path);
 
         const glm::mat3 transformBasis{1, 0, 0, 0, 1, 0, 0, 0, 1};
+
+        ProcessMode getProcessMode() const { return processMode; }
+        void setProcessMode(ProcessMode mode) { processMode = mode; }
+        bool isProcessed() const;
 
     protected:
         std::string name;
@@ -107,6 +119,11 @@ namespace z0 {
         id_t id;
         Node* parent {nullptr};
         static id_t currentId;
+        ProcessMode processMode{PROCESS_MODE_INHERIT};
+        bool inReady{false};
+        void _onReady();
+
+        friend class Application;
     };
 
 

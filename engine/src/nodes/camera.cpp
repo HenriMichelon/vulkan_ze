@@ -1,4 +1,5 @@
 #include "z0/nodes/camera.hpp"
+#include "z0/viewport.hpp"
 #include "z0/application.hpp"
 
 #include <glm/gtc/quaternion.hpp>
@@ -29,7 +30,7 @@ namespace z0 {
         nearDistance = _near;
         farDistance = _far;
         usePerspectiveProjection = true;
-        float aspect = z0::Application::getViewport().getAspectRatio();
+        float aspect = Application::getViewport().getAspectRatio();
         assert(glm::abs(aspect - std::numeric_limits<float>::epsilon()) > 0.0f);
         const float tanHalfFovy = tan(glm::radians(fov) / 2.f);
         projectionMatrix = glm::mat4{0.0f};

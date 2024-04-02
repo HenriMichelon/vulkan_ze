@@ -408,7 +408,6 @@ namespace z0 {
         colorAttachmentHdr->createImagesResources();
         colorAttachmentMultisampled.createImagesResources();
         if (depthBuffer != nullptr) {
-            depthBuffer->createImagesResources();
             resolvedDepthBuffer->createImagesResources();
         }
     }
@@ -426,7 +425,6 @@ namespace z0 {
 
     void SceneRenderer::cleanupImagesResources() {
         if (depthBuffer != nullptr) {
-            depthBuffer->cleanupImagesResources();
             resolvedDepthBuffer->cleanupImagesResources();
         }
         colorAttachmentHdr->cleanupImagesResources();

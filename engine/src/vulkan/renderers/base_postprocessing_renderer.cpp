@@ -42,9 +42,18 @@ namespace z0 {
     void BasePostprocessingRenderer::recreateImagesResources() {
         colorAttachmentHdr->cleanupImagesResources();
         colorAttachmentHdr->createImagesResources();
+        for (int i = 0; i < descriptorSets.size(); i++) {
+            auto globalBufferInfo = globalBuffers[i]->descriptorInfo(globalUboSize);
+            auto imageInfo = inputColorAttachmentHdr->imageInfo();
+            auto writer = VulkanDescriptorWriter(*globalSetLayout, *globalPool)
+                .writeBuffer(0, &globalBufferInfo)
+                .writeImage(1, &imageInfo);
+            writer.overwrite(descriptorSets[i]);
+        }
     }
 
-    void BasePostprocessingRenderer::createDescriptorSetLayout(VkDeviceSize globalUboSize) {
+    void BasePostprocessingRenderer::createDescriptorSetLayout(VkDeviceSize _globalUboSize) {
+        globalUboSize = _globalUboSize;
         globalPool = VulkanDescriptorPool::Builder(vulkanDevice)
                 .setMaxSets(MAX_FRAMES_IN_FLIGHT)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, MAX_FRAMES_IN_FLIGHT)

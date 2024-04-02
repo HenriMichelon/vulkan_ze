@@ -1,7 +1,8 @@
 #include "z0/nodes/mesh_instance.hpp"
-#include "z0/application.hpp"
 #include "z0/loader.hpp"
 #include "z0/log.hpp"
+#include "z0/viewport.hpp"
+#include "z0/application.hpp"
 
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
@@ -112,14 +113,6 @@ namespace z0 {
             die(getErrorMessage(error));
         }
         fastgltf::Asset gltf = std::move(asset.get());
-
-        // load all textures
-        /*std::vector<std::shared_ptr<Image>> images;
-        for (fastgltf::Image& image : gltf.images) {
-            std::shared_ptr<Image> newImage = loadImage(gltf, image);
-            std::cout << newImage->toString() << std::endl;
-            images.push_back(newImage);
-        }*/
 
         // load all materials
         std::vector<std::shared_ptr<StandardMaterial>> materials{};

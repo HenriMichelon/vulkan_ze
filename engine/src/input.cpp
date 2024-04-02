@@ -1,5 +1,6 @@
 #include "z0/helpers/window_helper.hpp"
 #include "z0/input.hpp"
+#include "z0/viewport.hpp"
 #include "z0/application.hpp"
 
 namespace z0 {

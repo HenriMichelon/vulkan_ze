@@ -1,5 +1,4 @@
-#include "z0/mainloop.hpp"
-#include "z0/scene.hpp"
+#include "z0/application.hpp"
 #include "z0/loader.hpp"
 #include "z0/input.hpp"
 #include "z0/nodes/directional_light.hpp"
@@ -43,7 +42,7 @@ public:
         }
     }
 
-    void onProcess(float delta) override {
+    void onPhysicsProcess(float delta) override {
         glm::vec2 input;
         if (gamepad != -1) {
             input = z0::Input::getGamepadVector(gamepad, z0::GAMEPAD_AXIS_LEFT);
@@ -86,7 +85,7 @@ public:
 
     void onReady() override {
         captureMouse();
-        setPosition({0.0, 0.5, 2.0});
+        setPosition({0.0, 0.0, 2.6});
         //rotateY(glm::radians(-45.));
 
         /*auto markup = z0::Loader::loadModelFromFile("models/light.glb", true);
@@ -94,8 +93,8 @@ public:
         addChild(markup);*/
 
         camera = std::make_shared<z0::Camera>();
-        camera->setPosition({ 0.0f, 0.0f, 0.5f});
-        addChild(static_cast<std::shared_ptr<z0::Node>>(camera));
+        camera->setPosition({ 0.0f, 0.0f, 0.0f});
+        addChild(camera);
 
         for (int i = 0; i < z0::Input::getConnectedJoypads(); i++) {
             if (z0::Input::isGamepad(i)) {
@@ -106,6 +105,7 @@ public:
         if (gamepad != -1) {
             std::cout << "Using Gamepad " << z0::Input::getGamepadName(gamepad) << std::endl;
         }
+        //setProcessMode(z0::PROCESS_MODE_ALWAYS);
     }
 
 private:
@@ -133,60 +133,61 @@ public:
 
     void onProcess(float delta) override {
         float angle = delta * glm::radians(90.0f) / 2;
+        model1->rotateY(angle);
+        model1->rotateX(angle);
     }
 
     void onReady() override {
-        z0::Environment environment{};
-        environment.setAmbientColorAndIntensity({1.0f, 1.0f, 1.0f, 0.05f});
+        std::shared_ptr<z0::Environment> environment = std::make_shared<z0::Environment>();
+        environment->setAmbientColorAndIntensity({1.0f, 1.0f, 1.0f, 0.05f});
         addChild(environment);
 
-        z0::Skybox skybox("textures/sky", ".jpg");
+        std::shared_ptr<z0::Skybox> skybox = std::make_shared<z0::Skybox>("textures/sky", ".jpg");
         addChild(skybox);
 
-        z0::DirectionalLight directionalLight{glm::vec3{0.0f, -1.0f, -1.0f}};
-        directionalLight.setColorAndIntensity({1.0f, 1.0f, 1.0f, 0.5f});
-        directionalLight.setCastShadow(true);
+        std::shared_ptr<z0::DirectionalLight> directionalLight = std::make_shared<z0::DirectionalLight>(glm::vec3{0.0f, -1.0f, -1.0f});
+        directionalLight->setColorAndIntensity({1.0f, 1.0f, 1.0f, 0.5f});
+        directionalLight->setCastShadow(true);
         addChild(directionalLight);
 
-        z0::SpotLight spotLight1{{-.25, -1.25, 1.0},
-                                 40.0, 45.0,
-                                 0.027, 0.0028};
-        spotLight1.setPosition({.2, 2.0, -1.5});
-        spotLight1.setColorAndIntensity({1.0f, 1.0f, 1.0f, 1.0f});
-        spotLight1.setCastShadow(false);
+        /*std::shared_ptr<z0::SpotLight> spotLight1 = std::make_shared<z0::SpotLight>(
+                glm::vec3{-.25, -1.25, 1.0},
+                 40.0, 45.0,
+                 0.027, 0.0028);
+        spotLight1->setPosition({.2, 2.0, -1.5});
+        spotLight1->setColorAndIntensity({1.0f, 1.0f, 1.0f, 1.0f});
+        spotLight1->setCastShadow(false);
         addChild(spotLight1);
         light1 = z0::Loader::loadModelFromFile("models/light.glb", true);
         light1->setScale(glm::vec3{0.25});
-        light1->setPosition(spotLight1.getPosition());
-        addChild(light1);
+        light1->setPosition(spotLight1->getPosition());
+        addChild(light1);*/
 
-        addChild(spotLight1.duplicate());
-        addChild(spotLight1.duplicate());
-        addChild(spotLight1.duplicate());
-        addChild(spotLight1.duplicate());
-        addChild(spotLight1.duplicate());
-
-        model1 = z0::Loader::loadModelFromFile("models/sphere.glb", false);
-        //model1->setScale(glm::vec3{0.01});
-        //model1->rotateZ(glm::radians(10.0));
+        model1 = z0::Loader::loadModelFromFile("models/crate.glb", false);
         addChild(model1);
+
+        model2 = model1->duplicate();
+        addChild(model2);
+
+        model1->setPosition({-1.0, 0.0, 0.0});
+        model2->setPosition({1.0, 0.0, 0.0});
 
         floor = z0::Loader::loadModelFromFile("models/floor.glb", true);
         floor->setPosition({0.0, -2.0, 0.0});
         addChild(floor);
 
         addChild(std::make_shared<Player>());
-        //printTree(std::cout);
+        //z0::Application::setPaused(true);
+
+        //auto child = getNode("Player/Camera");
+        printTree(std::cout);
     }
 
 private:
     float rot = 0.0;
     std::shared_ptr<z0::Node> model1;
     std::shared_ptr<z0::Node> model2;
-    std::shared_ptr<z0::Node> model3;
-    std::shared_ptr<z0::Node> model4;
     std::shared_ptr<z0::Node> light1;
-    std::shared_ptr<z0::Node> light2;
     std::shared_ptr<z0::Node> floor;
 
 };
@@ -201,7 +202,7 @@ int main() {
         .msaa = z0::MSAA_AUTO,
         .gamma = 1.0f,
     };
-    z0::MainLoop app{applicationConfig};
-    app.start(std::make_shared<z0::Scene>(std::make_shared<RootNode>()));
+    z0::Application app{applicationConfig};
+    app.start(std::make_shared<RootNode>());
     return 0;
 }
