@@ -1,5 +1,4 @@
-#include "z0/mainloop.hpp"
-#include "z0/scene.hpp"
+#include "z0/application.hpp"
 #include "z0/loader.hpp"
 #include "z0/input.hpp"
 #include "z0/nodes/directional_light.hpp"
@@ -106,6 +105,7 @@ public:
         if (gamepad != -1) {
             std::cout << "Using Gamepad " << z0::Input::getGamepadName(gamepad) << std::endl;
         }
+        //setProcessMode(z0::PROCESS_MODE_ALWAYS);
     }
 
 private:
@@ -133,6 +133,8 @@ public:
 
     void onProcess(float delta) override {
         float angle = delta * glm::radians(90.0f) / 2;
+        model1->rotateY(angle);
+        model1->rotateX(angle);
     }
 
     void onReady() override {
@@ -177,16 +179,13 @@ public:
 
         addChild(std::make_shared<Player>());
         //printTree(std::cout);
+        //z0::Application::setPaused(true);
     }
 
 private:
     float rot = 0.0;
     std::shared_ptr<z0::Node> model1;
-    std::shared_ptr<z0::Node> model2;
-    std::shared_ptr<z0::Node> model3;
-    std::shared_ptr<z0::Node> model4;
     std::shared_ptr<z0::Node> light1;
-    std::shared_ptr<z0::Node> light2;
     std::shared_ptr<z0::Node> floor;
 
 };
@@ -201,7 +200,7 @@ int main() {
         .msaa = z0::MSAA_AUTO,
         .gamma = 1.0f,
     };
-    z0::MainLoop app{applicationConfig};
-    app.start(std::make_shared<z0::Scene>(std::make_shared<RootNode>()));
+    z0::Application app{applicationConfig};
+    app.start(std::make_shared<RootNode>());
     return 0;
 }

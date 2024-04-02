@@ -18,6 +18,16 @@ namespace z0 {
     const glm::vec2 VEC2ZERO{0.0};
     const glm::vec3 VEC3ZERO{0.0};
 
+    enum ProcessMode {
+        PROCESS_MODE_INHERIT    = 0,
+        PROCESS_MODE_PAUSABLE   = 1,
+        PROCESS_MODE_WHEN_PAUSED= 2,
+        PROCESS_MODE_ALWAYS     = 3,
+        PROCESS_MODE_DISABLED   = 4,
+    };
+
+    class Scene;
+
     class Node: public Object {
     public:
         using id_t = unsigned int;
@@ -71,6 +81,7 @@ namespace z0 {
         void rotateGlobalZ(float angle);
 
         virtual void setScale(glm::vec3 scale);
+        void setScale(float scale);
         glm::vec3 getScale() const;
 
         virtual void setTransform(glm::mat4 transform) { localTransform = transform; }
@@ -96,6 +107,10 @@ namespace z0 {
 
         const glm::mat3 transformBasis{1, 0, 0, 0, 1, 0, 0, 0, 1};
 
+        ProcessMode getProcessMode() const { return processMode; }
+        void setProcessMode(ProcessMode mode) { processMode = mode; }
+        bool isProcessed() const;
+
     protected:
         std::string name;
         glm::mat4 localTransform {};
@@ -107,6 +122,7 @@ namespace z0 {
         id_t id;
         Node* parent {nullptr};
         static id_t currentId;
+        ProcessMode processMode{PROCESS_MODE_INHERIT};
     };
 
 

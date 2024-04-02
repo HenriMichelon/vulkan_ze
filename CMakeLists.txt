@@ -61,7 +61,7 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/include/z0/nodes/skybox.hpp
         ${Z0_ENGINE_DIR}/include/z0/ui/debug_ui.hpp
         ${Z0_ENGINE_DIR}/include/z0/application_config.hpp
-        ${Z0_ENGINE_DIR}/include/z0/mainloop.hpp
+        ${Z0_ENGINE_DIR}/include/z0/application.hpp
         ${Z0_ENGINE_DIR}/include/z0/log.hpp
         ${Z0_ENGINE_DIR}/include/z0/object.hpp
         ${Z0_ENGINE_DIR}/include/z0/transform.hpp
@@ -74,7 +74,6 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/include/z0/image.hpp
         ${Z0_ENGINE_DIR}/include/z0/color.hpp
         ${Z0_ENGINE_DIR}/include/z0/vertex.hpp
-        ${Z0_ENGINE_DIR}/include/z0/scene.hpp
         ${Z0_ENGINE_DIR}/include/z0/loader.hpp
         ${Z0_ENGINE_DIR}/include/z0/input.hpp
         ${Z0_ENGINE_DIR}/include/z0/cubemap.hpp
@@ -112,7 +111,7 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/nodes/omni_light.cpp
         ${Z0_ENGINE_DIR}/src/nodes/spot_light.cpp
         ${Z0_ENGINE_DIR}/src/nodes/skybox.cpp
-        ${Z0_ENGINE_DIR}/src/mainloop.cpp
+        ${Z0_ENGINE_DIR}/src/application.cpp
         ${Z0_ENGINE_DIR}/src/object.cpp
         ${Z0_ENGINE_DIR}/src/viewport.cpp
         ${Z0_ENGINE_DIR}/src/mesh.cpp

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "z0/application.hpp"
 #include "z0/input_event.hpp"
 
 #include <map>

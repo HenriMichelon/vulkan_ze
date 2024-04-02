@@ -1,7 +1,7 @@
 #include "z0/vulkan/renderers/scene_renderer.hpp"
 #include "z0/vulkan/renderers/tonemapping_renderer.hpp"
 #include "z0/vulkan/renderers/simple_postprocessing_renderer.hpp"
-#include "z0/mainloop.hpp"
+#include "z0/application.hpp"
 #include "z0/log.hpp"
 
 namespace z0 {

@@ -1,5 +1,5 @@
 #include "z0/vulkan/vulkan_stats.hpp"
-#include "z0/mainloop.hpp"
+#include "z0/application.hpp"
 #include "z0/viewport.hpp"
 #include "z0/log.hpp"
 #include "z0/input.hpp"
@@ -8,24 +8,22 @@
 
 namespace z0 {
 
-    static MainLoop* instance = nullptr;
+    static Application* instance = nullptr;
 
-    MainLoop& MainLoop::get() { return *instance; }
+    Application& Application::get() { return *instance; }
 
-    MainLoop::MainLoop(const ApplicationConfig& cfg):
+    Application::Application(const ApplicationConfig& cfg):
             applicationConfig{cfg},
             vulkanInstance{} {
         viewport = std::make_shared<Viewport>(vulkanInstance, cfg);
-        if (instance != nullptr) die("MainLoop already registered");
+        if (instance != nullptr) die("Application already registered");
         instance = this;
     }
 
-    void MainLoop::start(const std::shared_ptr<Scene>& scene) {
-        if (!scene->isValid()) return;
+    void Application::start(const std::shared_ptr<Node>& scene) {
         currentScene = scene;
-        std::shared_ptr<Node>& rootNode = currentScene->getRootNode();
-        ready(rootNode);
-        viewport->loadScene(rootNode);
+        ready(currentScene);
+        viewport->loadScene(currentScene);
 
         uint32_t frameCount = 0;
         auto lastFrameTime = std::chrono::high_resolution_clock::now();
@@ -33,13 +31,13 @@ namespace z0 {
         while (!viewport->shouldClose()) {
             while(Input::haveInputEvent()) {
                 auto event = Input::consumeInputEvent();
-                input(rootNode, *event);
+                input(currentScene, *event);
             }
 
             auto currentFrameTime = std::chrono::high_resolution_clock::now();
             auto deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(currentFrameTime - lastFrameTime).count();
 
-            process(rootNode, deltaTime);
+            process(currentScene, deltaTime);
             viewport->drawFrame();
 
             elapsedSeconds += deltaTime;
@@ -61,23 +59,22 @@ namespace z0 {
 #endif
     }
 
-    void MainLoop::input(const std::shared_ptr<Node>& node, InputEvent& event) {
-        node->onInput(event);
+    void Application::input(const std::shared_ptr<Node>& node, InputEvent& event) {
+        if (node->isProcessed()) node->onInput(event);
         for(auto child: node->getChildren()) {
             input(child, event);
         }
-
     }
 
-    void MainLoop::ready(const std::shared_ptr<Node>& node) {
+    void Application::ready(const std::shared_ptr<Node>& node) {
         node->onReady();
         for(auto child: node->getChildren()) {
             ready(child);
         }
     }
 
-    void MainLoop::process(const std::shared_ptr<Node>& node, float delta) {
-        node->onProcess(delta);
+    void Application::process(const std::shared_ptr<Node>& node, float delta) {
+        if (node->isProcessed()) node->onProcess(delta);
         for(auto child: node->getChildren()) {
             process(child, delta);
         }

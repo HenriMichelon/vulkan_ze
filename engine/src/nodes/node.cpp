@@ -1,4 +1,5 @@
 #include "z0/nodes/node.hpp"
+#include "z0/application.hpp"
 
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
@@ -122,6 +123,10 @@ namespace z0 {
         updateTransform();
     }
 
+    void Node::setScale(float scale) {
+        setScale(glm::vec3{scale, scale, scale});
+    }
+
     void Node::setScale(glm::vec3 scale) {
         localTransform = glm::scale(localTransform, scale);
         updateTransform();
@@ -167,6 +172,16 @@ namespace z0 {
 
     std::shared_ptr<Node> Node::duplicateInstance() {
         return std::make_shared<Node>(*this);
+    }
+
+    bool Node::isProcessed() const {
+        bool paused = Application::isPaused();
+        ProcessMode mode = processMode;
+        if ((parent == nullptr) && (mode == PROCESS_MODE_INHERIT)) mode = PROCESS_MODE_PAUSABLE;
+        return ((mode == PROCESS_MODE_INHERIT) && (parent->isProcessed())) ||
+                (!paused && (mode == PROCESS_MODE_PAUSABLE)) ||
+                (paused && (mode == PROCESS_MODE_WHEN_PAUSED)) ||
+                (mode == PROCESS_MODE_ALWAYS);
     }
 
     void Node::printTree(std::ostream& out, int tab) {
