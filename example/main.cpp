@@ -94,7 +94,7 @@ public:
 
         camera = std::make_shared<z0::Camera>();
         camera->setPosition({ 0.0f, 0.0f, 0.5f});
-        addChild(static_cast<std::shared_ptr<z0::Node>>(camera));
+        addChild(camera);
 
         for (int i = 0; i < z0::Input::getConnectedJoypads(); i++) {
             if (z0::Input::isGamepad(i)) {
@@ -138,35 +138,30 @@ public:
     }
 
     void onReady() override {
-        z0::Environment environment{};
-        environment.setAmbientColorAndIntensity({1.0f, 1.0f, 1.0f, 0.05f});
+        std::shared_ptr<z0::Environment> environment = std::make_shared<z0::Environment>();
+        environment->setAmbientColorAndIntensity({1.0f, 1.0f, 1.0f, 0.05f});
         addChild(environment);
 
-        z0::Skybox skybox("textures/sky", ".jpg");
+        std::shared_ptr<z0::Skybox> skybox = std::make_shared<z0::Skybox>("textures/sky", ".jpg");
         addChild(skybox);
 
-        z0::DirectionalLight directionalLight{glm::vec3{0.0f, -1.0f, -1.0f}};
-        directionalLight.setColorAndIntensity({1.0f, 1.0f, 1.0f, 0.5f});
-        directionalLight.setCastShadow(true);
+        std::shared_ptr<z0::DirectionalLight> directionalLight = std::make_shared<z0::DirectionalLight>(glm::vec3{0.0f, -1.0f, -1.0f});
+        directionalLight->setColorAndIntensity({1.0f, 1.0f, 1.0f, 0.5f});
+        directionalLight->setCastShadow(true);
         addChild(directionalLight);
 
-        z0::SpotLight spotLight1{{-.25, -1.25, 1.0},
-                                 40.0, 45.0,
-                                 0.027, 0.0028};
-        spotLight1.setPosition({.2, 2.0, -1.5});
-        spotLight1.setColorAndIntensity({1.0f, 1.0f, 1.0f, 1.0f});
-        spotLight1.setCastShadow(false);
+        std::shared_ptr<z0::SpotLight> spotLight1 = std::make_shared<z0::SpotLight>(
+                glm::vec3{-.25, -1.25, 1.0},
+                 40.0, 45.0,
+                 0.027, 0.0028);
+        spotLight1->setPosition({.2, 2.0, -1.5});
+        spotLight1->setColorAndIntensity({1.0f, 1.0f, 1.0f, 1.0f});
+        spotLight1->setCastShadow(false);
         addChild(spotLight1);
         light1 = z0::Loader::loadModelFromFile("models/light.glb", true);
         light1->setScale(glm::vec3{0.25});
-        light1->setPosition(spotLight1.getPosition());
+        light1->setPosition(spotLight1->getPosition());
         addChild(light1);
-
-        addChild(spotLight1.duplicate());
-        addChild(spotLight1.duplicate());
-        addChild(spotLight1.duplicate());
-        addChild(spotLight1.duplicate());
-        addChild(spotLight1.duplicate());
 
         model1 = z0::Loader::loadModelFromFile("models/sphere.glb", false);
         //model1->setScale(glm::vec3{0.01});
@@ -178,8 +173,10 @@ public:
         addChild(floor);
 
         addChild(std::make_shared<Player>());
-        //printTree(std::cout);
         //z0::Application::setPaused(true);
+
+        auto child = getNode("Player/Camera");
+        printTree(std::cout);
     }
 
 private:

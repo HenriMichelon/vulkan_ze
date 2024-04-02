@@ -26,13 +26,14 @@ namespace z0 {
         PROCESS_MODE_DISABLED   = 4,
     };
 
-    class Scene;
+    class Application;
 
     class Node: public Object {
     public:
         using id_t = unsigned int;
 
         explicit Node(const std::string nodeName = "Node");
+        Node(const Node&);
 
         virtual void onReady() {}
         virtual void onProcess(float delta) {}
@@ -95,15 +96,10 @@ namespace z0 {
         Node* getParent() { return parent; }
 
         void addChild(const std::shared_ptr<Node> child);
-        template<typename T>
-        void addChild(T& node) {
-            std::shared_ptr<Node> child = std::make_shared<T>(std::move(node));
-            children.push_back(child);
-            child->parent = this;
-            child->updateTransform(worldTransform);
-        }
         void removeChild(const std::shared_ptr<Node>& child);
         std::list<std::shared_ptr<Node>>& getChildren() { return children; }
+        std::shared_ptr<Node> getChild(std::string name);
+        std::shared_ptr<Node> getNode(std::string path);
 
         const glm::mat3 transformBasis{1, 0, 0, 0, 1, 0, 0, 0, 1};
 
@@ -123,6 +119,10 @@ namespace z0 {
         Node* parent {nullptr};
         static id_t currentId;
         ProcessMode processMode{PROCESS_MODE_INHERIT};
+        bool inReady{false};
+        void _onReady();
+
+        friend class Application;
     };
 
 

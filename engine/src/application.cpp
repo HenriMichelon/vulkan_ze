@@ -61,21 +61,21 @@ namespace z0 {
 
     void Application::input(const std::shared_ptr<Node>& node, InputEvent& event) {
         if (node->isProcessed()) node->onInput(event);
-        for(auto child: node->getChildren()) {
+        for(auto& child: node->getChildren()) {
             input(child, event);
         }
     }
 
     void Application::ready(const std::shared_ptr<Node>& node) {
-        node->onReady();
-        for(auto child: node->getChildren()) {
+        for(auto& child: node->getChildren()) {
             ready(child);
         }
+        node->_onReady();
     }
 
     void Application::process(const std::shared_ptr<Node>& node, float delta) {
         if (node->isProcessed()) node->onProcess(delta);
-        for(auto child: node->getChildren()) {
+        for(auto& child: node->getChildren()) {
             process(child, delta);
         }
     }

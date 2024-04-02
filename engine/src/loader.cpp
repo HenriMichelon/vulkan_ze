@@ -114,14 +114,6 @@ namespace z0 {
         }
         fastgltf::Asset gltf = std::move(asset.get());
 
-        // load all textures
-        /*std::vector<std::shared_ptr<Image>> images;
-        for (fastgltf::Image& image : gltf.images) {
-            std::shared_ptr<Image> newImage = loadImage(gltf, image);
-            std::cout << newImage->toString() << std::endl;
-            images.push_back(newImage);
-        }*/
-
         // load all materials
         std::vector<std::shared_ptr<StandardMaterial>> materials{};
         for (fastgltf::Material& mat : gltf.materials) {
