@@ -5,8 +5,7 @@
 #include "z0/input_event.hpp"
 
 #include <list>
-
-#include <list>
+#include <chrono>
 
 namespace z0 {
 
@@ -37,7 +36,7 @@ namespace z0 {
         virtual ~Node() {};
 
         virtual void onReady() {}
-        virtual void onProcess(float delta) {}
+        virtual void onProcess(float alpha) {}
         virtual void onPhysicsProcess(float delta) {}
         virtual void onInput(InputEvent& inputEvent) {}
 

@@ -25,10 +25,12 @@ namespace z0 {
         ready(currentScene);
         viewport->loadScene(currentScene);
 
-        const std::chrono::milliseconds TIME_PER_UPDATE(16); // Fixed update rate of approx. 60 times per second
-        auto currentTime = std::chrono::steady_clock::now();
-        std::chrono::milliseconds accumulator(0);
-        auto lastRenderTime = std::chrono::steady_clock::now();
+        // https://gafferongames.com/post/fix_your_timestep/
+        using Clock = std::chrono::steady_clock;
+        double t = 0.0;
+        const float dt = 0.01; // Fixed delta time
+        double currentTime = std::chrono::duration_cast<std::chrono::duration<double>>(Clock::now().time_since_epoch()).count();
+        double accumulator = 0.0;
         uint32_t frameCount = 0;
         float elapsedSeconds = 0.0;
         while (!viewport->shouldClose()) {
@@ -37,70 +39,32 @@ namespace z0 {
                 input(currentScene, *event);
             }
 
-            // Time management
-            auto newTime = std::chrono::steady_clock::now();
-            auto frameTime = duration_cast<std::chrono::milliseconds>(newTime - currentTime);
+            double newTime = std::chrono::duration_cast<std::chrono::duration<double>>(Clock::now().time_since_epoch()).count();
+            double frameTime = newTime - currentTime;
+            if (frameTime > 0.25) frameTime = 0.25; // Note: Max frame time to avoid spiral of death
             currentTime = newTime;
             accumulator += frameTime;
-            // Fixed update loop
-            while (accumulator >= TIME_PER_UPDATE) {
-                // Fixed update logic (e.g., physics)
-                physicsProcess(currentScene, TIME_PER_UPDATE.count() / 1000.0f);
-                accumulator -= TIME_PER_UPDATE;
+            while (accumulator >= dt) {
+                physicsProcess(currentScene, dt);
+                t += dt;
+                accumulator -= dt;
             }
-            // Variable update (rendering and less sensitive logic)
-            auto deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(newTime - lastRenderTime).count();
-            //auto deltaTime = duration_cast<std::chrono::milliseconds>(newTime - lastRenderTime);
-            lastRenderTime = newTime;
-
-            // Variable update logic (e.g., rendering, animations)
-            process(currentScene, deltaTime);
+            const double alpha = accumulator / dt;
+            process(currentScene, static_cast<float>(alpha));
             viewport->drawFrame();
 
-            // Sleep to prevent the loop from running too fast
-            //std::this_thread::sleep_until(currentTime + TIME_PER_UPDATE - accumulator);
-
-            elapsedSeconds += deltaTime;
+            elapsedSeconds += static_cast<float>(frameTime);
             frameCount++;
             if (elapsedSeconds >= 0.250) {
-                auto fps = frameCount / elapsedSeconds;
+                auto fps = static_cast<float>(frameCount) / elapsedSeconds;
 #ifdef VULKAN_STATS
-                VulkanStats::get().averageFps = (VulkanStats::get().averageFps + fps) / 2;
+                VulkanStats::get().averageFps = static_cast<uint32_t >((static_cast<float>(VulkanStats::get().averageFps) + fps) / 2.0f);
 #endif
-                viewport->_setFPS( fps);
+                viewport->_setFPS(fps);
                 frameCount = 0;
                 elapsedSeconds = 0;
             }
         }
-
-        /*uint32_t frameCount = 0;
-        auto lastFrameTime = std::chrono::high_resolution_clock::now();
-        float elapsedSeconds = 0.0;
-        while (!viewport->shouldClose()) {
-            while(Input::haveInputEvent()) {
-                auto event = Input::consumeInputEvent();
-                input(currentScene, *event);
-            }
-
-            auto currentFrameTime = std::chrono::high_resolution_clock::now();
-            auto deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(currentFrameTime - lastFrameTime).count();
-
-            process(currentScene, deltaTime);
-            viewport->drawFrame();
-
-            elapsedSeconds += deltaTime;
-            frameCount++;
-            if (elapsedSeconds >= 0.250) {
-                auto fps = frameCount / elapsedSeconds;
-#ifdef VULKAN_STATS
-                VulkanStats::get().averageFps = (VulkanStats::get().averageFps + fps) / 2;
-#endif
-                viewport->_setFPS( fps);
-                frameCount = 0;
-                elapsedSeconds = 0;
-            }
-            lastFrameTime = currentFrameTime;
-        }*/
         viewport->wait();
 #ifdef VULKAN_STATS
         VulkanStats::get().display();

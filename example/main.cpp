@@ -134,8 +134,9 @@ void printPosition(const z0::Node& node) {
 
 class Player: public z0::Node {
 public:
-    const float translationSpeed = 4.0;
+    const float translationSpeed = 0.5;
     const float mouseSensitivity = 0.002;
+    const float viewSensitivity = 0.1;
     const float maxCameraAngleUp = glm::radians(60.0);
     const float maxCameraAngleDown = -glm::radians(45.0);
 
@@ -157,6 +158,7 @@ public:
     }
 
     void onPhysicsProcess(float delta) override {
+        previousState = currentState;
         glm::vec2 input;
         if (gamepad != -1) {
             input = z0::Input::getGamepadVector(gamepad, z0::GAMEPAD_AXIS_LEFT);
@@ -164,22 +166,20 @@ public:
         } else {
             input = z0::Input::getKeyboardVector(z0::KEY_A, z0::KEY_D, z0::KEY_W, z0::KEY_S);
         }
-        glm::vec3 velocity{};
+
+        currentState = State{};
         if (input != z0::VEC2ZERO) {
             auto direction = transformBasis * glm::vec3{input.x, 0, input.y};
-            velocity.x = direction.x * translationSpeed;
-            velocity.z = direction.z * translationSpeed;
+            currentState.velocity.x = direction.x * translationSpeed;
+            currentState.velocity.z = direction.z * translationSpeed;
         }
         if (z0::Input::isKeyPressed(z0::KEY_Q)) {
-            velocity.y += translationSpeed / 2;
+            currentState.velocity.y += translationSpeed / 2;
         } else if (z0::Input::isKeyPressed(z0::KEY_Z)) {
-            velocity.y -= translationSpeed / 2;
+            currentState.velocity.y -= translationSpeed / 2;
         }
-        if (velocity != z0::VEC3ZERO) {
-            velocity = velocity * delta;
-            captureMouse();
-            translate(velocity);
-        }
+        if (currentState.velocity != z0::VEC3ZERO) currentState.velocity *= delta;
+
         if (mouseCaptured) {
             glm::vec2 inputDir;
             if (gamepad != -1) {
@@ -188,13 +188,24 @@ public:
             } else {
                 inputDir = z0::Input::getKeyboardVector(z0::KEY_LEFT, z0::KEY_RIGHT, z0::KEY_UP, z0::KEY_DOWN);
             }
-            if (inputDir != z0::VEC2ZERO) {
-                auto look_dir = inputDir * delta;
-                rotateY(-look_dir.x * 2.0f);
-                camera->rotateX(-look_dir.y * mouseInvertedAxisY);
-                camera->setRotationX(std::clamp(camera->getRotationX() , maxCameraAngleDown, maxCameraAngleUp));
-            }
+            if (inputDir != z0::VEC2ZERO) currentState.lookDir = inputDir * viewSensitivity * delta;
         }
+    }
+
+    void onProcess(float alpha) override {
+        if (currentState.velocity != z0::VEC3ZERO) {
+            captureMouse();
+            auto interpolatedVelocity = previousState.velocity * (1.0f-alpha) + currentState.velocity * alpha;
+            translate(interpolatedVelocity);
+        }
+        if (currentState.lookDir != z0::VEC2ZERO) {
+            captureMouse();
+            auto interpolatedLookDir = previousState.lookDir * (1.0f-alpha) + currentState.lookDir * alpha;
+            rotateY(-interpolatedLookDir.x * 2.0f);
+            camera->rotateX(interpolatedLookDir.y * keyboardInvertedAxisY);
+            camera->setRotationX(std::clamp(camera->getRotationX() , maxCameraAngleDown, maxCameraAngleUp));
+        }
+
     }
 
     void onReady() override {
@@ -223,9 +234,19 @@ public:
     }
 
 private:
+    struct State {
+        glm::vec3 velocity = z0::VEC3ZERO;
+        glm::vec2 lookDir = z0::VEC2ZERO;
+
+        State& operator=(const State& other) = default;
+    };
+
     int gamepad{-1};
     bool mouseCaptured{false};
     float mouseInvertedAxisY{1.0};
+    float keyboardInvertedAxisY{1.0};
+    State previousState;
+    State currentState;
     std::shared_ptr<z0::Camera> camera;
     std::shared_ptr<z0::Node> markup2;
 
