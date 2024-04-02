@@ -210,7 +210,7 @@ public:
 
     void onReady() override {
         captureMouse();
-        setPosition({0.0, -1.8, 6.0});
+        setPosition({0.0, -0.0, 6.0});
         //rotateY(glm::radians(-45.));
 
         /*auto markup = z0::Loader::loadModelFromFile("models/light.glb", true);
@@ -306,35 +306,32 @@ public:
         addChild(model1);
 
         JPH::BodyInterface &body_interface = physicsSystem.GetBodyInterface();
-        JPH::BoxShapeSettings floor_shape_settings(JPH::Vec3(100.0f, 0.2f, 100.0f));
-        JPH::ShapeSettings::ShapeResult floor_shape_result = floor_shape_settings.Create();
-        JPH::ShapeRefC floor_shape = floor_shape_result.Get();
-        JPH::BodyCreationSettings floor_settings(floor_shape,
-                                                 JPH::RVec3(0.0, -2.0, 0.0),
-                                                 JPH::Quat::sIdentity(),
-                                                 JPH::EMotionType::Static, Layers::NON_MOVING);
-        JPH::Body *floorBody = body_interface.CreateBody(floor_settings);
-        body_interface.AddBody(floorBody->GetID(), JPH::EActivation::DontActivate);
 
-        JPH::BodyCreationSettings box_settings(new JPH::BoxShape(JPH::Vec3(2.0f, 2.0f, 2.0f)),
+        JPH::BodyCreationSettings box_settings(new JPH::BoxShape(JPH::Vec3(1.0f, 1.0f, 1.0f)),
                                                JPH::RVec3(0.0, 2.0, 0.0),
                                                JPH::Quat::sIdentity(), JPH::EMotionType::Dynamic,
                                                Layers::MOVING);
-        box_settings.mRestitution = 0.5f;
         box_id = body_interface.CreateAndAddBody(box_settings, JPH::EActivation::Activate);
         //body_interface.SetLinearVelocity(box_id, JPH::Vec3(0.0f, -1.0f, 0.0f));
         auto position = body_interface.GetPosition(box_id);
+        body_interface.SetRestitution(box_id, 0.8);
+        std::cout << position.GetX() << " " << position.GetY() << " " << position.GetZ() << std::endl;
         model1->setPosition({position.GetX(), position.GetY(), position.GetZ()});
         //body_interface.SetPosition(box_id, JPH::RVec3(model1->getPositionGlobal().x, model1->getPositionGlobal().y, model1->getPositionGlobal().z), JPH::EActivation::Activate );
-        physicsSystem.OptimizeBroadPhase();
 
         //model2 = model1->duplicate();
         //model2->setPosition({1.0, 0.0, 0.0});
         //addChild(model2);
 
+        JPH::BodyCreationSettings floor_settings(new JPH::BoxShape(JPH::Vec3(100.0f, 0.1f, 100.0f)),
+                                                 JPH::RVec3(0.0, -2.0, 0.0),
+                                                 JPH::Quat::sIdentity(),
+                                                 JPH::EMotionType::Static, Layers::NON_MOVING);
+        JPH::BodyID floor_id = body_interface.CreateAndAddBody(floor_settings, JPH::EActivation::DontActivate);
+
         floor = z0::Loader::loadModelFromFile("models/floor.glb", true);
         //floor->setPosition({0.0, -2.0, 0.0});
-        position = body_interface.GetPosition(floorBody->GetID());
+        position = body_interface.GetPosition(floor_id);
         floor->setPosition({position.GetX(), position.GetY(), position.GetZ()});
         addChild(floor);
 
@@ -342,7 +339,9 @@ public:
         //z0::Application::setPaused(true);
 
         //auto child = getNode("Player/Camera");
-        printTree(std::cout);
+        //printTree(std::cout);
+
+        physicsSystem.OptimizeBroadPhase();
     }
 
 private:
