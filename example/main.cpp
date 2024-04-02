@@ -42,7 +42,7 @@ public:
         }
     }
 
-    void onProcess(float delta) override {
+    void onPhysicsProcess(float delta) override {
         glm::vec2 input;
         if (gamepad != -1) {
             input = z0::Input::getGamepadVector(gamepad, z0::GAMEPAD_AXIS_LEFT);
@@ -133,8 +133,8 @@ public:
 
     void onProcess(float delta) override {
         float angle = delta * glm::radians(90.0f) / 2;
-        //model1->rotateY(angle);
-        //model1->rotateX(angle);
+        model1->rotateY(angle);
+        model1->rotateX(angle);
     }
 
     void onReady() override {

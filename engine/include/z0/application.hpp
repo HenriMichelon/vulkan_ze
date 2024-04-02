@@ -31,6 +31,7 @@ namespace z0 {
 
         void ready(const std::shared_ptr<Node>& node);
         void process(const std::shared_ptr<Node>& node, float delta);
+        void physicsProcess(const std::shared_ptr<Node>& node, float delta);
         void input(const std::shared_ptr<Node>& node, InputEvent& event);
 
         static Application& get();

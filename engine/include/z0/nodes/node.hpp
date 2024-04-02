@@ -37,6 +37,7 @@ namespace z0 {
 
         virtual void onReady() {}
         virtual void onProcess(float delta) {}
+        virtual void onPhysicsProcess(float delta) {}
         virtual void onInput(InputEvent& inputEvent) {}
 
         id_t getId() const { return id; }

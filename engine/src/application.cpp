@@ -5,6 +5,7 @@
 #include "z0/input.hpp"
 
 #include <chrono>
+#include <thread>
 
 namespace z0 {
 
@@ -25,7 +26,55 @@ namespace z0 {
         ready(currentScene);
         viewport->loadScene(currentScene);
 
+        const std::chrono::milliseconds TIME_PER_UPDATE(16); // Fixed update rate of approx. 60 times per second
+        auto currentTime = std::chrono::steady_clock::now();
+        std::chrono::milliseconds accumulator(0);
+        auto lastRenderTime = std::chrono::steady_clock::now();
         uint32_t frameCount = 0;
+        float elapsedSeconds = 0.0;
+        while (!viewport->shouldClose()) {
+            while(Input::haveInputEvent()) {
+                auto event = Input::consumeInputEvent();
+                input(currentScene, *event);
+            }
+
+            // Time management
+            auto newTime = std::chrono::steady_clock::now();
+            auto frameTime = duration_cast<std::chrono::milliseconds>(newTime - currentTime);
+            currentTime = newTime;
+            accumulator += frameTime;
+            // Fixed update loop
+            while (accumulator >= TIME_PER_UPDATE) {
+                // Fixed update logic (e.g., physics)
+                physicsProcess(currentScene, TIME_PER_UPDATE.count() / 1000.0f);
+                accumulator -= TIME_PER_UPDATE;
+            }
+            // Variable update (rendering and less sensitive logic)
+            auto deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(newTime - lastRenderTime).count();
+            //auto deltaTime = duration_cast<std::chrono::milliseconds>(newTime - lastRenderTime);
+            lastRenderTime = newTime;
+
+            // Variable update logic (e.g., rendering, animations)
+            process(currentScene, deltaTime);
+            viewport->drawFrame();
+
+            // Sleep to prevent the loop from running too fast
+            //std::this_thread::sleep_until(currentTime + TIME_PER_UPDATE - accumulator);
+
+            elapsedSeconds += deltaTime;
+            frameCount++;
+            if (elapsedSeconds >= 0.250) {
+                auto fps = frameCount / elapsedSeconds;
+#ifdef VULKAN_STATS
+                VulkanStats::get().averageFps = (VulkanStats::get().averageFps + fps) / 2;
+#endif
+                viewport->_setFPS( fps);
+                frameCount = 0;
+                elapsedSeconds = 0;
+            }
+        }
+
+        /*uint32_t frameCount = 0;
         auto lastFrameTime = std::chrono::high_resolution_clock::now();
         float elapsedSeconds = 0.0;
         while (!viewport->shouldClose()) {
@@ -52,7 +101,7 @@ namespace z0 {
                 elapsedSeconds = 0;
             }
             lastFrameTime = currentFrameTime;
-        }
+        }*/
         viewport->wait();
 #ifdef VULKAN_STATS
         VulkanStats::get().display();
@@ -77,6 +126,12 @@ namespace z0 {
         if (node->isProcessed()) node->onProcess(delta);
         for(auto& child: node->getChildren()) {
             process(child, delta);
+        }
+    }
+    void Application::physicsProcess(const std::shared_ptr<Node>& node, float delta) {
+        if (node->isProcessed()) node->onPhysicsProcess(delta);
+        for(auto& child: node->getChildren()) {
+            physicsProcess(child, delta);
         }
     }
 }
