@@ -23,7 +23,7 @@ set(CROSS_PLATFORM_DETERMINISTIC OFF)
 set(FLOATING_POINT_EXCEPTIONS_ENABLED OFF)
 
 # Number of bits to use in ObjectLayer. Can be 16 or 32.
-set(OBJECT_LAYER_BITS 16)
+set(OBJECT_LAYER_BITS 32)
 
 # Select X86 processor features to use, by default the library compiles with AVX2, if everything is off it will be SSE2 compatible.
 set(USE_SSE4_1 ON)

@@ -128,6 +128,12 @@ add_executable(${PROJECT_NAME}
         ${IMGUI_SOURCES}
         example/main.cpp
 		engine/include/z0/utils/blocking_queue.hpp
+		engine/include/z0/nodes/physics_body.hpp
+		engine/src/nodes/physics_body.cpp
+		engine/include/z0/nodes/static_body.hpp
+		engine/src/nodes/static_body.cpp
+		engine/src/nodes/rigid_body.cpp
+		engine/include/z0/nodes/rigid_body.hpp
 )
 
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_shaders)

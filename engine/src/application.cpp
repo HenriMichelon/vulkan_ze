@@ -4,6 +4,10 @@
 #include "z0/log.hpp"
 #include "z0/input.hpp"
 
+#include <Jolt/RegisterTypes.h>
+#include <Jolt/Physics/Collision/ObjectLayer.h>
+#include <Jolt/Physics/Collision/BroadPhase/BroadPhaseLayer.h>
+
 #include <chrono>
 #include <thread>
 
@@ -18,6 +22,26 @@ namespace z0 {
         viewport = std::make_shared<Viewport>(vulkanInstance, cfg);
         if (instance != nullptr) die("Application already registered");
         instance = this;
+
+        JPH::RegisterDefaultAllocator();
+        JPH::Factory::sInstance = new JPH::Factory();
+        JPH::RegisterTypes();
+
+        temp_allocator = std::make_unique<JPH::TempAllocatorImpl>(10 * 1024 * 1024);
+        job_system = std::make_unique<JPH::JobSystemThreadPool>(JPH::cMaxPhysicsJobs,
+                                                                JPH::cMaxPhysicsBarriers,
+                                                                JPH::thread::hardware_concurrency() - 1);
+        const uint32_t cMaxBodies = 1024;
+        const uint32_t cNumBodyMutexes = 0;
+        const uint32_t cMaxBodyPairs = 1024;
+        const uint32_t cMaxContactConstraints = 1024;
+        physicsSystem.Init(cMaxBodies,
+                           cNumBodyMutexes,
+                           cMaxBodyPairs,
+                           cMaxContactConstraints,
+                           broad_phase_layer_interface,
+                           object_vs_broadphase_layer_filter,
+                           object_vs_object_layer_filter);
     }
 
     void worker(BlockingQueue<std::shared_ptr<Node>>& queue) {
@@ -26,12 +50,12 @@ namespace z0 {
             //std::cout << std::this_thread::get_id() << " consumed: " << node->toString() << std::endl;
             node->onPhysicsProcess(dt);
         }
-        std::cout << "Worker " << std::this_thread::get_id() << " shutting down." << std::endl;
     }
 
     void Application::start(const std::shared_ptr<Node>& scene) {
         currentScene = scene;
         ready(currentScene);
+        physicsSystem.OptimizeBroadPhase();
         viewport->loadScene(currentScene);
 
         // https://gafferongames.com/post/fix_your_timestep/
@@ -61,6 +85,7 @@ namespace z0 {
             while (accumulator >= dt) {
                 physicsProcess(currentScene, dt);
                 while ((!queue.isEmpty()) && (!viewport->shouldClose())) {}; //queue.waitWhileNotEmpty();
+                physicsSystem.Update(dt, 1, temp_allocator.get(), job_system.get());
                 t += dt;
                 accumulator -= dt;
             }
@@ -83,6 +108,7 @@ namespace z0 {
         }
         queue.shutdown();
         viewport->wait();
+        JPH::UnregisterTypes();
 #ifdef VULKAN_STATS
         VulkanStats::get().display();
 #endif

@@ -39,11 +39,6 @@ namespace z0 {
             cond.notify_all();
         }
 
-        void waitWhileNotEmpty() {
-            std::unique_lock<std::mutex> lock(mutex);
-            cond.wait(lock, [this] { return queue.empty() || _shutdown; });
-        }
-
         bool isEmpty() {
             return queue.empty();
         }
