@@ -42,6 +42,7 @@ void main() {
     } else {
         color = material.albedoColor;
     }
+    COLOR = color;
 
     if (((material.transparency == 2) || (material.transparency == 3)) && (color.a < material.alphaScissor)) {
         discard;

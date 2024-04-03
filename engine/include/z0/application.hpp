@@ -4,10 +4,12 @@
 #include "z0/application_config.hpp"
 #include "z0/vulkan/vulkan_instance.hpp"
 #include "z0/nodes/node.hpp"
+#include "z0/utils/blocking_queue.hpp"
 
 namespace z0 {
 
     class Viewport;
+    const float dt = 0.01; // Fixed delta time
 
     class Application: public Object {
     public:
@@ -28,6 +30,7 @@ namespace z0 {
         const ApplicationConfig& applicationConfig;
         std::shared_ptr<Node> currentScene;
         bool paused{false};
+        BlockingQueue<std::shared_ptr<Node>> queue{1000};
 
         void ready(const std::shared_ptr<Node>& node);
         void process(const std::shared_ptr<Node>& node, float alpha);

@@ -282,6 +282,7 @@ namespace z0 {
             fastgltf::Node& node = gltf.nodes[i];
             std::shared_ptr<Node>& sceneNode = nodes[i];
             for (auto& c : node.children) {
+                sceneNode->setProcessMode(PROCESS_MODE_DISABLED);
                 sceneNode->addChild(nodes[c]);
             }
         }
@@ -290,6 +291,7 @@ namespace z0 {
         std::shared_ptr<Node> rootNode = std::make_shared<Node>(filename.string());
         for (auto& node : nodes) {
             if (node->getParent() == nullptr) {
+                node->setProcessMode(PROCESS_MODE_DISABLED);
                 rootNode->addChild(node);
             }
         }

@@ -127,6 +127,7 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/libraries.cpp
         ${IMGUI_SOURCES}
         example/main.cpp
+		engine/include/z0/utils/blocking_queue.hpp
 )
 
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_shaders)

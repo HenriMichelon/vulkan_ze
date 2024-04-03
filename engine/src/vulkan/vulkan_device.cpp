@@ -154,6 +154,9 @@ namespace z0 {
         }
         vkResetFences(device, 1, &inFlightFences[currentFrame]);
         {
+            for (auto& renderer: renderers) {
+                renderer->update(currentFrame);
+            }
             vkResetCommandBuffer(commandBuffers[currentFrame], 0);
             const VkCommandBufferBeginInfo beginInfo{
                     .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -213,9 +216,6 @@ namespace z0 {
         {
             const VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
             const VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-            for (auto& renderer: renderers) {
-                renderer->update(currentFrame);
-            }
             const VkSubmitInfo submitInfo{
                     .sType                  = VK_STRUCTURE_TYPE_SUBMIT_INFO,
                     .waitSemaphoreCount     = 1,

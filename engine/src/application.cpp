@@ -20,6 +20,15 @@ namespace z0 {
         instance = this;
     }
 
+    void worker(BlockingQueue<std::shared_ptr<Node>>& queue) {
+        std::shared_ptr<Node> node;
+        while (queue.pop(node)) {
+            //std::cout << std::this_thread::get_id() << " consumed: " << node->toString() << std::endl;
+            node->onPhysicsProcess(dt);
+        }
+        std::cout << "Worker " << std::this_thread::get_id() << " shutting down." << std::endl;
+    }
+
     void Application::start(const std::shared_ptr<Node>& scene) {
         currentScene = scene;
         ready(currentScene);
@@ -28,11 +37,16 @@ namespace z0 {
         // https://gafferongames.com/post/fix_your_timestep/
         using Clock = std::chrono::steady_clock;
         double t = 0.0;
-        const float dt = 0.01; // Fixed delta time
         double currentTime = std::chrono::duration_cast<std::chrono::duration<double>>(Clock::now().time_since_epoch()).count();
         double accumulator = 0.0;
         uint32_t frameCount = 0;
         float elapsedSeconds = 0.0;
+
+        constexpr int maxWorkers = 2;
+        std::vector<std::jthread> workers{maxWorkers};
+        for (int i = 0; i < maxWorkers; i++) {
+            workers.push_back(std::jthread{worker, std::ref(queue)});
+        }
         while (!viewport->shouldClose()) {
             while(Input::haveInputEvent()) {
                 auto event = Input::consumeInputEvent();
@@ -46,9 +60,11 @@ namespace z0 {
             accumulator += frameTime;
             while (accumulator >= dt) {
                 physicsProcess(currentScene, dt);
+                while ((!queue.isEmpty()) && (!viewport->shouldClose())) {}; //queue.waitWhileNotEmpty();
                 t += dt;
                 accumulator -= dt;
             }
+
             const double alpha = accumulator / dt;
             process(currentScene, static_cast<float>(alpha));
             viewport->drawFrame();
@@ -65,11 +81,13 @@ namespace z0 {
                 elapsedSeconds = 0;
             }
         }
+        queue.shutdown();
         viewport->wait();
 #ifdef VULKAN_STATS
         VulkanStats::get().display();
 #endif
     }
+
 
     void Application::input(const std::shared_ptr<Node>& node, InputEvent& event) {
         if (node->isProcessed()) node->onInput(event);
@@ -92,7 +110,10 @@ namespace z0 {
         }
     }
     void Application::physicsProcess(const std::shared_ptr<Node>& node, float delta) {
-        if (node->isProcessed()) node->onPhysicsProcess(delta);
+        if (node->isProcessed()) {
+            queue.push(node);
+            //node->onPhysicsProcess(delta);
+        }
         for(auto& child: node->getChildren()) {
             physicsProcess(child, delta);
         }

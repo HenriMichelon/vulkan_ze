@@ -134,7 +134,7 @@ void printPosition(const z0::Node& node) {
 
 class Player: public z0::Node {
 public:
-    const float translationSpeed = 0.5;
+    const float translationSpeed = 4;
     const float mouseSensitivity = 0.002;
     const float viewSensitivity = 0.1;
     const float maxCameraAngleUp = glm::radians(60.0);
@@ -205,12 +205,11 @@ public:
             camera->rotateX(interpolatedLookDir.y * keyboardInvertedAxisY);
             camera->setRotationX(std::clamp(camera->getRotationX() , maxCameraAngleDown, maxCameraAngleUp));
         }
-
     }
 
     void onReady() override {
         captureMouse();
-        setPosition({0.0, -0.0, 6.0});
+        setPosition({0.0, 2.0, 6.0});
         //rotateY(glm::radians(-45.));
 
         /*auto markup = z0::Loader::loadModelFromFile("models/light.glb", true);
@@ -261,6 +260,23 @@ private:
     }
 };
 
+
+class Crate: public z0::Node {
+public:
+    explicit Crate(std::shared_ptr<z0::Node> _model): model{_model} {
+        addChild(model);
+    }
+
+    void onPhysicsProcess(float delta) override {
+        float angle = delta * glm::radians(90.0f) / 2;
+        model->rotateX(angle);
+        model->rotateY(angle);
+    }
+
+private:
+    std::shared_ptr<z0::Node> model;
+};
+
 class RootNode: public z0::Node {
 public:
 
@@ -269,9 +285,9 @@ public:
     void onPhysicsProcess(float delta) override {
         float angle = delta * glm::radians(90.0f) / 2;
         //model1->translate({1.5*delta, 0.0, 0.0});
-        JPH::BodyInterface &body_interface = physicsSystem.GetBodyInterface();
+        /*JPH::BodyInterface &body_interface = physicsSystem.GetBodyInterface();
         JPH::RVec3 position = body_interface.GetPosition(box_id);
-        model1->setPosition({position.GetX(), position.GetY(), position.GetZ()});
+        model1->setPosition({position.GetX(), position.GetY(), position.GetZ()});*/
         physicsSystem.Update(delta, 1, temp_allocator.get(), job_system.get());
     }
 
@@ -302,10 +318,22 @@ public:
         addChild(light1);*/
 
         model1 = z0::Loader::loadModelFromFile("models/crate.glb", false);
+        for (int x = 0; x < 2; x++) {
+            for (int y = 0; y < 2; y++) {
+                for (int z = 0; z < 2; z++) {
+                    auto model = std::make_shared<Crate>(model1->duplicate());
+                    model->setPosition({x * 4 - 2 * 2, y * 4, z * -4});
+                    addChild(model);
+                }
+            }
+        }
+
+        JPH::BodyInterface &body_interface = physicsSystem.GetBodyInterface();
+
+        /*
         model1->setPosition({-3.0, 0.0, 0.0});
         addChild(model1);
 
-        JPH::BodyInterface &body_interface = physicsSystem.GetBodyInterface();
 
         JPH::BodyCreationSettings box_settings(new JPH::BoxShape(JPH::Vec3(1.0f, 1.0f, 1.0f)),
                                                JPH::RVec3(0.0, 2.0, 0.0),
@@ -316,7 +344,7 @@ public:
         auto position = body_interface.GetPosition(box_id);
         body_interface.SetRestitution(box_id, 0.8);
         std::cout << position.GetX() << " " << position.GetY() << " " << position.GetZ() << std::endl;
-        model1->setPosition({position.GetX(), position.GetY(), position.GetZ()});
+        model1->setPosition({position.GetX(), position.GetY(), position.GetZ()});*/
         //body_interface.SetPosition(box_id, JPH::RVec3(model1->getPositionGlobal().x, model1->getPositionGlobal().y, model1->getPositionGlobal().z), JPH::EActivation::Activate );
 
         //model2 = model1->duplicate();
@@ -331,7 +359,7 @@ public:
 
         floor = z0::Loader::loadModelFromFile("models/floor.glb", true);
         //floor->setPosition({0.0, -2.0, 0.0});
-        position = body_interface.GetPosition(floor_id);
+        auto position = body_interface.GetPosition(floor_id);
         floor->setPosition({position.GetX(), position.GetY(), position.GetZ()});
         addChild(floor);
 
