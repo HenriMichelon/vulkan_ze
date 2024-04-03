@@ -1,6 +1,6 @@
 # ZeroZero
 
-ZeroZero is a 3D game engine based on the Vulkan 1.3 API
+ZeroZero is a 3D game engine based on Vulkan 1.3 & Jolt Physics 4.x
 
 **Current state**
 - Scene tree & nodes using classical OO approch
@@ -25,6 +25,7 @@ ZeroZero is a 3D game engine based on the Vulkan 1.3 API
 - stb https://github.com/nothings/stb
 - fastgltf https://github.com/spnda/fastgltf
 - Dear Imgui https://www.dearimgui.com/
+- Jolt Physics https://github.com/jrouwe/JoltPhysics
 
 **Building tools needed**
 - GCC/MINGW 11+ (C++ 23)
