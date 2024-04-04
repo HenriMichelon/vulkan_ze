@@ -5,8 +5,6 @@
 #include "z0/input.hpp"
 
 #include <Jolt/RegisterTypes.h>
-#include <Jolt/Physics/Collision/ObjectLayer.h>
-#include <Jolt/Physics/Collision/BroadPhase/BroadPhaseLayer.h>
 
 #include <chrono>
 #include <thread>
@@ -48,7 +46,7 @@ namespace z0 {
         std::shared_ptr<Node> node;
         while (queue.pop(node)) {
             //std::cout << std::this_thread::get_id() << " consumed: " << node->toString() << std::endl;
-            node->_physicsUpdate();
+            if (node->_needPhysics()) node->_physicsUpdate();
             node->onPhysicsProcess(dt);
         }
     }

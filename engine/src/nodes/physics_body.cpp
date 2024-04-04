@@ -7,7 +7,7 @@
 
 namespace z0 {
 
-    PhysicsBody::PhysicsBody(std::shared_ptr<Shape> _shape, uint32_t layer, uint32_t mask, JPH::EActivation _activationMode, JPH::EMotionType _motionType, const std::string name):
+    PhysicsBody::PhysicsBody(std::shared_ptr<Shape>& _shape, uint32_t layer, uint32_t mask, JPH::EActivation _activationMode, JPH::EMotionType _motionType, const std::string name):
         Node{name},
         bodyInterface{Application::_getBodyInterface()},
         shape{_shape},
@@ -15,7 +15,7 @@ namespace z0 {
         motionType{_motionType},
         collisionLayer{layer},
         collisionMask{mask} {
-        JPH::BodyCreationSettings settings{
+        const JPH::BodyCreationSettings settings{
                 shape->_getShape(),
                 JPH::RVec3(0.0f, 0.0f, 0.0f),
                 JPH::Quat::sIdentity(),
@@ -24,21 +24,24 @@ namespace z0 {
         };
         bodyId = bodyInterface.CreateAndAddBody(settings, activationMode);
         setPositionAndRotation();
+        needPhysics = true;
     }
 
     PhysicsBody::~PhysicsBody() {
-        Application::_getBodyInterface().RemoveBody(bodyId);
+        //bodyInterface.DestroyBody(bodyId);
     }
 
     void PhysicsBody::_physicsUpdate() {
         updating = true;
-        auto position = bodyInterface.GetPosition(bodyId);
-        setPositionGlobal(glm::vec3{position.GetX(), position.GetY(), position.GetZ()});
+        //auto position = bodyInterface.GetPosition(bodyId);
+        //setPositionGlobal(glm::vec3{position.GetX(), position.GetY(), position.GetZ()});
+        auto mat44 = bodyInterface.GetWorldTransform(bodyId);
+
         updating = false;
     }
 
     void PhysicsBody::setPositionAndRotation() {
-        if (updating) return;
+        if (updating || (parent == nullptr)) return;
         auto position = getPositionGlobal();
         auto quat = glm::toQuat(glm::mat3(worldTransform));
         bodyInterface.SetPositionAndRotation(
@@ -49,13 +52,13 @@ namespace z0 {
     }
 
     void PhysicsBody::updateTransform() {
-        Node::updateTransform();
-        setPositionAndRotation();
+        //Node::updateTransform();
+        //setPositionAndRotation();
     }
 
     void PhysicsBody::updateTransform(const glm::mat4 &parentMatrix) {
-        Node::updateTransform(parentMatrix);
-        setPositionAndRotation();
+        //Node::updateTransform(parentMatrix);
+        //setPositionAndRotation();
     }
 
     bool PhysicsBody::haveCollisionLayer(uint32_t layer) const {

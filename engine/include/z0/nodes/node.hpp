@@ -33,7 +33,7 @@ namespace z0 {
 
         explicit Node(const std::string nodeName = "Node");
         Node(const Node&);
-        virtual ~Node() {};
+        virtual ~Node() = default;
 
         virtual void onReady() {}
         virtual void onProcess(float alpha) {}
@@ -113,24 +113,25 @@ namespace z0 {
         glm::mat4 localTransform {};
         glm::mat4 worldTransform {};
         std::list<std::shared_ptr<Node>> children;
+        bool needPhysics{false};
+        Node* parent {nullptr};
+
+        virtual void _onReady();
+
         virtual std::shared_ptr<Node> duplicateInstance();
 
     private:
         id_t id;
-        Node* parent {nullptr};
         static id_t currentId;
         ProcessMode processMode{PROCESS_MODE_INHERIT};
         bool inReady{false};
-
-        void _onReady();
 
         friend class Application;
 
     public:
         virtual void _physicsUpdate() {};
+        inline bool _needPhysics() const { return needPhysics; }
     };
-
-
 
     class DistanceSortedNode {
     public:

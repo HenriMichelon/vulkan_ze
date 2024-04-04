@@ -29,7 +29,13 @@ namespace z0 {
         JPH::BodyID bodyId;
         JPH::BodyInterface& bodyInterface;
         std::shared_ptr<Shape> shape;
-        PhysicsBody(std::shared_ptr<Shape> shape, uint32_t layer, uint32_t mask, JPH::EActivation activationMode, JPH::EMotionType motionType, const std::string name = "PhysicsBody");
+
+        PhysicsBody(std::shared_ptr<Shape>& shape,
+                    uint32_t layer,
+                    uint32_t mask,
+                    JPH::EActivation activationMode,
+                    JPH::EMotionType motionType,
+                    const std::string name);
 
     private:
         JPH::EActivation activationMode;
