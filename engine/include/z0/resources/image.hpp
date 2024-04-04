@@ -2,7 +2,7 @@
 
 #include "z0/vulkan/vulkan_image.hpp"
 #include "z0/viewport.hpp"
-#include "z0/resource.hpp"
+#include "z0/resources/resource.hpp"
 
 namespace z0 {
 

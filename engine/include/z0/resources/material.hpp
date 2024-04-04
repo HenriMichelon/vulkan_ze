@@ -1,7 +1,7 @@
 #pragma once
 
 #include "z0/color.hpp"
-#include "z0/texture.hpp"
+#include "z0/resources/texture.hpp"
 
 namespace z0 {
 

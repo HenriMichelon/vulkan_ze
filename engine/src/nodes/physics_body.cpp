@@ -7,13 +7,17 @@
 
 namespace z0 {
 
-    PhysicsBody::PhysicsBody(JPH::EActivation _activationMode, JPH::EMotionType _motionType, const std::string name):
-        Node{name}, activationMode{_activationMode}, motionType{_motionType} {
-        JPH::BodyCreationSettings settings{};
-        auto& bodyInterface = Application::_getBodyInterface();
-        bodyId = bodyInterface.CreateAndAddBody(settings, activationMode);
-        bodyInterface.SetMotionType(bodyId, motionType, activationMode);
-        bodyInterface.SetObjectLayer(bodyId, collisionLayer << 4 | collisionMask);
+    PhysicsBody::PhysicsBody(std::shared_ptr<Shape> _shape, uint32_t layer, uint32_t mask, JPH::EActivation _activationMode, JPH::EMotionType _motionType, const std::string name):
+        Node{name}, shape{_shape}, activationMode{_activationMode}, motionType{_motionType}, collisionLayer{layer}, collisionMask{mask} {
+        JPH::BodyCreationSettings settings{
+                shape->_getShape(),
+                JPH::RVec3(0.0f, 0.0f, 0.0f),
+                JPH::Quat::sIdentity(),
+                motionType,
+                collisionLayer << 4 | collisionMask
+        };
+        bodyId = Application::_getBodyInterface().CreateAndAddBody(settings, activationMode);
+        setPositionAndRotation();
     }
 
     PhysicsBody::~PhysicsBody() {

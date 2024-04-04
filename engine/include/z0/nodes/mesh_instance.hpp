@@ -1,6 +1,6 @@
 #pragma once
 
-#include "z0/mesh.hpp"
+#include "z0/resources/mesh.hpp"
 
 namespace z0 {
 

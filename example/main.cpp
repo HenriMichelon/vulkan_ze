@@ -10,6 +10,7 @@
 #include "z0/log.hpp"
 #include "Jolt/Physics/Body/BodyCreationSettings.h"
 #include "Jolt/Physics/Collision/Shape/BoxShape.h"
+#include "z0/nodes/rigid_body.hpp"
 
 #include <algorithm>
 
@@ -178,9 +179,9 @@ public:
     void onPhysicsProcess(float delta) override {
         float angle = delta * glm::radians(90.0f) / 2;
         //model1->translate({1.5*delta, 0.0, 0.0});
-        auto& body_interface = z0::Application::_getBodyInterface();
-        JPH::RVec3 position = body_interface.GetPosition(box_id);
-        model1->setPosition({position.GetX(), position.GetY(), position.GetZ()});
+        //auto& body_interface = z0::Application::_getBodyInterface();
+        //JPH::RVec3 position = body_interface.GetPosition(box_id);
+        //model1->setPosition({position.GetX(), position.GetY(), position.GetZ()});
     }
 
     void onReady() override {
@@ -209,8 +210,15 @@ public:
         light1->setPosition(spotLight1->getPosition());
         addChild(light1);*/
 
-        model1 = z0::Loader::loadModelFromFile("models/crate.glb", false);
-       /* for (int x = 0; x < 2; x++) {
+        model1 = std::make_shared<z0::RigidBody>(std::make_shared<z0::BoxShape>(glm::vec3{1.0f,1.0f, 1.0f}),
+                                                 Layers::BODIES,
+                                                 Layers::WORLD);
+        model1->addChild(z0::Loader::loadModelFromFile("models/crate.glb", true));
+        model1->setPosition({0.0, 3.0, 0.0});
+        addChild(model1);
+
+        /*model1 = z0::Loader::loadModelFromFile("models/crate.glb", false);
+        for (int x = 0; x < 2; x++) {
             for (int y = 0; y < 2; y++) {
                 for (int z = 0; z < 2; z++) {
                     auto model = std::make_shared<Crate>(model1->duplicate());
@@ -220,14 +228,15 @@ public:
             }
         }*/
         //model1->setPosition({-3.0, 0.0, 0.0});
-        addChild(model1);
+        //addChild(model1);
 
-        auto layers = Layers::BODIES << 4 | Layers::WORLD;
+        auto& body_interface = z0::Application::_getBodyInterface();
+        /*auto layers = Layers::BODIES << 4 | Layers::WORLD;
         JPH::BodyCreationSettings box_settings(new JPH::BoxShape(JPH::Vec3(1.0f, 1.0f, 1.0f)),
                                                JPH::RVec3(0.0, 2.0, 0.0),
                                                JPH::Quat::sIdentity(), JPH::EMotionType::Dynamic,
                                                layers);
-        auto& body_interface = z0::Application::_getBodyInterface();
+
         box_id = body_interface.CreateAndAddBody(box_settings, JPH::EActivation::Activate);
         //body_interface.SetLinearVelocity(box_id, JPH::Vec3(0.0f, -1.0f, 0.0f));
         auto position = body_interface.GetPosition(box_id);
@@ -235,12 +244,12 @@ public:
         std::cout << position.GetX() << " " << position.GetY() << " " << position.GetZ() << std::endl;
         model1->setPosition({position.GetX(), position.GetY(), position.GetZ()});
         //body_interface.SetPosition(box_id, JPH::RVec3(model1->getPositionGlobal().x, model1->getPositionGlobal().y, model1->getPositionGlobal().z), JPH::EActivation::Activate );
-
         //model2 = model1->duplicate();
         //model2->setPosition({1.0, 0.0, 0.0});
         //addChild(model2);
+         */
 
-        layers = Layers::WORLD << 4 | 0;
+        auto layers = Layers::WORLD << 4 | 0;
         JPH::BodyCreationSettings floor_settings(new JPH::BoxShape(JPH::Vec3(100.0f, 0.1f, 100.0f)),
                                                  JPH::RVec3(0.0, -2.0, 0.0),
                                                  JPH::Quat::sIdentity(),
@@ -250,7 +259,7 @@ public:
 
         floor = z0::Loader::loadModelFromFile("models/floor.glb", true);
         //floor->setPosition({0.0, -2.0, 0.0});
-        position = body_interface.GetPosition(floor_id);
+        auto position = body_interface.GetPosition(floor_id);
         floor->setPosition({position.GetX(), position.GetY(), position.GetZ()});
         addChild(floor);
 
@@ -259,19 +268,14 @@ public:
 
         //auto child = getNode("Player/Camera");
         //printTree(std::cout);
-
-
     }
 
 private:
     float rot = 0.0;
     std::shared_ptr<z0::Node> model1;
-    std::shared_ptr<z0::Node> model2;
-    std::shared_ptr<z0::Node> light1;
     std::shared_ptr<z0::Node> floor;
 
-    JPH::BodyID box_id;
-
+    //JPH::BodyID box_id;
 };
 
 int main() {

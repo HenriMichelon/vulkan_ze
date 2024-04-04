@@ -1,7 +1,7 @@
 #pragma once
 
 #include "z0/vulkan/vulkan_cubemap.hpp"
-#include "z0/resource.hpp"
+#include "z0/resources/resource.hpp"
 
 #include <filesystem>
 

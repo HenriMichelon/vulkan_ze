@@ -51,6 +51,12 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/include/z0/vulkan/framebuffers/color_attachment_hdr.hpp
 		${Z0_ENGINE_DIR}/include/z0/vulkan/framebuffers/color_attachment.hpp
         ${Z0_ENGINE_DIR}/include/z0/vulkan/vulkan_stats.hpp
+		${Z0_ENGINE_DIR}/include/z0/resources/mesh.hpp
+		${Z0_ENGINE_DIR}/include/z0/resources/resource.hpp
+		${Z0_ENGINE_DIR}/include/z0/resources/material.hpp
+		${Z0_ENGINE_DIR}/include/z0/resources/texture.hpp
+		${Z0_ENGINE_DIR}/include/z0/resources/image.hpp
+		${Z0_ENGINE_DIR}/include/z0/resources/cubemap.hpp
         ${Z0_ENGINE_DIR}/include/z0/nodes/node.hpp
         ${Z0_ENGINE_DIR}/include/z0/nodes/camera.hpp
         ${Z0_ENGINE_DIR}/include/z0/nodes/mesh_instance.hpp
@@ -72,16 +78,10 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/include/z0/transform.hpp
         ${Z0_ENGINE_DIR}/include/z0/window.hpp
         ${Z0_ENGINE_DIR}/include/z0/viewport.hpp
-        ${Z0_ENGINE_DIR}/include/z0/mesh.hpp
-        ${Z0_ENGINE_DIR}/include/z0/resource.hpp
-        ${Z0_ENGINE_DIR}/include/z0/material.hpp
-        ${Z0_ENGINE_DIR}/include/z0/texture.hpp
-        ${Z0_ENGINE_DIR}/include/z0/image.hpp
         ${Z0_ENGINE_DIR}/include/z0/color.hpp
         ${Z0_ENGINE_DIR}/include/z0/vertex.hpp
         ${Z0_ENGINE_DIR}/include/z0/loader.hpp
         ${Z0_ENGINE_DIR}/include/z0/input.hpp
-        ${Z0_ENGINE_DIR}/include/z0/cubemap.hpp
         ${Z0_ENGINE_DIR}/include/z0/application.hpp
         ${Z0_ENGINE_DIR}/include/z0/input_event.hpp
         ${Z0_ENGINE_DIR}/src/helpers/window_helper_glfw.cpp
@@ -110,6 +110,11 @@ add_executable(${PROJECT_NAME}
 		${Z0_ENGINE_DIR}/src/vulkan/framebuffers/color_attachment.cpp
 		${Z0_ENGINE_DIR}/src/vulkan/framebuffers/color_attachment.cpp
         ${Z0_ENGINE_DIR}/src/ui/debug_ui.cpp
+		${Z0_ENGINE_DIR}/src/resources/mesh.cpp
+		${Z0_ENGINE_DIR}/src/resources/image.cpp
+		${Z0_ENGINE_DIR}/src/resources/texture.cpp
+		${Z0_ENGINE_DIR}/src/resources/resource.cpp
+		${Z0_ENGINE_DIR}/src/resources/cubemap.cpp
         ${Z0_ENGINE_DIR}/src/nodes/node.cpp
         ${Z0_ENGINE_DIR}/src/nodes/camera.cpp
         ${Z0_ENGINE_DIR}/src/nodes/mesh_instance.cpp
@@ -122,18 +127,15 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/application.cpp
         ${Z0_ENGINE_DIR}/src/object.cpp
         ${Z0_ENGINE_DIR}/src/viewport.cpp
-        ${Z0_ENGINE_DIR}/src/mesh.cpp
         ${Z0_ENGINE_DIR}/src/transform.cpp
-        ${Z0_ENGINE_DIR}/src/image.cpp
-        ${Z0_ENGINE_DIR}/src/texture.cpp
-        ${Z0_ENGINE_DIR}/src/resource.cpp
         ${Z0_ENGINE_DIR}/src/loader.cpp
-        ${Z0_ENGINE_DIR}/src/cubemap.cpp
         ${Z0_ENGINE_DIR}/src/input.cpp
         ${Z0_ENGINE_DIR}/src/input_event.cpp
         ${Z0_ENGINE_DIR}/src/libraries.cpp
         ${IMGUI_SOURCES}
         example/main.cpp
+		engine/include/z0/resources/shape.hpp
+		engine/src/resources/shape.cpp
 )
 
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_shaders)

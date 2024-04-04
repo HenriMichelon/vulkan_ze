@@ -1,7 +1,7 @@
 #pragma once
 
 #include "node.hpp"
-#include "z0/cubemap.hpp"
+#include "z0/resources/cubemap.hpp"
 
 namespace z0 {
 

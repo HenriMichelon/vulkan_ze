@@ -1,4 +1,4 @@
-#include "z0/mesh.hpp"
+#include "z0/resources/mesh.hpp"
 #include "z0/application.hpp"
 
 namespace z0 {

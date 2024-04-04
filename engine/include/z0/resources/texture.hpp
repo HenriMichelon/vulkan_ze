@@ -1,20 +1,20 @@
 #pragma once
 
-#include "z0/image.hpp"
+#include "z0/resources/image.hpp"
 
 namespace z0 {
 
     class Texture: public Resource {
     public:
+        explicit Texture(std::string resName): Resource{resName} {};
         virtual uint32_t getWidth() const = 0;
         virtual uint32_t getHeight() const = 0;
         virtual glm::vec2 getSize() const { return glm::vec2{getWidth(), getHeight()}; };
-
     };
 
     class ImageTexture: public Texture {
     public:
-        ImageTexture(const std::shared_ptr<Image>& img): image(img) {};
+        ImageTexture(const std::shared_ptr<Image>& img): Texture{img->getName()}, image(img) {};
         ImageTexture(const std::filesystem::path& filename);
 
         bool isValid() override { return image != nullptr; }

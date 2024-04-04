@@ -1,7 +1,7 @@
 #pragma once
 
 #include "z0/vulkan/vulkan_model.hpp"
-#include "z0/material.hpp"
+#include "z0/resources/material.hpp"
 
 #include <unordered_set>
 
@@ -16,9 +16,8 @@ namespace z0 {
 
     class Mesh: public Resource {
     public:
-        explicit Mesh(const std::string& meshName): name{meshName} {};
+        explicit Mesh(const std::string& meshName): Resource{meshName} {};
 
-        const std::string& getName() const { return name; }
         std::vector<std::shared_ptr<MeshSurface>>& getSurfaces() { return surfaces; };
         std::shared_ptr<Material>& getSurfaceMaterial(uint32_t surfaceIndex);
         void setSurfaceMaterial(uint32_t surfaceIndex, std::shared_ptr<Material>& material);
@@ -27,7 +26,6 @@ namespace z0 {
         bool isValid() override { return _model != nullptr; }
 
     private:
-        std::string name {};
         std::vector<Vertex> vertices{};
         std::vector<uint32_t> indices{};
         std::vector<std::shared_ptr<MeshSurface>> surfaces{};

@@ -8,7 +8,7 @@ namespace z0 {
     class Resource: public Object {
     public:
         using rid_t = unsigned int;
-        Resource(std::string resName = ""): name{resName}, id{currentId++}  { }
+        Resource(std::string resName): name{resName}, id{currentId++}  { }
 
         rid_t getId() const { return id; }
         const std::string& getName() const { return name; }

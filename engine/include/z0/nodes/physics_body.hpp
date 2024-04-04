@@ -1,6 +1,7 @@
 #pragma once
 
 #include "z0/nodes/node.hpp"
+#include "z0/resources/shape.hpp"
 
 #include <Jolt/Jolt.h>
 #include <Jolt/Physics/Body/BodyID.h>
@@ -24,14 +25,15 @@ namespace z0 {
         void updateTransform(const glm::mat4& parentMatrix) override;
 
     protected:
-        PhysicsBody(JPH::EActivation activationMode, JPH::EMotionType motionType, const std::string name = "PhysicsBody");
+        std::shared_ptr<Shape> shape;
+        PhysicsBody(std::shared_ptr<Shape> shape, uint32_t layer, uint32_t mask, JPH::EActivation activationMode, JPH::EMotionType motionType, const std::string name = "PhysicsBody");
 
     private:
         JPH::BodyID bodyId;
         JPH::EActivation activationMode;
         JPH::EMotionType motionType;
-        uint32_t collisionLayer{1};
-        uint32_t collisionMask{1};
+        uint32_t collisionLayer;
+        uint32_t collisionMask;
 
         void setPositionAndRotation();
     };

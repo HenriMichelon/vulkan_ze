@@ -1,4 +1,4 @@
-#include "z0/resource.hpp"
+#include "z0/resources/resource.hpp"
 
 namespace z0 {
 
