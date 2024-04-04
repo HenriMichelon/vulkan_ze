@@ -7,6 +7,7 @@
 #include <Jolt/Physics/Body/BodyID.h>
 #include <Jolt/Physics/EActivation.h>
 #include <Jolt/Physics/Body/MotionType.h>
+#include <Jolt/Physics/Body/BodyInterface.h>
 
 namespace z0 {
 
@@ -25,17 +26,22 @@ namespace z0 {
         void updateTransform(const glm::mat4& parentMatrix) override;
 
     protected:
+        JPH::BodyID bodyId;
+        JPH::BodyInterface& bodyInterface;
         std::shared_ptr<Shape> shape;
         PhysicsBody(std::shared_ptr<Shape> shape, uint32_t layer, uint32_t mask, JPH::EActivation activationMode, JPH::EMotionType motionType, const std::string name = "PhysicsBody");
 
     private:
-        JPH::BodyID bodyId;
         JPH::EActivation activationMode;
         JPH::EMotionType motionType;
         uint32_t collisionLayer;
         uint32_t collisionMask;
+        bool updating{false};
 
         void setPositionAndRotation();
+
+    public:
+        void _physicsUpdate() override;
     };
 
 }

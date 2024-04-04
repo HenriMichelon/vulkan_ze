@@ -215,6 +215,7 @@ public:
                                                  Layers::WORLD);
         model1->addChild(z0::Loader::loadModelFromFile("models/crate.glb", true));
         model1->setPosition({0.0, 3.0, 0.0});
+        model1->setBounce(0.8);
         addChild(model1);
 
         /*model1 = z0::Loader::loadModelFromFile("models/crate.glb", false);
@@ -272,7 +273,7 @@ public:
 
 private:
     float rot = 0.0;
-    std::shared_ptr<z0::Node> model1;
+    std::shared_ptr<z0::RigidBody> model1;
     std::shared_ptr<z0::Node> floor;
 
     //JPH::BodyID box_id;

@@ -48,6 +48,7 @@ namespace z0 {
         std::shared_ptr<Node> node;
         while (queue.pop(node)) {
             //std::cout << std::this_thread::get_id() << " consumed: " << node->toString() << std::endl;
+            node->_physicsUpdate();
             node->onPhysicsProcess(dt);
         }
     }

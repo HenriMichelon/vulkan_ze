@@ -8,7 +8,13 @@
 namespace z0 {
 
     PhysicsBody::PhysicsBody(std::shared_ptr<Shape> _shape, uint32_t layer, uint32_t mask, JPH::EActivation _activationMode, JPH::EMotionType _motionType, const std::string name):
-        Node{name}, shape{_shape}, activationMode{_activationMode}, motionType{_motionType}, collisionLayer{layer}, collisionMask{mask} {
+        Node{name},
+        bodyInterface{Application::_getBodyInterface()},
+        shape{_shape},
+        activationMode{_activationMode},
+        motionType{_motionType},
+        collisionLayer{layer},
+        collisionMask{mask} {
         JPH::BodyCreationSettings settings{
                 shape->_getShape(),
                 JPH::RVec3(0.0f, 0.0f, 0.0f),
@@ -16,7 +22,7 @@ namespace z0 {
                 motionType,
                 collisionLayer << 4 | collisionMask
         };
-        bodyId = Application::_getBodyInterface().CreateAndAddBody(settings, activationMode);
+        bodyId = bodyInterface.CreateAndAddBody(settings, activationMode);
         setPositionAndRotation();
     }
 
@@ -24,10 +30,18 @@ namespace z0 {
         Application::_getBodyInterface().RemoveBody(bodyId);
     }
 
+    void PhysicsBody::_physicsUpdate() {
+        updating = true;
+        auto position = bodyInterface.GetPosition(bodyId);
+        setPositionGlobal(glm::vec3{position.GetX(), position.GetY(), position.GetZ()});
+        updating = false;
+    }
+
     void PhysicsBody::setPositionAndRotation() {
+        if (updating) return;
         auto position = getPositionGlobal();
         auto quat = glm::toQuat(glm::mat3(worldTransform));
-        Application::_getBodyInterface().SetPositionAndRotation(
+        bodyInterface.SetPositionAndRotation(
                 bodyId,
                 JPH::RVec3(position.x, position.y, position.z),
                 JPH::Quat(quat.x, quat.y, quat.z, quat.w),
@@ -58,7 +72,7 @@ namespace z0 {
         } else {
             collisionLayer &= ~layer;
         }
-        Application::_getBodyInterface().SetObjectLayer(bodyId, collisionLayer << 4 | collisionMask);
+        bodyInterface.SetObjectLayer(bodyId, collisionLayer << 4 | collisionMask);
     }
 
     void PhysicsBody::setCollistionMask(uint32_t layer, bool value) {
@@ -67,7 +81,7 @@ namespace z0 {
         } else {
             collisionMask &= ~layer;
         }
-        Application::_getBodyInterface().SetObjectLayer(bodyId, collisionLayer << 4 | collisionMask);
+        bodyInterface.SetObjectLayer(bodyId, collisionLayer << 4 | collisionMask);
     }
 
 }

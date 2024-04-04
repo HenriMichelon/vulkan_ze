@@ -121,10 +121,15 @@ namespace z0 {
         static id_t currentId;
         ProcessMode processMode{PROCESS_MODE_INHERIT};
         bool inReady{false};
+
         void _onReady();
 
         friend class Application;
+
+    public:
+        virtual void _physicsUpdate() {};
     };
+
 
 
     class DistanceSortedNode {
