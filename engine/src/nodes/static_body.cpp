@@ -2,7 +2,7 @@
 
 namespace z0 {
 
-    StaticBody::StaticBody(const std::string name): PhysicsBody(JPH::EActivation::DontActivate, name) {
+    StaticBody::StaticBody(const std::string name): PhysicsBody(JPH::EActivation::DontActivate, JPH::EMotionType::Static, name) {
 
     }
 

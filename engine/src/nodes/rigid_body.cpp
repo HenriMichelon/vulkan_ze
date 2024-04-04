@@ -2,7 +2,7 @@
 
 namespace z0 {
 
-    RigidBody::RigidBody(const std::string name): PhysicsBody(JPH::EActivation::Activate, name) {
+    RigidBody::RigidBody(const std::string name): PhysicsBody(JPH::EActivation::Activate, JPH::EMotionType::Dynamic, name) {
 
     }
 

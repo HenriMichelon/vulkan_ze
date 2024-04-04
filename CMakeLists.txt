@@ -60,6 +60,10 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/include/z0/nodes/omni_light.hpp
         ${Z0_ENGINE_DIR}/include/z0/nodes/spot_light.hpp
         ${Z0_ENGINE_DIR}/include/z0/nodes/skybox.hpp
+		${Z0_ENGINE_DIR}/include/z0/nodes/physics_body.hpp
+		${Z0_ENGINE_DIR}/include/z0/nodes/static_body.hpp
+		${Z0_ENGINE_DIR}/include/z0/nodes/rigid_body.hpp
+		${Z0_ENGINE_DIR}/include/z0/utils/blocking_queue.hpp
         ${Z0_ENGINE_DIR}/include/z0/ui/debug_ui.hpp
         ${Z0_ENGINE_DIR}/include/z0/application_config.hpp
         ${Z0_ENGINE_DIR}/include/z0/application.hpp
@@ -112,6 +116,9 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/nodes/omni_light.cpp
         ${Z0_ENGINE_DIR}/src/nodes/spot_light.cpp
         ${Z0_ENGINE_DIR}/src/nodes/skybox.cpp
+		${Z0_ENGINE_DIR}/src/nodes/physics_body.cpp
+		${Z0_ENGINE_DIR}/src/nodes/static_body.cpp
+		${Z0_ENGINE_DIR}/src/nodes/rigid_body.cpp
         ${Z0_ENGINE_DIR}/src/application.cpp
         ${Z0_ENGINE_DIR}/src/object.cpp
         ${Z0_ENGINE_DIR}/src/viewport.cpp
@@ -127,13 +134,6 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/libraries.cpp
         ${IMGUI_SOURCES}
         example/main.cpp
-		engine/include/z0/utils/blocking_queue.hpp
-		engine/include/z0/nodes/physics_body.hpp
-		engine/src/nodes/physics_body.cpp
-		engine/include/z0/nodes/static_body.hpp
-		engine/src/nodes/static_body.cpp
-		engine/src/nodes/rigid_body.cpp
-		engine/include/z0/nodes/rigid_body.hpp
 )
 
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_shaders)
