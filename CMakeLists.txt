@@ -57,7 +57,8 @@ add_executable(${PROJECT_NAME}
 		${Z0_ENGINE_DIR}/include/z0/resources/texture.hpp
 		${Z0_ENGINE_DIR}/include/z0/resources/image.hpp
 		${Z0_ENGINE_DIR}/include/z0/resources/cubemap.hpp
-        ${Z0_ENGINE_DIR}/include/z0/nodes/node.hpp
+		${Z0_ENGINE_DIR}/include/z0/resources/shape.hpp
+		${Z0_ENGINE_DIR}/include/z0/nodes/node.hpp
         ${Z0_ENGINE_DIR}/include/z0/nodes/camera.hpp
         ${Z0_ENGINE_DIR}/include/z0/nodes/mesh_instance.hpp
         ${Z0_ENGINE_DIR}/include/z0/nodes/light.hpp
@@ -75,7 +76,6 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/include/z0/application.hpp
         ${Z0_ENGINE_DIR}/include/z0/log.hpp
         ${Z0_ENGINE_DIR}/include/z0/object.hpp
-        ${Z0_ENGINE_DIR}/include/z0/transform.hpp
         ${Z0_ENGINE_DIR}/include/z0/window.hpp
         ${Z0_ENGINE_DIR}/include/z0/viewport.hpp
         ${Z0_ENGINE_DIR}/include/z0/color.hpp
@@ -115,6 +115,7 @@ add_executable(${PROJECT_NAME}
 		${Z0_ENGINE_DIR}/src/resources/texture.cpp
 		${Z0_ENGINE_DIR}/src/resources/resource.cpp
 		${Z0_ENGINE_DIR}/src/resources/cubemap.cpp
+		${Z0_ENGINE_DIR}/src/resources/shape.cpp
         ${Z0_ENGINE_DIR}/src/nodes/node.cpp
         ${Z0_ENGINE_DIR}/src/nodes/camera.cpp
         ${Z0_ENGINE_DIR}/src/nodes/mesh_instance.cpp
@@ -127,15 +128,12 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/application.cpp
         ${Z0_ENGINE_DIR}/src/object.cpp
         ${Z0_ENGINE_DIR}/src/viewport.cpp
-        ${Z0_ENGINE_DIR}/src/transform.cpp
         ${Z0_ENGINE_DIR}/src/loader.cpp
         ${Z0_ENGINE_DIR}/src/input.cpp
         ${Z0_ENGINE_DIR}/src/input_event.cpp
         ${Z0_ENGINE_DIR}/src/libraries.cpp
         ${IMGUI_SOURCES}
         example/main.cpp
-		engine/include/z0/resources/shape.hpp
-		engine/src/resources/shape.cpp
 )
 
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_shaders)

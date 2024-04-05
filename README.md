@@ -10,6 +10,7 @@ ZeroZero is a 3D game engine based on Vulkan 1.3 & Jolt Physics 4.x
 - Simple shadows for directionals & spots ligths
 - Skybox using cubemap
 - HDR tone mapping
+- Jolt Physics for Static & Rigid bodies
 
 **Please note**
 - This project was made for learning purpose

@@ -3,6 +3,8 @@
 #include "z0/nodes/directional_light.hpp"
 #include "z0/log.hpp"
 
+#include <glm/gtc/matrix_transform.hpp>
+
 namespace z0 {
 
     ShadowMap::ShadowMap(VulkanDevice &dev, Light* spotLight) : BaseFrameBuffer{dev}, light(spotLight) {
