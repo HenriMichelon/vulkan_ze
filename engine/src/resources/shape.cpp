@@ -4,7 +4,7 @@
 namespace z0 {
 
     BoxShape::BoxShape(glm::vec3 sizes, std::string resName):
-        Shape {new JPH::BoxShape(JPH::Vec3(sizes.x, sizes.y, sizes.z)), resName} {
+        Shape {new JPH::BoxShape(JPH::Vec3(sizes.x/2, sizes.y/2, sizes.z/2)), resName} {
     }
 
 }

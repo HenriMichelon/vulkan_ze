@@ -223,7 +223,7 @@ namespace z0 {
                 pointLightsArray[i].outerCutOff =spot->getOuterCutOff();
             }
         }
-        writeUniformBuffer(pointLightBuffers, currentFrame, pointLightsArray.get());
+        if (globalUbo.pointLightsCount > 0) writeUniformBuffer(pointLightBuffers, currentFrame, pointLightsArray.get());
 
         uint32_t modelIndex = 0;
         uint32_t surfaceIndex = 0;

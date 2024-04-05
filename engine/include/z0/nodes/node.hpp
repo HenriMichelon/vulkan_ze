@@ -3,9 +3,7 @@
 #include "z0/transform.hpp"
 #include "z0/object.hpp"
 #include "z0/input_event.hpp"
-
 #include <list>
-#include <chrono>
 
 namespace z0 {
 
@@ -71,6 +69,8 @@ namespace z0 {
         void setRotationX(float angle);
         void setRotationY(float angle);
         void setRotationZ(float angle);
+        void rotate(glm::quat quat);
+        void setRotation(glm::quat quat);
 
         // rotations around parent relative position
         glm::vec3 getRotationGlobal() const;
@@ -81,6 +81,8 @@ namespace z0 {
         void rotateGlobalX(float angle);
         void rotateGlobalY(float angle);
         void rotateGlobalZ(float angle);
+        void setRotationGlobal(glm::quat quat);
+
 
         virtual void setScale(glm::vec3 scale);
         void setScale(float scale);

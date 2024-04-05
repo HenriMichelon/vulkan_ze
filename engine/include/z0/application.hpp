@@ -16,9 +16,9 @@ namespace z0 {
     class ObjectLayerPairFilterImpl : public JPH::ObjectLayerPairFilter {
     public:
         bool ShouldCollide(JPH::ObjectLayer layersAndMask1, JPH::ObjectLayer layersAndMask2) const override {
-            auto sourceMask = layersAndMask1 & 0x1111;
-            auto targetLayer = (layersAndMask2 >> 4) & 0x1111;
-            return (targetLayer & sourceMask);
+            auto sourceMask = layersAndMask1 & 0b1111;
+            auto targetLayer = (layersAndMask2 >> 4) & 0b1111;
+            return (targetLayer & sourceMask) != 0;
         }
     };
 

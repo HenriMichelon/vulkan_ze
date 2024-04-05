@@ -13,6 +13,7 @@ namespace z0 {
         virtual ~RigidBody() = default;
 
         void setBounce(float value);
+        void setGravityScale(float value);
     };
 
 }

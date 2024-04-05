@@ -33,10 +33,11 @@ namespace z0 {
 
     void PhysicsBody::_physicsUpdate() {
         updating = true;
-        //auto position = bodyInterface.GetPosition(bodyId);
-        //setPositionGlobal(glm::vec3{position.GetX(), position.GetY(), position.GetZ()});
-        auto mat44 = bodyInterface.GetWorldTransform(bodyId);
-
+        JPH::Vec3 position;
+        JPH::Quat rotation;
+        bodyInterface.GetPositionAndRotation(bodyId, position, rotation);
+        setPositionGlobal(glm::vec3{position.GetX(), position.GetY(), position.GetZ()});
+        setRotation(glm::quat{rotation.GetW(), rotation.GetX(), rotation.GetY(), rotation.GetZ(), });
         updating = false;
     }
 
@@ -52,13 +53,13 @@ namespace z0 {
     }
 
     void PhysicsBody::updateTransform() {
-        //Node::updateTransform();
-        //setPositionAndRotation();
+        Node::updateTransform();
+        setPositionAndRotation();
     }
 
     void PhysicsBody::updateTransform(const glm::mat4 &parentMatrix) {
-        //Node::updateTransform(parentMatrix);
-        //setPositionAndRotation();
+        Node::updateTransform(parentMatrix);
+        setPositionAndRotation();
     }
 
     bool PhysicsBody::haveCollisionLayer(uint32_t layer) const {

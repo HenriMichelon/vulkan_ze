@@ -134,6 +134,33 @@ namespace z0 {
         updateTransform();
     }
 
+    void Node::rotate(glm::quat quat) {
+        glm::mat4 rotationMatrix = glm::toMat4(quat);
+        localTransform = localTransform * rotationMatrix;;
+        updateTransform();
+    }
+
+    void Node::setRotation(glm::quat quat) {
+        glm::vec3 scale, translation, skew;
+        glm::vec4 perspective;
+        glm::quat orientation;
+        // Decompose the original matrix to extract translation, rotation (orientation), and scale
+        glm::decompose(localTransform, scale, orientation, translation, skew, perspective);
+        // Create a rotation matrix from the new quaternion
+        glm::mat4 rotationMatrix = glm::toMat4(quat);
+        // Reconstruct the transformation matrix with the new rotation, preserving the original translation and scale
+        localTransform = glm::translate(glm::mat4(1.0f), translation)
+                                 * rotationMatrix
+                                 * glm::scale(glm::mat4(1.0f), scale);
+        updateTransform();
+    }
+
+    void Node::setRotationGlobal(glm::quat quat) {
+        glm::mat4 rotationMatrix = glm::toMat4(quat);
+        localTransform = rotationMatrix * localTransform;;
+        updateTransform();
+    }
+
     void Node::setScale(float scale) {
         setScale(glm::vec3{scale, scale, scale});
     }

@@ -12,18 +12,13 @@
 #include "z0/log.hpp"
 
 #include <algorithm>
+#include <glm/gtc/quaternion.hpp>
+#include <utility>
 
 enum Layers {
     WORLD       = 0b0001,
     BODIES      = 0b0010,
 };
-
-void printPosition(const z0::Node& node) {
-    auto pos = node.getPosition();
-    std::cout << node.toString() << " local position : " << pos.x << "," << pos.y << "," << pos.z << std::endl;
-    pos = node.getPositionGlobal();
-    std::cout << node.toString() << " global position : " << pos.x << "," << pos.y << "," << pos.z << std::endl;
-}
 
 class Player: public z0::Node {
 public:
@@ -102,12 +97,7 @@ public:
 
     void onReady() override {
         captureMouse();
-        setPosition({0.0, 2.0, 6.0});
-        //rotateY(glm::radians(-45.));
-
-        /*auto markup = z0::Loader::loadModelFromFile("models/light.glb", true);
-        markup->setScale(glm::vec3{0.25});
-        addChild(markup);*/
+        setPosition({0.0, 1.5, 10.0});
 
         camera = std::make_shared<z0::Camera>();
         camera->setPosition({ 0.0f, 0.0f, 0.0f});
@@ -122,14 +112,12 @@ public:
         if (gamepad != -1) {
             std::cout << "Using Gamepad " << z0::Input::getGamepadName(gamepad) << std::endl;
         }
-        //setProcessMode(z0::PROCESS_MODE_ALWAYS);
     }
 
 private:
     struct State {
         glm::vec3 velocity = z0::VEC3ZERO;
         glm::vec2 lookDir = z0::VEC2ZERO;
-
         State& operator=(const State& other) = default;
     };
 
@@ -140,7 +128,6 @@ private:
     State previousState;
     State currentState;
     std::shared_ptr<z0::Camera> camera;
-    std::shared_ptr<z0::Node> markup2;
 
     void captureMouse() {
         z0::Input::setMouseMode(z0::MOUSE_MODE_HIDDEN_CAPTURED);
@@ -156,18 +143,20 @@ private:
 
 class Crate: public z0::RigidBody {
 public:
-    explicit Crate(std::shared_ptr<z0::Node>& model):
-        z0::RigidBody{std::make_shared<z0::BoxShape>(glm::vec3{1.0f,1.0f, 1.0f}),
+    explicit Crate(std::shared_ptr<z0::Node> model):
+        z0::RigidBody{std::make_shared<z0::BoxShape>(glm::vec3{2.0f,2.0f, 2.0f}),
                         Layers::BODIES,
-                        Layers::WORLD} {
-        addChild(model);
+                        Layers::WORLD | Layers::BODIES} {
+        addChild(std::move(model));
         setBounce(0.8);
+        setGravityScale(0.5);
     }
 
-    void onPhysicsProcess(float delta) override {
-        float angle = delta * glm::radians(90.0f) / 2;
-        rotateZ(angle);
+    void onReady() override {
+        glm::quat rot = glm::angleAxis(glm::radians(static_cast<float>(std::rand()%90)), z0::AXIS_Z);
+        setRotation(rot);
     }
+
 };
 
 class RootNode: public z0::Node {
@@ -188,25 +177,16 @@ public:
         directionalLight->setCastShadow(true);
         addChild(directionalLight);
 
-        /*std::shared_ptr<z0::SpotLight> spotLight1 = std::make_shared<z0::SpotLight>(
-                glm::vec3{-.25, -1.25, 1.0},
-                 40.0, 45.0,
-                 0.027, 0.0028);
-        spotLight1->setPosition({.2, 2.0, -1.5});
-        spotLight1->setColorAndIntensity({1.0f, 1.0f, 1.0f, 1.0f});
-        spotLight1->setCastShadow(false);
-        addChild(spotLight1);
-        light1 = z0::Loader::loadModelFromFile("models/light.glb", true);
-        light1->setScale(glm::vec3{0.25});
-        light1->setPosition(spotLight1->getPosition());
-        addChild(light1);*/
-
         auto crateModel = z0::Loader::loadModelFromFile("models/crate.glb", true);
-        auto model1 = std::make_shared<Crate>(crateModel);
-        model1->setPosition({0.0, 3.0, 0.0});
-        addChild(model1);
+        for (int x = 0; x < 10; x++) {
+            for (int z = 0; z < 10; z++) {
+                auto model= std::make_shared<Crate>(crateModel->duplicate());
+                model->setPosition({x * 3 - 2*10, 3.0 + std::rand() % 5, -z * 3});
+                addChild(model);
+            }
+        }
 
-        auto floor = std::make_shared<z0::StaticBody>(std::make_shared<z0::BoxShape>(glm::vec3{100.0f,0.1f, 100.0f}),
+        auto floor = std::make_shared<z0::StaticBody>(std::make_shared<z0::BoxShape>(glm::vec3{200.0f,0.2f, 200.0f}),
                                                  Layers::WORLD,
                                                  0);
         floor->addChild(z0::Loader::loadModelFromFile("models/floor.glb", true));
@@ -214,10 +194,7 @@ public:
         addChild(floor);
 
         addChild(std::make_shared<Player>());
-        //z0::Application::setPaused(true);
-
-        //auto child = getNode("Player/Camera");
-        printTree(std::cout);
+        //printTree(std::cout);
     }
 
 private:
