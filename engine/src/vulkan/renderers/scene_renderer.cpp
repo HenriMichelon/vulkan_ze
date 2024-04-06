@@ -24,6 +24,7 @@ namespace z0 {
             shadowMapRenderer->cleanup();
         }
         if (skyboxRenderer != nullptr) skyboxRenderer->cleanup();
+        materials.clear();
         shadowMapRenderers.clear();
         shadowMaps.clear();
         opaquesMeshes.clear();
@@ -31,7 +32,7 @@ namespace z0 {
         depthPrepassRenderer->cleanup();
         images.clear();
         shadowMapsBuffers.clear();
-        surfacesBuffers.clear();
+        materialsBuffers.clear();
         pointLightBuffers.clear();
         BaseMeshesRenderer::cleanup();
     }
@@ -49,13 +50,16 @@ namespace z0 {
             modelIndices[meshInstance->getId()] = modelIndex;
             auto transparent = false;
             for (const auto &material: meshInstance->getMesh()->_getMaterials()) {
-                surfacesIndices[material->getId()] = surfaceIndex;
-                surfaceIndex += 1;
                 if (auto* standardMaterial = dynamic_cast<StandardMaterial*>(material.get())) {
                     if (standardMaterial->transparency != TRANSPARENCY_DISABLED) {
                         transparent = true;
                     }
                 }
+                // Build materials collection : each material used in the scene is written only once
+                if (materialsIndices.contains(material->getId())) continue;
+                materials.push_back(material);
+                materialsIndices[material->getId()] = surfaceIndex;
+                surfaceIndex += 1;
             }
             if (transparent) {
                 sortedTransparentNodes.insert(DistanceSortedNode(*meshInstance, *currentCamera));
@@ -180,20 +184,13 @@ namespace z0 {
         if (skyboxRenderer != nullptr) skyboxRenderer->update(currentCamera, currentFrame);
         if (meshes.empty() ) return;
 
+        //**** GobalUniformBufferObject
         GobalUniformBufferObject globalUbo{
             .projection = currentCamera->getProjection(),
             .view = currentCamera->getView(),
             .cameraPosition = currentCamera->getPosition(),
             .shadowMapsCount = static_cast<uint32_t>(shadowMaps.size()),
         };
-
-        auto shadowMapArray =  std::make_unique<ShadowMapUniform[]>(globalUbo.shadowMapsCount);
-        for(uint32_t i=0; i < globalUbo.shadowMapsCount; i++) {
-            shadowMapArray[i].lightSpace = shadowMaps[i]->getLightSpace();
-            shadowMapArray[i].lightPos = shadowMaps[i]->getLightPosition();
-        }
-        writeUniformBuffer(shadowMapsBuffers, currentFrame, shadowMapArray.get());
-
         if (directionalLight != nullptr) {
             globalUbo.directionalLight = {
                 .direction = directionalLight->getDirection(),
@@ -208,6 +205,15 @@ namespace z0 {
         globalUbo.pointLightsCount = omniLights.size();
         writeUniformBuffer(globalBuffers, currentFrame, &globalUbo);
 
+        //**** ShadowMapUniforms
+        auto shadowMapArray =  std::make_unique<ShadowMapUniform[]>(globalUbo.shadowMapsCount);
+        for(uint32_t i=0; i < globalUbo.shadowMapsCount; i++) {
+            shadowMapArray[i].lightSpace = shadowMaps[i]->getLightSpace();
+            shadowMapArray[i].lightPos = shadowMaps[i]->getLightPosition();
+        }
+        writeUniformBuffer(shadowMapsBuffers, currentFrame, shadowMapArray.get());
+
+        //**** PointLightUniform
         auto pointLightsArray =  std::make_unique<PointLightUniform[]>(globalUbo.pointLightsCount);
         for(uint32_t i=0; i < globalUbo.pointLightsCount; i++) {
             pointLightsArray[i].position = omniLights[i]->getPosition();
@@ -225,35 +231,36 @@ namespace z0 {
         }
         if (globalUbo.pointLightsCount > 0) writeUniformBuffer(pointLightBuffers, currentFrame, pointLightsArray.get());
 
+        //**** ModelUniformBufferObject
         uint32_t modelIndex = 0;
-        uint32_t surfaceIndex = 0;
         for (const auto&meshInstance: meshes) {
             if (meshInstance->getMesh()->isValid()) {
                 ModelUniformBufferObject modelUbo {
                     .matrix = meshInstance->getTransformGlobal(),
                 };
                 writeUniformBuffer(modelsBuffers, currentFrame, &modelUbo, modelIndex);
-                for (const auto &surface: meshInstance->getMesh()->getSurfaces()) {
-                    SurfaceUniformBufferObject surfaceUbo { };
-                    if (auto* standardMaterial = dynamic_cast<StandardMaterial*>(surface->material.get())) {
-                        surfaceUbo.albedoColor = standardMaterial->albedoColor.color;
-                        if (standardMaterial->albedoTexture != nullptr) {
-                            surfaceUbo.diffuseIndex = imagesIndices[standardMaterial->albedoTexture->getImage().getId()];
-                        }
-                        if (standardMaterial->specularTexture != nullptr) {
-                            surfaceUbo.specularIndex = imagesIndices[standardMaterial->specularTexture->getImage().getId()];
-                        }
-                        if (standardMaterial->normalTexture != nullptr) {
-                            surfaceUbo.normalIndex = imagesIndices[standardMaterial->normalTexture->getImage().getId()];
-                        }
-                        surfaceUbo.transparency = standardMaterial->transparency;
-                        surfaceUbo.alphaScissor = standardMaterial->alphaScissor;
-                    }
-                    writeUniformBuffer(surfacesBuffers, currentFrame, &surfaceUbo, surfaceIndex);
-                    surfaceIndex += 1;
-                }
             }
             modelIndex += 1;
+        }
+
+        //**** MaterialUniformBufferObject
+        for (const auto &material: materials) {
+            MaterialUniformBufferObject surfaceUbo { };
+            if (auto* standardMaterial = dynamic_cast<StandardMaterial*>(material.get())) {
+                surfaceUbo.albedoColor = standardMaterial->albedoColor.color;
+                if (standardMaterial->albedoTexture != nullptr) {
+                    surfaceUbo.diffuseIndex = imagesIndices[standardMaterial->albedoTexture->getImage().getId()];
+                }
+                if (standardMaterial->specularTexture != nullptr) {
+                    surfaceUbo.specularIndex = imagesIndices[standardMaterial->specularTexture->getImage().getId()];
+                }
+                if (standardMaterial->normalTexture != nullptr) {
+                    surfaceUbo.normalIndex = imagesIndices[standardMaterial->normalTexture->getImage().getId()];
+                }
+                surfaceUbo.transparency = standardMaterial->transparency;
+                surfaceUbo.alphaScissor = standardMaterial->alphaScissor;
+            }
+            writeUniformBuffer(materialsBuffers, currentFrame, &surfaceUbo, materialsIndices[material->getId()]);
         }
     }
 
@@ -286,11 +293,10 @@ namespace z0 {
                     } else {
                         vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_NONE);
                     }
-                    auto surfaceIndex = surfacesIndices[material->getId()];
                     std::array<uint32_t, 5> offsets = {
                             0, // globalBuffers
                             static_cast<uint32_t>(modelsBuffers[currentFrame]->getAlignmentSize() * modelIndex),
-                            static_cast<uint32_t>(surfacesBuffers[currentFrame]->getAlignmentSize() * surfaceIndex),
+                            static_cast<uint32_t>(materialsBuffers[currentFrame]->getAlignmentSize() * materialsIndices[material->getId()]),
                             0, // pointLightBuffers
                             0, // shadowMapsBuffers
                     };
@@ -322,15 +328,9 @@ namespace z0 {
         VkDeviceSize modelBufferSize = sizeof(ModelUniformBufferObject);
         createUniformBuffers(modelsBuffers, modelBufferSize, meshes.size());
 
-        // Surface materials UBO
-        VkDeviceSize surfaceBufferSize = sizeof(SurfaceUniformBufferObject);
-        uint32_t surfaceCount = 0;
-        for (const auto& meshInstance: meshes) {
-            if (meshInstance->getMesh()->isValid()) {
-                surfaceCount += meshInstance->getMesh()->getSurfaces().size();
-            }
-        }
-        createUniformBuffers(surfacesBuffers, surfaceBufferSize, surfaceCount);
+        // Materials UBO
+        VkDeviceSize materialBufferSize = sizeof(MaterialUniformBufferObject);
+        createUniformBuffers(materialsBuffers, materialBufferSize, materials.size());
 
         // PointLight array UBO
         VkDeviceSize pointLightBufferSize = sizeof(PointLightUniform) * (omniLights.size()+ (omniLights.empty() ? 1 : 0));
@@ -344,14 +344,14 @@ namespace z0 {
             .addBinding(0, // global UBO
                     VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
                     VK_SHADER_STAGE_ALL_GRAPHICS)
-            .addBinding(1, // textures
+            .addBinding(1, // images textures
                        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                        VK_SHADER_STAGE_FRAGMENT_BIT,
                        images.size())
             .addBinding(2, // model UBO
                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
                         VK_SHADER_STAGE_VERTEX_BIT)
-            .addBinding(3, // surfaces UBO
+            .addBinding(3, // materials UBO
                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
                         VK_SHADER_STAGE_FRAGMENT_BIT)
             .addBinding(4, // PointLight array UBO
@@ -369,7 +369,7 @@ namespace z0 {
         for (uint32_t i = 0; i < descriptorSets.size(); i++) {
             auto globalBufferInfo = globalBuffers[i]->descriptorInfo(sizeof(GobalUniformBufferObject));
             auto modelBufferInfo = modelsBuffers[i]->descriptorInfo(modelBufferSize);
-            auto surfaceBufferInfo = surfacesBuffers[i]->descriptorInfo(surfaceBufferSize);
+            auto materialBufferInfo = materialsBuffers[i]->descriptorInfo(materialBufferSize);
             auto pointLightBufferInfo = pointLightBuffers[i]->descriptorInfo(pointLightBufferSize);
             auto shadowMapBufferInfo = shadowMapsBuffers[i]->descriptorInfo(shadowMapBufferSize);
             std::vector<VkDescriptorImageInfo> imagesInfo{};
@@ -380,7 +380,7 @@ namespace z0 {
                 .writeBuffer(0, &globalBufferInfo)
                 .writeImage(1, imagesInfo.data())
                 .writeBuffer(2, &modelBufferInfo)
-                .writeBuffer(3, &surfaceBufferInfo)
+                .writeBuffer(3, &materialBufferInfo)
                 .writeBuffer(4, &pointLightBufferInfo)
                 .writeBuffer(5, &shadowMapBufferInfo);
             std::vector<VkDescriptorImageInfo> shadowMapsInfo{};
@@ -482,6 +482,7 @@ namespace z0 {
 
     void SceneRenderer::endRendering(VkCommandBuffer commandBuffer, bool isLast) {
         vkCmdEndRendering(commandBuffer);
+        // Transition color image for the next render pass or for presentation (if isLast)
         vulkanDevice.transitionImageLayout(commandBuffer, colorAttachmentHdr->getImage(),
                                            VK_IMAGE_LAYOUT_UNDEFINED,
                                            isLast ? VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
@@ -490,14 +491,17 @@ namespace z0 {
                                            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                                            isLast ? VK_PIPELINE_STAGE_TRANSFER_BIT : VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                                            VK_IMAGE_ASPECT_COLOR_BIT);
-        vulkanDevice.transitionImageLayout(commandBuffer, resolvedDepthBuffer->getImage(),
-                                           VK_IMAGE_LAYOUT_UNDEFINED,
-                                           VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
-                                           0,
-                                           VK_ACCESS_SHADER_READ_BIT,
-                                           VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-                                           VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                                           VK_IMAGE_ASPECT_DEPTH_BIT);
+        // Transition depth buffer for the next render pass
+        if (!isLast) {
+            vulkanDevice.transitionImageLayout(commandBuffer, resolvedDepthBuffer->getImage(),
+                                               VK_IMAGE_LAYOUT_UNDEFINED,
+                                               VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
+                                               0,
+                                               VK_ACCESS_SHADER_READ_BIT,
+                                               VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                                               VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                               VK_IMAGE_ASPECT_DEPTH_BIT);
+        }
     }
 
 

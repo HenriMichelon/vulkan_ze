@@ -39,7 +39,7 @@ layout(set = 0, binding = 2) uniform ModelUniformBufferObject  {
     mat4 matrix;
 } model;
 
-layout(set = 0, binding = 3) uniform SurfaceUniformBufferObject  {
+layout(set = 0, binding = 3) uniform MaterialUniformBufferObject  {
     int transparency;
     float alphaScissor;
     int diffuseIndex;

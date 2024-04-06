@@ -50,7 +50,7 @@ namespace z0 {
         struct ModelUniformBufferObject {
             glm::mat4 matrix;
         };
-        struct SurfaceUniformBufferObject {
+        struct MaterialUniformBufferObject {
             alignas(4) int transparency;
             alignas(4) float alphaScissor;
             alignas(4) int32_t diffuseIndex{-1};
@@ -77,12 +77,16 @@ namespace z0 {
         std::map<Node::id_t, uint32_t> modelIndices {};
         std::vector<MeshInstance*> opaquesMeshes {};
         std::vector<MeshInstance*> transparentsMeshes {};
+
         std::vector<OmniLight*> omniLights;
         std::vector<std::unique_ptr<VulkanBuffer>> pointLightBuffers{MAX_FRAMES_IN_FLIGHT};
+
         std::map<Resource::rid_t, int32_t> imagesIndices {};
         std::unordered_set<std::shared_ptr<VulkanImage>> images {};
-        std::map<Resource::rid_t, uint32_t> surfacesIndices {};
-        std::vector<std::unique_ptr<VulkanBuffer>> surfacesBuffers{MAX_FRAMES_IN_FLIGHT};
+
+        std::vector<std::shared_ptr<Material>> materials;
+        std::map<Resource::rid_t, uint32_t> materialsIndices {};
+        std::vector<std::unique_ptr<VulkanBuffer>> materialsBuffers{MAX_FRAMES_IN_FLIGHT};
 
         // Offscreen frame buffers
         ColorAttachment colorAttachmentMultisampled;
