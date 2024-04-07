@@ -91,9 +91,9 @@ namespace  z0 {
         stagingBuffer.copyTo(*indexBuffer, bufferSize);
     }
 
-    void VulkanModel::draw(VkCommandBuffer commandBuffer, uint32_t firstIndex, uint32_t count) {
+    void VulkanModel::draw(VkCommandBuffer commandBuffer, uint32_t firstIndex, uint32_t count, uint32_t firstInstance) {
         bind(commandBuffer);
-        vkCmdDrawIndexed(commandBuffer, count, 1, firstIndex, 0, 0);
+        vkCmdDrawIndexed(commandBuffer, count, 1, firstIndex, 0, firstInstance);
     }
 
     void VulkanModel::bind(VkCommandBuffer commandBuffer) {

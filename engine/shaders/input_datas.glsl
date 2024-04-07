@@ -22,6 +22,10 @@ struct ShadowMap {
     vec3 lightPos;
 };
 
+struct ModelUniform  {
+    mat4 matrix;
+};
+
 layout(set = 0, binding = 0) uniform GlobalUniformBufferObject  {
     mat4 projection;
     mat4 view;
@@ -35,9 +39,9 @@ layout(set = 0, binding = 0) uniform GlobalUniformBufferObject  {
 
 layout(set = 0, binding = 1) uniform sampler2D texSampler[100];
 
-layout(set = 0, binding = 2) uniform ModelUniformBufferObject  {
-    mat4 matrix;
-} model;
+layout(set = 0, binding = 2) uniform ModelUniformArray  {
+    ModelUniform transforms[1];
+} models;
 
 layout(set = 0, binding = 3) uniform MaterialUniformBufferObject  {
     int transparency;

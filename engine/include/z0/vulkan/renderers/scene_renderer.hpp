@@ -37,7 +37,7 @@ namespace z0 {
             glm::mat4 lightSpace;
             alignas(16) glm::vec3 lightPos;
         };
-        struct GobalUniformBufferObject {
+        struct GobalUniform {
             glm::mat4 projection{1.0f};
             glm::mat4 view{1.0f};
             glm::vec4 ambient = { 1.0f, 1.0f, 1.0f, .0f }; // RGB + Intensity;
@@ -47,10 +47,10 @@ namespace z0 {
             alignas(4) uint32_t pointLightsCount{0};
             alignas(4) uint32_t shadowMapsCount{0};
         };
-        struct ModelUniformBufferObject {
+        struct ModelUniform {
             glm::mat4 matrix;
         };
-        struct MaterialUniformBufferObject {
+        struct MaterialUniform {
             alignas(4) int transparency;
             alignas(4) float alphaScissor;
             alignas(4) int32_t diffuseIndex{-1};
@@ -69,6 +69,7 @@ namespace z0 {
 
         void loadScene(std::shared_ptr<Node>& rootNode);
         void cleanup() override;
+        std::vector<std::shared_ptr<ShadowMap>> shadowMaps;
 
     private:
         DirectionalLight* directionalLight{nullptr};
@@ -95,7 +96,6 @@ namespace z0 {
         std::shared_ptr<DepthPrepassRenderer> depthPrepassRenderer;
         std::shared_ptr<DepthBuffer> resolvedDepthBuffer;
         // Shadow mapping
-        std::vector<std::shared_ptr<ShadowMap>> shadowMaps;
         std::vector<std::shared_ptr<ShadowMapRenderer>> shadowMapRenderers;
         std::vector<std::unique_ptr<VulkanBuffer>> shadowMapsBuffers{MAX_FRAMES_IN_FLIGHT};
         // Skybox

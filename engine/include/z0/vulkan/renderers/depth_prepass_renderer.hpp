@@ -6,11 +6,11 @@ namespace z0 {
 
     class DepthPrepassRenderer: public BaseMeshesRenderer {
     public:
-        struct GlobalUniformBufferObject {
+        struct GlobalUniform {
             glm::mat4 projection{1.0f};
             glm::mat4 view{1.0f};
         };
-        struct ModelUniformBufferObject {
+        struct ModelUniform {
             glm::mat4 matrix;
         };
 

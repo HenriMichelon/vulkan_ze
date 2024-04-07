@@ -8,12 +8,17 @@ layout (binding = 0) uniform GlobalUBO {
     mat4 lightSpace;
 } global;
 
-layout (binding = 1) uniform ModelUBO {
+struct ModelUniform  {
     mat4 matrix;
-} model;
+};
+
+layout(set = 0, binding = 1) uniform ModelUniformArray  {
+    ModelUniform transforms[1];
+} models;
 
 void main() {
-    vec4 globalPosition = model.matrix * vec4(position, 1.0);
+    mat4 model = models.transforms[gl_InstanceIndex].matrix;
+    vec4 globalPosition = model * vec4(position, 1.0);
     gl_Position = global.lightSpace * globalPosition;
     UV = uv;
 }

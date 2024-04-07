@@ -8,10 +8,10 @@ namespace z0 {
 
     class ShadowMapRenderer: public BaseRenderpass, public VulkanRenderer {
     public:
-        struct GlobalUniformBufferObject {
+        struct GlobalUniform {
             glm::mat4 lightSpace;
         };
-        struct ModelUniformBufferObject {
+        struct ModelUniform {
             glm::mat4 matrix;
         };
 

@@ -184,8 +184,8 @@ namespace z0 {
         if (skyboxRenderer != nullptr) skyboxRenderer->update(currentCamera, currentFrame);
         if (meshes.empty() ) return;
 
-        //**** GobalUniformBufferObject
-        GobalUniformBufferObject globalUbo{
+        //**** GobalUniform
+        GobalUniform globalUbo{
             .projection = currentCamera->getProjection(),
             .view = currentCamera->getView(),
             .cameraPosition = currentCamera->getPosition(),
@@ -231,21 +231,20 @@ namespace z0 {
         }
         if (globalUbo.pointLightsCount > 0) writeUniformBuffer(pointLightBuffers, currentFrame, pointLightsArray.get());
 
-        //**** ModelUniformBufferObject
-        uint32_t modelIndex = 0;
+        //**** ModelUniform
+        auto modelsUboArray = std::make_unique<ModelUniform[]>(meshes.size());
         for (const auto&meshInstance: meshes) {
             if (meshInstance->getMesh()->isValid()) {
-                ModelUniformBufferObject modelUbo {
+                modelsUboArray[modelIndices[meshInstance->getId()]] = {
                     .matrix = meshInstance->getTransformGlobal(),
                 };
-                writeUniformBuffer(modelsBuffers, currentFrame, &modelUbo, modelIndex);
             }
-            modelIndex += 1;
         }
+        writeUniformBuffer(modelsBuffers, currentFrame, modelsUboArray.get());
 
-        //**** MaterialUniformBufferObject
+        //**** MaterialUniform
         for (const auto &material: materials) {
-            MaterialUniformBufferObject surfaceUbo { };
+            MaterialUniform surfaceUbo { };
             if (auto* standardMaterial = dynamic_cast<StandardMaterial*>(material.get())) {
                 surfaceUbo.albedoColor = standardMaterial->albedoColor.color;
                 if (standardMaterial->albedoTexture != nullptr) {
@@ -295,13 +294,13 @@ namespace z0 {
                     }
                     std::array<uint32_t, 5> offsets = {
                             0, // globalBuffers
-                            static_cast<uint32_t>(modelsBuffers[currentFrame]->getAlignmentSize() * modelIndex),
+                            0,
                             static_cast<uint32_t>(materialsBuffers[currentFrame]->getAlignmentSize() * materialsIndices[material->getId()]),
                             0, // pointLightBuffers
                             0, // shadowMapsBuffers
                     };
                     bindDescriptorSets(commandBuffer, currentFrame, offsets.size(), offsets.data());
-                    mesh->_getModel()->draw(commandBuffer, surface->firstVertexIndex, surface->indexCount);
+                    mesh->_getModel()->draw(commandBuffer, surface->firstVertexIndex, surface->indexCount, modelIndex);
                 }
             }
         }
@@ -322,14 +321,14 @@ namespace z0 {
                 .build();
 
         // Global UBO
-        createUniformBuffers(globalBuffers, sizeof(GobalUniformBufferObject));
+        createUniformBuffers(globalBuffers, sizeof(GobalUniform));
 
         // Models UBO
-        VkDeviceSize modelBufferSize = sizeof(ModelUniformBufferObject);
-        createUniformBuffers(modelsBuffers, modelBufferSize, meshes.size());
+        VkDeviceSize modelBufferSize = sizeof(ModelUniform) * meshes.size();
+        createUniformBuffers(modelsBuffers, modelBufferSize);
 
         // Materials UBO
-        VkDeviceSize materialBufferSize = sizeof(MaterialUniformBufferObject);
+        VkDeviceSize materialBufferSize = sizeof(MaterialUniform);
         createUniformBuffers(materialsBuffers, materialBufferSize, materials.size());
 
         // PointLight array UBO
@@ -367,7 +366,7 @@ namespace z0 {
            .build();
 
         for (uint32_t i = 0; i < descriptorSets.size(); i++) {
-            auto globalBufferInfo = globalBuffers[i]->descriptorInfo(sizeof(GobalUniformBufferObject));
+            auto globalBufferInfo = globalBuffers[i]->descriptorInfo(sizeof(GobalUniform));
             auto modelBufferInfo = modelsBuffers[i]->descriptorInfo(modelBufferSize);
             auto materialBufferInfo = materialsBuffers[i]->descriptorInfo(materialBufferSize);
             auto pointLightBufferInfo = pointLightBuffers[i]->descriptorInfo(pointLightBufferSize);
@@ -503,7 +502,5 @@ namespace z0 {
                                                VK_IMAGE_ASPECT_DEPTH_BIT);
         }
     }
-
-
 
 }

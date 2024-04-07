@@ -16,7 +16,7 @@ namespace z0 {
         static std::vector<VkVertexInputBindingDescription2EXT> getBindingDescription();
         static std::vector<VkVertexInputAttributeDescription2EXT> getAttributeDescription();
 
-        void draw(VkCommandBuffer commandBuffer, uint32_t first, uint32_t count);
+        void draw(VkCommandBuffer commandBuffer, uint32_t first, uint32_t count, uint32_t firstInstance);
 
     private:
         VulkanDevice& device;

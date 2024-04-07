@@ -32,17 +32,19 @@ namespace z0 {
     }
 
     void ShadowMapRenderer::update(uint32_t currentFrame) {
-        GlobalUniformBufferObject globalUbo {
+        GlobalUniform globalUbo {
             .lightSpace = shadowMap->getLightSpace()
         };
         writeUniformBuffer(globalBuffers, currentFrame, &globalUbo);
 
+        auto modelsUboArray = std::make_unique<ModelUniform[]>(meshes.size());
         uint32_t modelIndex = 0;
         for (const auto&meshInstance: meshes) {
-            ModelUniformBufferObject modelUbo{
-                .matrix = meshInstance->getTransformGlobal(),
-            };
-            writeUniformBuffer(modelsBuffers, currentFrame, &modelUbo, modelIndex);
+            if (meshInstance->getMesh()->isValid()) {
+                modelsUboArray[modelIndex] = {
+                        .matrix = meshInstance->getTransformGlobal(),
+                };
+            }
             modelIndex += 1;
         }
     }
@@ -76,18 +78,13 @@ namespace z0 {
                                          standardMaterial->cullMode == CULLMODE_BACK ? VK_CULL_MODE_BACK_BIT
                                                                                      : VK_CULL_MODE_FRONT_BIT);
                     } else {
-                        //vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_FRONT_BIT); // default avoid Peter panning
                         vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_NONE);
                     }
-                    std::array<uint32_t, 2> offsets = {
-                        0, // globalBuffers
-                        static_cast<uint32_t>(modelsBuffers[currentFrame]->getAlignmentSize() * modelIndex),
-                    };
-                    bindDescriptorSets(commandBuffer, currentFrame, offsets.size(), offsets.data());
-                    mesh->_getModel()->draw(commandBuffer, surface->firstVertexIndex, surface->indexCount);
+                    bindDescriptorSets(commandBuffer, currentFrame);
+                    mesh->_getModel()->draw(commandBuffer, surface->firstVertexIndex, surface->indexCount, modelIndex);
                 }
+                modelIndex += 1;
             }
-            modelIndex += 1;
         }
         vkCmdSetDepthBiasEnable(commandBuffer, VK_FALSE);
     }
@@ -100,23 +97,23 @@ namespace z0 {
                 .build();
 
         // Global UBO
-        createUniformBuffers(globalBuffers, sizeof(GlobalUniformBufferObject));
+        createUniformBuffers(globalBuffers, sizeof(GlobalUniform));
 
         // Models UBO
-        VkDeviceSize modelBufferSize = sizeof(ModelUniformBufferObject);
-        createUniformBuffers(modelsBuffers, modelBufferSize, meshes.size());;
+        VkDeviceSize modelBufferSize = sizeof(ModelUniform) * meshes.size();
+        createUniformBuffers(modelsBuffers, modelBufferSize);
 
         globalSetLayout = VulkanDescriptorSetLayout::Builder(vulkanDevice)
                 .addBinding(0, // global UBO
-                            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                             VK_SHADER_STAGE_VERTEX_BIT)
                 .addBinding(1, // model UBO
-                            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                             VK_SHADER_STAGE_VERTEX_BIT)
             .build();
 
         for (uint32_t i = 0; i < descriptorSets.size(); i++) {
-            auto globalBufferInfo = globalBuffers[i]->descriptorInfo(sizeof(GlobalUniformBufferObject));
+            auto globalBufferInfo = globalBuffers[i]->descriptorInfo(sizeof(GlobalUniform));
             auto modelBufferInfo = modelsBuffers[i]->descriptorInfo(modelBufferSize);
             if (!VulkanDescriptorWriter(*globalSetLayout, *globalPool)
                 .writeBuffer(0, &globalBufferInfo)
