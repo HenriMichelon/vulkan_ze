@@ -15,6 +15,7 @@ namespace z0 {
         void setInstanceCount(uint32_t  count);
         uint32_t getInstanceCount() const;
         void setInstanceTransform(uint32_t instance, glm::mat4 transform);
+        glm::mat4 getInstanceTransform(uint32_t instance);
 
     private:
         std::shared_ptr<Mesh> mesh;

@@ -113,7 +113,9 @@ namespace z0 {
 
         void loadNode(std::shared_ptr<Node>& parent);
         void createImagesList(std::shared_ptr<Node>& node);
+        void createImagesList(std::shared_ptr<Mesh>& mesh);
         void createImagesIndex(std::shared_ptr<Node>& node);
+        void createImagesIndex(std::shared_ptr<Mesh>& mesh);
         void drawMeshes(VkCommandBuffer commandBuffer, uint32_t currentFrame, const std::vector<MeshInstance*>& meshesToDraw);
 
     public:

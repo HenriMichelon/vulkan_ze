@@ -19,4 +19,8 @@ namespace z0 {
         if (instance < getInstanceCount()) transforms[instance] = transform;
     }
 
+    glm::mat4 MultiMesh::getInstanceTransform(uint32_t instance) {
+        return transforms[instance];
+    }
+
 }

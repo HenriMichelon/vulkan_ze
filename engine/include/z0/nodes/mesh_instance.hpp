@@ -10,7 +10,7 @@ namespace z0 {
         explicit MeshInstance(const std::shared_ptr<Mesh>& _mesh, const std::string name = "MeshInstance"): Node{name}, mesh{_mesh} {};
 
         void setMesh(const std::shared_ptr<Mesh>& _mesh) { mesh = _mesh; };
-        std::shared_ptr<Mesh> getMesh() const { return mesh; }
+        std::shared_ptr<Mesh>& getMesh() { return mesh; }
         bool isValid() const { return mesh != nullptr; }
         //std::string toString() const override;
 

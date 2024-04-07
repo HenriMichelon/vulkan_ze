@@ -41,8 +41,7 @@ namespace z0 {
         loadNode(rootNode);
         createImagesIndex(rootNode);
 
-        // Build indices collections for uniform buffer to model & surfaces relations
-        // Build transparent objets sorted collection
+        // Build indices collections for uniform buffer to model & materials relations
         std::multiset<DistanceSortedNode> sortedTransparentNodes;
         uint32_t surfaceIndex = 0;
         uint32_t modelIndex = 0;
@@ -68,6 +67,7 @@ namespace z0 {
             }
             modelIndex += 1;
         }
+        // Build transparent objets sorted collection
         for (const auto& node: sortedTransparentNodes) {
             transparentsMeshes.push_back(dynamic_cast<MeshInstance*>(&node.getNode()));
         }
@@ -127,20 +127,46 @@ namespace z0 {
         }
     }
 
+    void SceneRenderer::createImagesList(std::shared_ptr<Mesh>& mesh) {
+        for(const auto& material : mesh->_getMaterials()) {
+            if (auto standardMaterial = dynamic_cast<StandardMaterial *>(material.get())) {
+                if (standardMaterial->albedoTexture != nullptr) {
+                    images.insert(standardMaterial->albedoTexture->getImage()._getImage());
+                }
+                if (standardMaterial->specularTexture != nullptr) {
+                    images.insert(standardMaterial->specularTexture->getImage()._getImage());
+                }
+                if (standardMaterial->normalTexture != nullptr) {
+                    images.insert(standardMaterial->normalTexture->getImage()._getImage());
+                }
+            }
+        }
+    }
+
     void SceneRenderer::createImagesList(std::shared_ptr<Node>& node) {
         if (auto* meshInstance = dynamic_cast<MeshInstance*>(node.get())) {
             meshes.push_back(meshInstance);
-            for(const auto& material : meshInstance->getMesh()->_getMaterials()) {
-                if (auto standardMaterial = dynamic_cast<StandardMaterial *>(material.get())) {
-                    if (standardMaterial->albedoTexture != nullptr) {
-                        images.insert(standardMaterial->albedoTexture->getImage()._getImage());
-                    }
-                    if (standardMaterial->specularTexture != nullptr) {
-                        images.insert(standardMaterial->specularTexture->getImage()._getImage());
-                    }
-                    if (standardMaterial->normalTexture != nullptr) {
-                        images.insert(standardMaterial->normalTexture->getImage()._getImage());
-                    }
+            createImagesList(meshInstance->getMesh());
+        }
+    }
+
+    void SceneRenderer::createImagesIndex(std::shared_ptr<Mesh>& mesh) {
+        for(const auto& material : mesh->_getMaterials()) {
+            if (auto* standardMaterial = dynamic_cast<StandardMaterial*>(material.get())) {
+                if (standardMaterial->albedoTexture != nullptr) {
+                    auto &image = standardMaterial->albedoTexture->getImage();
+                    auto index = std::distance(std::begin(images), images.find(image._getImage()));
+                    imagesIndices[image.getId()] = static_cast<int32_t>(index);
+                }
+                if (standardMaterial->specularTexture != nullptr) {
+                    auto &image = standardMaterial->specularTexture->getImage();
+                    auto index = std::distance(std::begin(images), images.find(image._getImage()));
+                    imagesIndices[image.getId()] = static_cast<int32_t>(index);
+                }
+                if (standardMaterial->normalTexture != nullptr) {
+                    auto &image = standardMaterial->normalTexture->getImage();
+                    auto index = std::distance(std::begin(images), images.find(image._getImage()));
+                    imagesIndices[image.getId()] = static_cast<int32_t>(index);
                 }
             }
         }
@@ -148,25 +174,7 @@ namespace z0 {
 
     void SceneRenderer::createImagesIndex(std::shared_ptr<Node>& node) {
         if (auto* meshInstance = dynamic_cast<MeshInstance*>(node.get())) {
-            for(const auto& material : meshInstance->getMesh()->_getMaterials()) {
-                if (auto* standardMaterial = dynamic_cast<StandardMaterial*>(material.get())) {
-                    if (standardMaterial->albedoTexture != nullptr) {
-                        auto &image = standardMaterial->albedoTexture->getImage();
-                        auto index = std::distance(std::begin(images), images.find(image._getImage()));
-                        imagesIndices[image.getId()] = static_cast<int32_t>(index);
-                    }
-                    if (standardMaterial->specularTexture != nullptr) {
-                        auto &image = standardMaterial->specularTexture->getImage();
-                        auto index = std::distance(std::begin(images), images.find(image._getImage()));
-                        imagesIndices[image.getId()] = static_cast<int32_t>(index);
-                    }
-                    if (standardMaterial->normalTexture != nullptr) {
-                        auto &image = standardMaterial->normalTexture->getImage();
-                        auto index = std::distance(std::begin(images), images.find(image._getImage()));
-                        imagesIndices[image.getId()] = static_cast<int32_t>(index);
-                    }
-                }
-            }
+            createImagesIndex(meshInstance->getMesh());
         }
         for(auto& child: node->getChildren()) {
             createImagesIndex(child);
@@ -232,14 +240,22 @@ namespace z0 {
         if (globalUbo.pointLightsCount > 0) writeUniformBuffer(pointLightBuffers, currentFrame, pointLightsArray.get());
 
         //**** ModelUniform
-        auto modelsUboArray = std::make_unique<ModelUniform[]>(meshes.size());
+        auto modelsUboArray = std::make_unique<ModelUniform[]>(meshes.size() + getMultiMeshesInstanceCount());
         for (const auto&meshInstance: meshes) {
             if (meshInstance->getMesh()->isValid()) {
                 modelsUboArray[modelIndices[meshInstance->getId()]] = {
-                    .matrix = meshInstance->getTransformGlobal(),
+                    .matrix = meshInstance->getTransformGlobal()
                 };
             }
         }
+        /*for (const auto&meshInstance: multiMeshes) {
+            auto& mesh = meshInstance->getMultiMesh();
+            if (mesh->isValid()) {
+                modelsUboArray[modelIndices[meshInstance->getId()]] = {
+                    .matrix = meshInstance->getTransformGlobal() * mesh->getInstanceTransform(instance)
+                };
+            }
+        }*/
         writeUniformBuffer(modelsBuffers, currentFrame, modelsUboArray.get());
 
         //**** MaterialUniform
@@ -326,7 +342,7 @@ namespace z0 {
         createUniformBuffers(globalBuffers, sizeof(GobalUniform));
 
         // Models UBO
-        VkDeviceSize modelBufferSize = sizeof(ModelUniform) * meshes.size();
+        VkDeviceSize modelBufferSize = sizeof(ModelUniform) * (meshes.size() + getMultiMeshesInstanceCount());
         createUniformBuffers(modelsBuffers, modelBufferSize);
 
         // Materials UBO

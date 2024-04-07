@@ -11,6 +11,7 @@
 #include "z0/nodes/static_body.hpp"
 #include "z0/nodes/mesh_instance.hpp"
 #include "z0/log.hpp"
+#include "z0/nodes/multi_mesh_instance.hpp"
 
 #include <algorithm>
 #include <glm/gtc/quaternion.hpp>
@@ -179,16 +180,20 @@ public:
         addChild(directionalLight);
 
         auto crateModel = z0::Loader::loadModelFromFile("models/crate.glb", true);
-        /*for (int x = 0; x < 10; x++) {
+        for (int x = 0; x < 10; x++) {
             for (int z = 0; z < 10; z++) {
                 auto model= std::make_shared<Crate>(crateModel->duplicate());
                 model->setPosition({x * 3 - 2*10, 3.0 + std::rand() % 5, -z * 3});
                 addChild(model);
             }
-        }*/
+        }
         std::shared_ptr<z0::MeshInstance> meshInstance = std::static_pointer_cast<z0::MeshInstance>(crateModel->getNode(
                 "Sketchfab_model/Collada visual scene group/g/defaultMaterial"));
         auto mesh = meshInstance->getMesh();
+        std::shared_ptr<z0::MultiMeshInstance> multi = std::make_shared<z0::MultiMeshInstance>(
+                mesh,
+                10);
+        addChild(multi);
 
         auto floor = std::make_shared<z0::StaticBody>(std::make_shared<z0::BoxShape>(glm::vec3{200.0f,0.2f, 200.0f}),
                                                  Layers::WORLD,
