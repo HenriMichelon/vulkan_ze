@@ -69,7 +69,6 @@ namespace z0 {
 
         void loadScene(std::shared_ptr<Node>& rootNode);
         void cleanup() override;
-        std::vector<std::shared_ptr<ShadowMap>> shadowMaps;
 
     private:
         DirectionalLight* directionalLight{nullptr};
@@ -96,6 +95,7 @@ namespace z0 {
         std::shared_ptr<DepthPrepassRenderer> depthPrepassRenderer;
         std::shared_ptr<DepthBuffer> resolvedDepthBuffer;
         // Shadow mapping
+        std::vector<std::shared_ptr<ShadowMap>> shadowMaps;
         std::vector<std::shared_ptr<ShadowMapRenderer>> shadowMapRenderers;
         std::vector<std::unique_ptr<VulkanBuffer>> shadowMapsBuffers{MAX_FRAMES_IN_FLIGHT};
         // Skybox

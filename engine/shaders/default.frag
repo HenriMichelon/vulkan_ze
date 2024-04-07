@@ -65,11 +65,11 @@ void main() {
         diffuse += calcPointLight(pointLights.lights[i]);
     }
     vec3 result = ambient + diffuse;
-
+/*
     for (int i = 0; i < global.shadowMapsCount; i++) {
         float shadows = shadowFactor(i);
         result = (ambient + shadows) * result;
     }
-
+*/
     COLOR = vec4(result, material.transparency == 1 || material.transparency == 3 ? color.a : 1.0);
 }

@@ -74,14 +74,14 @@ namespace z0 {
 
         createResources();
 
-        for (auto& shadowMap : shadowMaps) {
+        /* (auto& shadowMap : shadowMaps) {
             auto shadowMapRenderer = std::make_shared<ShadowMapRenderer>(vulkanDevice, shaderDirectory);
             shadowMapRenderer->loadScene(shadowMap, meshes);
             shadowMapRenderers.push_back(shadowMapRenderer);
             vulkanDevice.registerRenderer(shadowMapRenderer);
         }
         depthPrepassRenderer->loadScene(depthBuffer, currentCamera, opaquesMeshes);
-        vulkanDevice.registerRenderer(depthPrepassRenderer);
+        vulkanDevice.registerRenderer(depthPrepassRenderer);*/
     }
 
     void SceneRenderer::loadNode(std::shared_ptr<Node>& parent) {
@@ -269,6 +269,8 @@ namespace z0 {
             setInitialState(commandBuffer);
             vkCmdSetDepthWriteEnable(commandBuffer, VK_FALSE); // we have a depth prepass
             vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_EQUAL); // comparing with the depth prepass
+            vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
+            vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_LESS_OR_EQUAL);
             drawMeshes(commandBuffer, currentFrame, opaquesMeshes);
             vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
             vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_LESS_OR_EQUAL);
@@ -462,7 +464,7 @@ namespace z0 {
                 .resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT,
                 .resolveImageView = resolvedDepthBuffer->getImageView(),
                 .resolveImageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
-                .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
+                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
                 .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
                 .clearValue = depthClearValue,
         };

@@ -134,6 +134,10 @@ add_executable(${PROJECT_NAME}
         ${Z0_ENGINE_DIR}/src/libraries.cpp
         ${IMGUI_SOURCES}
         example/main.cpp
+		engine/include/z0/resources/multi_mesh.hpp
+		engine/src/resources/multi_mesh.cpp
+		engine/include/z0/nodes/multi_mesh_instance.hpp
+		engine/src/nodes/multi_mesh_instance.cpp
 )
 
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_shaders)
