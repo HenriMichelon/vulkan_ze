@@ -12,6 +12,8 @@ namespace z0 {
 
         std::shared_ptr<Cubemap>& getCubemap() { return cubemap; }
 
+        void _onEnterTree() override;
+
     private:
         std::shared_ptr<Cubemap> cubemap;
     };

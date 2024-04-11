@@ -37,6 +37,32 @@ namespace z0 {
         BaseMeshesRenderer::cleanup();
     }
 
+    void SceneRenderer::setCamera(std::shared_ptr<Camera>& camera) {
+
+    }
+
+    void SceneRenderer::setEnvironment(std::shared_ptr<Environment>& environment) {
+
+    }
+
+    void SceneRenderer::setSkyBox(std::shared_ptr<Skybox>& skybox) {
+        if (skyboxRenderer != nullptr) {
+            skyboxRenderer->cleanup();
+            skyboxRenderer.reset();
+        }
+        skyboxRenderer = std::make_unique<SkyboxRenderer>(vulkanDevice, shaderDirectory);
+        skyboxRenderer->loadScene(skybox->getCubemap()->_getCubemap());
+        log("Using skybox", skybox->toString());
+    }
+
+    void SceneRenderer::addMesh(std::shared_ptr<MeshInstance>& meshInstance) {
+
+    }
+
+    void SceneRenderer::addLight(std::shared_ptr<OmniLight>& omniLight) {
+
+    }
+
    /* void SceneRenderer::loadScene(std::shared_ptr<Node>& rootNode) {
         loadNode(rootNode);
         createImagesIndex(rootNode);

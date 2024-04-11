@@ -4,6 +4,7 @@
 #include "z0/nodes/node.hpp"
 #include "z0/helpers/window_helper.hpp"
 #include "z0/vulkan/vulkan_device.hpp"
+#include "z0/nodes/skybox.hpp"
 
 namespace z0 {
 
@@ -26,7 +27,10 @@ namespace z0 {
 
         //void loadScene(std::shared_ptr<Node>& rootNode);
 
-        static Viewport& get();
+        //static Viewport& get();
+
+
+
 
     private:
         float fps;
@@ -40,6 +44,7 @@ namespace z0 {
         VulkanDevice& _getDevice() { return *vulkanDevice; }
         WindowHelper& _getWindowHelper() { return window; }
         void _setFPS(float _fps) { fps = _fps; }
+        void _setSkyBox(std::shared_ptr<Skybox>& skybox);
     };
 
 }

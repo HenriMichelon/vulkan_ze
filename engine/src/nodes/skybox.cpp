@@ -7,4 +7,8 @@ namespace z0 {
         cubemap = std::make_shared<Cubemap>(filename, fileext);
     }
 
+    void Skybox::_onEnterTree() {
+
+    }
+
 }

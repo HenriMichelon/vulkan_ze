@@ -118,6 +118,8 @@ namespace z0 {
         Node* parent {nullptr};
 
         virtual void _onReady();
+        virtual void _onEnterTree() {};
+        virtual void _onExitTree() {};
 
         virtual std::shared_ptr<Node> duplicateInstance();
 

@@ -9,6 +9,7 @@
 #include "z0/nodes/directional_light.hpp"
 #include "z0/nodes/environment.hpp"
 #include "z0/nodes/omni_light.hpp"
+#include "z0/nodes/skybox.hpp"
 
 #include <map>
 
@@ -69,10 +70,11 @@ namespace z0 {
 
         void cleanup() override;
 
-        void setCamera(std::shared_ptr<Camera> camera);
-        void setEnvironment(std::shared_ptr<Environment> environment);
-        void addMesh(std::shared_ptr<MeshInstance> meshInstance);
-        void addLight(std::shared_ptr<OmniLight> omniLight);
+        void setCamera(std::shared_ptr<Camera>& camera);
+        void setEnvironment(std::shared_ptr<Environment>& environment);
+        void setSkyBox(std::shared_ptr<Skybox>& skybox);
+        void addMesh(std::shared_ptr<MeshInstance>& meshInstance);
+        void addLight(std::shared_ptr<OmniLight>& omniLight);
 
     private:
         std::shared_ptr<DirectionalLight> directionalLight{nullptr};

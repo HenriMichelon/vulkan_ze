@@ -66,4 +66,6 @@ namespace z0 {
         sceneRenderer->loadScene(rootNode);
     }*/
 
+    void Viewport::_setSkyBox(std::shared_ptr<Skybox>& skybox) { sceneRenderer->setSkyBox(skybox); };
+
 }
