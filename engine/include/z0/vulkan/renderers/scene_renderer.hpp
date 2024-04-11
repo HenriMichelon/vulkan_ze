@@ -67,18 +67,22 @@ namespace z0 {
         VkImageView getImageView() const override { return colorAttachmentHdr->getImageView(); }
         std::shared_ptr<DepthBuffer>& getResolvedDepthBuffer()  { return resolvedDepthBuffer; }
 
-        void loadScene(std::shared_ptr<Node>& rootNode);
         void cleanup() override;
 
+        void setCamera(std::shared_ptr<Camera> camera);
+        void setEnvironment(std::shared_ptr<Environment> environment);
+        void addMesh(std::shared_ptr<MeshInstance> meshInstance);
+        void addLight(std::shared_ptr<OmniLight> omniLight);
+
     private:
-        DirectionalLight* directionalLight{nullptr};
-        Environment* environement{nullptr};
+        std::shared_ptr<DirectionalLight> directionalLight{nullptr};
+        std::shared_ptr<Environment> environement{nullptr};
 
         std::map<Node::id_t, uint32_t> modelIndices {};
-        std::vector<MeshInstance*> opaquesMeshes {};
-        std::vector<MeshInstance*> transparentsMeshes {};
+        std::vector<std::shared_ptr<MeshInstance>> opaquesMeshes {};
+        std::vector<std::shared_ptr<MeshInstance>> transparentsMeshes {};
 
-        std::vector<OmniLight*> omniLights;
+        std::vector<std::shared_ptr<OmniLight>> omniLights;
         std::vector<std::unique_ptr<VulkanBuffer>> pointLightBuffers{MAX_FRAMES_IN_FLIGHT};
 
         std::map<Resource::rid_t, int32_t> imagesIndices {};
@@ -92,11 +96,11 @@ namespace z0 {
         ColorAttachment colorAttachmentMultisampled;
         std::shared_ptr<ColorAttachmentHDR> colorAttachmentHdr;
         // Depth prepass buffer
-        std::shared_ptr<DepthPrepassRenderer> depthPrepassRenderer;
+        //std::shared_ptr<DepthPrepassRenderer> depthPrepassRenderer;
         std::shared_ptr<DepthBuffer> resolvedDepthBuffer;
         // Shadow mapping
         std::vector<std::shared_ptr<ShadowMap>> shadowMaps;
-        std::vector<std::shared_ptr<ShadowMapRenderer>> shadowMapRenderers;
+        //std::vector<std::shared_ptr<ShadowMapRenderer>> shadowMapRenderers;
         std::vector<std::unique_ptr<VulkanBuffer>> shadowMapsBuffers{MAX_FRAMES_IN_FLIGHT};
         // Skybox
         std::unique_ptr<SkyboxRenderer> skyboxRenderer {nullptr};
@@ -116,7 +120,7 @@ namespace z0 {
         void createImagesList(std::shared_ptr<Mesh>& mesh);
         void createImagesIndex(std::shared_ptr<Node>& node);
         void createImagesIndex(std::shared_ptr<Mesh>& mesh);
-        void drawMeshes(VkCommandBuffer commandBuffer, uint32_t currentFrame, const std::vector<MeshInstance*>& meshesToDraw);
+        void drawMeshes(VkCommandBuffer commandBuffer, uint32_t currentFrame, const std::vector<std::shared_ptr<MeshInstance>>& meshesToDraw);
 
     public:
         SceneRenderer(const SceneRenderer&) = delete;

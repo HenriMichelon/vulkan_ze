@@ -55,7 +55,7 @@ namespace z0 {
         currentScene = scene;
         ready(currentScene);
         physicsSystem.OptimizeBroadPhase();
-        viewport->loadScene(currentScene);
+        //viewport->loadScene(currentScene);
 
         // https://gafferongames.com/post/fix_your_timestep/
         using Clock = std::chrono::steady_clock;

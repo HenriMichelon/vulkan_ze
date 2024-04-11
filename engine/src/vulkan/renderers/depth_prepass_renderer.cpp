@@ -9,8 +9,8 @@ namespace z0 {
     }
 
     void DepthPrepassRenderer::loadScene(std::shared_ptr<DepthBuffer>& _depthBuffer,
-                                         Camera* _camera,
-                                         std::vector<MeshInstance*>& _meshes) {
+                                         std::shared_ptr<Camera>& _camera,
+                                         std::vector<std::shared_ptr<MeshInstance>>& _meshes) {
         meshes = _meshes;
         depthBuffer = _depthBuffer;
         currentCamera = _camera;

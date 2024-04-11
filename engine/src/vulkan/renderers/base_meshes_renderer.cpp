@@ -32,12 +32,4 @@ namespace z0 {
                                vertexAttribute.data());
     }
 
-    uint32_t BaseMeshesRenderer::getMultiMeshesInstanceCount() const {
-        uint32_t count{0};
-        for (auto& multiMesh: multiMeshes) {
-            count += multiMesh->getMultiMesh()->getInstanceCount();
-        }
-        return count;
-    }
-
 }

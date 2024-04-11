@@ -18,7 +18,7 @@ namespace z0 {
 
         void cleanup() override;
         void loadScene(std::shared_ptr<VulkanCubemap>& cubemap);
-        void update(Camera* currentCamera, uint32_t currentFrame);
+        void update(std::shared_ptr<Camera> currentCamera, uint32_t currentFrame);
         void loadShaders() override;
         void createDescriptorSetLayout() override;
         void recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) override;

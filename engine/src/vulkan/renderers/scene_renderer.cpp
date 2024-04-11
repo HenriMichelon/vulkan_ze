@@ -20,16 +20,16 @@ namespace z0 {
      }
 
     void SceneRenderer::cleanup() {
-        for (const auto& shadowMapRenderer : shadowMapRenderers) {
+        /*for (const auto& shadowMapRenderer : shadowMapRenderers) {
             shadowMapRenderer->cleanup();
-        }
+        }*/
         if (skyboxRenderer != nullptr) skyboxRenderer->cleanup();
         materials.clear();
-        shadowMapRenderers.clear();
         shadowMaps.clear();
         opaquesMeshes.clear();
         transparentsMeshes.clear();
-        depthPrepassRenderer->cleanup();
+        //shadowMapRenderers.clear();
+        //depthPrepassRenderer->cleanup();
         images.clear();
         shadowMapsBuffers.clear();
         materialsBuffers.clear();
@@ -37,7 +37,7 @@ namespace z0 {
         BaseMeshesRenderer::cleanup();
     }
 
-    void SceneRenderer::loadScene(std::shared_ptr<Node>& rootNode) {
+   /* void SceneRenderer::loadScene(std::shared_ptr<Node>& rootNode) {
         loadNode(rootNode);
         createImagesIndex(rootNode);
 
@@ -74,17 +74,17 @@ namespace z0 {
 
         createResources();
 
-        /* (auto& shadowMap : shadowMaps) {
+         (auto& shadowMap : shadowMaps) {
             auto shadowMapRenderer = std::make_shared<ShadowMapRenderer>(vulkanDevice, shaderDirectory);
             shadowMapRenderer->loadScene(shadowMap, meshes);
             shadowMapRenderers.push_back(shadowMapRenderer);
             vulkanDevice.registerRenderer(shadowMapRenderer);
         }
         depthPrepassRenderer->loadScene(depthBuffer, currentCamera, opaquesMeshes);
-        vulkanDevice.registerRenderer(depthPrepassRenderer);*/
+        vulkanDevice.registerRenderer(depthPrepassRenderer);
     }
 
-    void SceneRenderer::loadNode(std::shared_ptr<Node>& parent) {
+    /*void SceneRenderer::loadNode(std::shared_ptr<Node>& parent) {
         if (currentCamera == nullptr) {
             if (auto* camera = dynamic_cast<Camera*>(parent.get())) {
                 currentCamera = camera;
@@ -179,7 +179,7 @@ namespace z0 {
         for(auto& child: node->getChildren()) {
             createImagesIndex(child);
         }
-    }
+    }*/
 
     void SceneRenderer::loadShaders() {
         if (skyboxRenderer != nullptr) skyboxRenderer->loadShaders();
@@ -230,7 +230,7 @@ namespace z0 {
             pointLightsArray[i].constant = omniLights[i]->getAttenuation();
             pointLightsArray[i].linear = omniLights[i]->getLinear();
             pointLightsArray[i].quadratic = omniLights[i]->getQuadratic();
-            if (auto* spot = dynamic_cast<SpotLight*>(omniLights[i])) {
+            if (auto* spot = dynamic_cast<SpotLight*>(omniLights[i].get())) {
                 pointLightsArray[i].isSpot = true;
                 pointLightsArray[i].direction = spot->getDirection();
                 pointLightsArray[i].cutOff = spot->getCutOff();
@@ -240,7 +240,7 @@ namespace z0 {
         if (globalUbo.pointLightsCount > 0) writeUniformBuffer(pointLightBuffers, currentFrame, pointLightsArray.get());
 
         //**** ModelUniform
-        auto modelsUboArray = std::make_unique<ModelUniform[]>(meshes.size() + getMultiMeshesInstanceCount());
+        auto modelsUboArray = std::make_unique<ModelUniform[]>(meshes.size());
         for (const auto&meshInstance: meshes) {
             if (meshInstance->getMesh()->isValid()) {
                 modelsUboArray[modelIndices[meshInstance->getId()]] = {
@@ -248,14 +248,6 @@ namespace z0 {
                 };
             }
         }
-        /*for (const auto&meshInstance: multiMeshes) {
-            auto& mesh = meshInstance->getMultiMesh();
-            if (mesh->isValid()) {
-                modelsUboArray[modelIndices[meshInstance->getId()]] = {
-                    .matrix = meshInstance->getTransformGlobal() * mesh->getInstanceTransform(instance)
-                };
-            }
-        }*/
         writeUniformBuffer(modelsBuffers, currentFrame, modelsUboArray.get());
 
         //**** MaterialUniform
@@ -280,22 +272,20 @@ namespace z0 {
     }
 
     void SceneRenderer::recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) {
-        if (currentCamera == nullptr) return;
-        if (!meshes.empty()) {
-            setInitialState(commandBuffer);
-            vkCmdSetDepthWriteEnable(commandBuffer, VK_FALSE); // we have a depth prepass
-            vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_EQUAL); // comparing with the depth prepass
-            vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
-            vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_LESS_OR_EQUAL);
-            drawMeshes(commandBuffer, currentFrame, opaquesMeshes);
-            vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
-            vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_LESS_OR_EQUAL);
-            drawMeshes(commandBuffer, currentFrame, transparentsMeshes);
-        }
+        setInitialState(commandBuffer);
+        /*vkCmdSetDepthWriteEnable(commandBuffer, VK_FALSE); // we have a depth prepass
+        vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_EQUAL); // comparing with the depth prepass
+         */
+        vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
+        vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_LESS_OR_EQUAL);
+        drawMeshes(commandBuffer, currentFrame, opaquesMeshes);
+        /*vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
+        vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_LESS_OR_EQUAL);
+        drawMeshes(commandBuffer, currentFrame, transparentsMeshes);*/
         if (skyboxRenderer != nullptr) skyboxRenderer->recordCommands(commandBuffer, currentFrame);
     }
 
-    void SceneRenderer::drawMeshes(VkCommandBuffer commandBuffer, uint32_t currentFrame, const std::vector<MeshInstance*>& meshesToDraw) {
+    void SceneRenderer::drawMeshes(VkCommandBuffer commandBuffer, uint32_t currentFrame, const std::vector<std::shared_ptr<MeshInstance>>& meshesToDraw) {
         for (const auto& meshInstance : meshesToDraw) {
             auto modelIndex = modelIndices[meshInstance->getId()];
             auto mesh = meshInstance->getMesh();
@@ -342,12 +332,12 @@ namespace z0 {
         createUniformBuffers(globalBuffers, sizeof(GobalUniform));
 
         // Models UBO
-        VkDeviceSize modelBufferSize = sizeof(ModelUniform) * (meshes.size() + getMultiMeshesInstanceCount());
+        VkDeviceSize modelBufferSize = sizeof(ModelUniform) * (meshes.size() + (meshes.empty() ? 1 : 0));
         createUniformBuffers(modelsBuffers, modelBufferSize);
 
         // Materials UBO
         VkDeviceSize materialBufferSize = sizeof(MaterialUniform);
-        createUniformBuffers(materialsBuffers, materialBufferSize, materials.size());
+        createUniformBuffers(materialsBuffers, materialBufferSize, materials.size() + (materials.empty() ? 1 : 0));
 
         // PointLight array UBO
         VkDeviceSize pointLightBufferSize = sizeof(PointLightUniform) * (omniLights.size()+ (omniLights.empty() ? 1 : 0));
@@ -434,7 +424,7 @@ namespace z0 {
         if (depthBuffer == nullptr) {
             depthBuffer = std::make_shared<DepthBuffer>(vulkanDevice, true);
             resolvedDepthBuffer = std::make_shared<DepthBuffer>(vulkanDevice, false);
-            depthPrepassRenderer = std::make_shared<DepthPrepassRenderer>(vulkanDevice, shaderDirectory);
+            //depthPrepassRenderer = std::make_shared<DepthPrepassRenderer>(vulkanDevice, shaderDirectory);
         } else {
             depthBuffer->createImagesResources();
         }
@@ -443,6 +433,7 @@ namespace z0 {
     void SceneRenderer::cleanupImagesResources() {
         if (depthBuffer != nullptr) {
             resolvedDepthBuffer->cleanupImagesResources();
+            depthBuffer->cleanupImagesResources();
         }
         colorAttachmentHdr->cleanupImagesResources();
         colorAttachmentMultisampled.cleanupImagesResources();

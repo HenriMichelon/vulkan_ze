@@ -203,7 +203,7 @@ public:
         addChild(floor);
 
         addChild(std::make_shared<Player>());
-        printTree(std::cout);
+        //printTree(std::cout);
     }
 
 private:

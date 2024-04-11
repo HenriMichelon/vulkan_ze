@@ -24,7 +24,7 @@ namespace z0 {
         bool shouldClose() { return window.shouldClose(); }
         float getFPS() const { return fps; }
 
-        void loadScene(std::shared_ptr<Node>& rootNode);
+        //void loadScene(std::shared_ptr<Node>& rootNode);
 
         static Viewport& get();
 

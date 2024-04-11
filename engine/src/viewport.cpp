@@ -62,8 +62,8 @@ namespace z0 {
         return vulkanDevice->getAspectRatio();
     }
 
-    void Viewport::loadScene(std::shared_ptr<Node>& rootNode) {
+    /*void Viewport::loadScene(std::shared_ptr<Node>& rootNode) {
         sceneRenderer->loadScene(rootNode);
-    }
+    }*/
 
 }
