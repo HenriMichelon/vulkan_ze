@@ -138,6 +138,7 @@ add_executable(${PROJECT_NAME}
 		engine/src/resources/multi_mesh.cpp
 		engine/include/z0/nodes/multi_mesh_instance.hpp
 		engine/src/nodes/multi_mesh_instance.cpp
+		engine/src/nodes/environment.cpp
 )
 
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_shaders)

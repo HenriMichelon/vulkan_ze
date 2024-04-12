@@ -53,9 +53,9 @@ namespace z0 {
 
     void Application::start(const std::shared_ptr<Node>& scene) {
         currentScene = scene;
-        ready(currentScene);
+        currentScene->_onReady();
+        currentScene->_setViewport(viewport);
         physicsSystem.OptimizeBroadPhase();
-        //viewport->loadScene(currentScene);
 
         // https://gafferongames.com/post/fix_your_timestep/
         using Clock = std::chrono::steady_clock;
@@ -122,10 +122,7 @@ namespace z0 {
     }
 
     void Application::ready(const std::shared_ptr<Node>& node) {
-        for(auto& child: node->getChildren()) {
-            ready(child);
-        }
-        node->_onReady();
+
     }
 
     void Application::process(const std::shared_ptr<Node>& node, float delta) {

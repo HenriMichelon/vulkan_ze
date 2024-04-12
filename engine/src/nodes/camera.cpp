@@ -15,6 +15,24 @@ namespace z0 {
         setViewDirection();
     }
 
+    void Camera::setCurrent() {
+        Application::getViewport()._setCamera(this);
+    }
+
+    bool Camera::isCurrent() {
+        return this == Application::getViewport()._getCurrentCamera();
+    }
+
+    void Camera::_onEnterScene() {
+        if (Application::getViewport()._getCurrentCamera() == nullptr) setCurrent();
+        Node::_onEnterScene();
+    }
+
+    void Camera::_onExitScene() {
+        if (isCurrent()) Application::getViewport()._setCamera(nullptr);
+        Node::_onExitScene();
+    }
+
     void Camera::setOrthographicProjection(float left, float right, float top, float bottom, float _near, float _far) {
         projectionMatrix = glm::mat4{1.0f};
         projectionMatrix[0][0] = 2.f / (right - left);

@@ -190,8 +190,9 @@ namespace z0 {
     void Node::addChild(const std::shared_ptr<Node> child) {
         children.push_back(child);
         child->parent = this;
+        child->viewport = viewport;
         child->updateTransform(worldTransform);
-        if (inReady) child->_onReady();
+        if (inReady) child->onReady();
     }
 
     void Node::removeChild(const std::shared_ptr<Node>& node) {
@@ -199,8 +200,35 @@ namespace z0 {
         node->parent = nullptr;
     }
 
+    void Node::_onEnterScene() {
+        for(auto& child: children) {
+            child->viewport = viewport;
+            child->_onEnterScene();
+        }
+    }
+
+    void Node::_onExitScene() {
+        for(auto& child: children) {
+            child->viewport = nullptr;
+            child->_onExitScene();
+        }
+    }
+
+    void Node::_setViewport(std::shared_ptr<Viewport>& _viewport) {
+        viewport = _viewport;
+        if (viewport == nullptr) {
+            _onExitScene();
+        } else {
+            _onEnterScene();
+        }
+    }
+
     void Node::_onReady() {
         inReady = true;
+        for(auto& child: children) {
+            child->viewport = nullptr;
+            child->_onReady();
+        }
         onReady();
         inReady = false;
     }

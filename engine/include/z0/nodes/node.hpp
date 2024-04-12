@@ -23,6 +23,7 @@ namespace z0 {
     };
 
     class Application;
+    class Viewport;
 
     class Node: public Object {
     public:
@@ -116,10 +117,11 @@ namespace z0 {
         std::list<std::shared_ptr<Node>> children;
         bool needPhysics{false};
         Node* parent {nullptr};
+        std::shared_ptr<Viewport> viewport{nullptr};
 
         virtual void _onReady();
-        virtual void _onEnterTree() {};
-        virtual void _onExitTree() {};
+        virtual void _onEnterScene();
+        virtual void _onExitScene();
 
         virtual std::shared_ptr<Node> duplicateInstance();
 
@@ -134,6 +136,7 @@ namespace z0 {
     public:
         virtual void _physicsUpdate() {};
         inline bool _needPhysics() const { return needPhysics; }
+        void _setViewport(std::shared_ptr<Viewport>& viewport);
     };
 
     class DistanceSortedNode {

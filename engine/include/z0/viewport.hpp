@@ -1,10 +1,13 @@
 #pragma once
 
-#include "z0/application_config.hpp"
-#include "z0/nodes/node.hpp"
 #include "z0/helpers/window_helper.hpp"
 #include "z0/vulkan/vulkan_device.hpp"
+#include "z0/application_config.hpp"
+#include "z0/nodes/node.hpp"
 #include "z0/nodes/skybox.hpp"
+#include "z0/nodes/camera.hpp"
+#include "z0/nodes/environment.hpp"
+#include "z0/nodes/mesh_instance.hpp"
 
 namespace z0 {
 
@@ -25,13 +28,6 @@ namespace z0 {
         bool shouldClose() { return window.shouldClose(); }
         float getFPS() const { return fps; }
 
-        //void loadScene(std::shared_ptr<Node>& rootNode);
-
-        //static Viewport& get();
-
-
-
-
     private:
         float fps;
         WindowHelper window;
@@ -44,7 +40,11 @@ namespace z0 {
         VulkanDevice& _getDevice() { return *vulkanDevice; }
         WindowHelper& _getWindowHelper() { return window; }
         void _setFPS(float _fps) { fps = _fps; }
-        void _setSkyBox(std::shared_ptr<Skybox>& skybox);
+        void _setSkyBox(Skybox& skybox);
+        void _setCamera(Camera* camera);
+        Camera* _getCurrentCamera();
+        void setEnvironment(Environment* environment);
+        void addMesh(MeshInstance* meshInstance);
     };
 
 }

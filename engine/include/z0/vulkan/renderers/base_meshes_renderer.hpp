@@ -2,7 +2,6 @@
 
 #include "z0/vulkan/renderers/base_renderpass.hpp"
 #include "z0/vulkan/framebuffers/depth_buffer.hpp"
-#include "z0/nodes/multi_mesh_instance.hpp"
 #include "z0/nodes/mesh_instance.hpp"
 #include "z0/nodes/camera.hpp"
 
@@ -15,9 +14,12 @@ namespace z0 {
 
         std::shared_ptr<DepthBuffer>& getDepthBuffer() { return depthBuffer; }
 
+        void setCamera(Camera* camera);
+        Camera* getCurrentCamera() const { return currentCamera; }
+
     protected:
-        std::shared_ptr<Camera> currentCamera {nullptr};
-        std::vector<std::shared_ptr<MeshInstance>> meshes {};
+        Camera* currentCamera {nullptr};
+        std::vector<MeshInstance*> meshes {};
         std::shared_ptr<DepthBuffer> depthBuffer;
         std::vector<std::unique_ptr<VulkanBuffer>> modelsBuffers{MAX_FRAMES_IN_FLIGHT};
 

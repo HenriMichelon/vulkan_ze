@@ -2,6 +2,7 @@
 #include "z0/vulkan/renderers/tonemapping_renderer.hpp"
 #include "z0/vulkan/renderers/simple_postprocessing_renderer.hpp"
 #include "z0/application.hpp"
+#include "z0/viewport.hpp"
 #include "z0/log.hpp"
 
 namespace z0 {
@@ -62,10 +63,10 @@ namespace z0 {
         return vulkanDevice->getAspectRatio();
     }
 
-    /*void Viewport::loadScene(std::shared_ptr<Node>& rootNode) {
-        sceneRenderer->loadScene(rootNode);
-    }*/
-
-    void Viewport::_setSkyBox(std::shared_ptr<Skybox>& skybox) { sceneRenderer->setSkyBox(skybox); };
+    void Viewport::_setSkyBox(Skybox& skybox) { sceneRenderer->setSkyBox(skybox); };
+    void Viewport::_setCamera(Camera* camera) { sceneRenderer->setCamera(camera); }
+    Camera* Viewport::_getCurrentCamera() { return sceneRenderer->getCurrentCamera(); }
+    void Viewport::setEnvironment(Environment* environment) { sceneRenderer->setEnvironment(environment); }
+    void Viewport::addMesh(MeshInstance* meshInstance) { sceneRenderer->addMesh(meshInstance); }
 
 }

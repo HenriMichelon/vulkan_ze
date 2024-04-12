@@ -8,6 +8,8 @@
 #include "z0/nodes/directional_light.hpp"
 #include "z0/log.hpp"
 
+#include "stb_image_write.h"
+
 #include <array>
 #include <set>
 
@@ -17,6 +19,7 @@ namespace z0 {
             BaseMeshesRenderer{dev, sDir},
             colorAttachmentMultisampled{dev, true} {
         createImagesResources();
+        createResources();
      }
 
     void SceneRenderer::cleanup() {
@@ -37,29 +40,29 @@ namespace z0 {
         BaseMeshesRenderer::cleanup();
     }
 
-    void SceneRenderer::setCamera(std::shared_ptr<Camera>& camera) {
-
+    void SceneRenderer::setEnvironment(Environment* env) {
+        environment = env;
+        if (environment != nullptr) log("Using environment", environment->toString());
     }
 
-    void SceneRenderer::setEnvironment(std::shared_ptr<Environment>& environment) {
-
-    }
-
-    void SceneRenderer::setSkyBox(std::shared_ptr<Skybox>& skybox) {
+    void SceneRenderer::setSkyBox(Skybox& skybox) {
         if (skyboxRenderer != nullptr) {
             skyboxRenderer->cleanup();
             skyboxRenderer.reset();
         }
         skyboxRenderer = std::make_unique<SkyboxRenderer>(vulkanDevice, shaderDirectory);
-        skyboxRenderer->loadScene(skybox->getCubemap()->_getCubemap());
-        log("Using skybox", skybox->toString());
+        skyboxRenderer->loadScene(skybox.getCubemap()->_getCubemap());
+        log("Using skybox", skybox.toString());
     }
 
-    void SceneRenderer::addMesh(std::shared_ptr<MeshInstance>& meshInstance) {
-
+    void SceneRenderer::addMesh(MeshInstance* meshInstance) {
+        if (meshInstance->isValid()) {
+            meshes.push_back(meshInstance);
+            updateMaterials(meshInstance->getMesh());
+        }
     }
 
-    void SceneRenderer::addLight(std::shared_ptr<OmniLight>& omniLight) {
+    void SceneRenderer::addLight(OmniLight* omniLight) {
 
     }
 
@@ -111,19 +114,6 @@ namespace z0 {
     }
 
     /*void SceneRenderer::loadNode(std::shared_ptr<Node>& parent) {
-        if (currentCamera == nullptr) {
-            if (auto* camera = dynamic_cast<Camera*>(parent.get())) {
-                currentCamera = camera;
-                log("Using camera", currentCamera->toString());
-            }
-        }
-        if (skyboxRenderer == nullptr) {
-            if (auto* skybox = dynamic_cast<Skybox*>(parent.get())) {
-                skyboxRenderer = std::make_unique<SkyboxRenderer>(vulkanDevice, shaderDirectory);
-                skyboxRenderer->loadScene(skybox->getCubemap()->_getCubemap());
-                log("Using skybox", skybox->toString());
-            }
-        }
         if (directionalLight == nullptr) {
             if (auto* light = dynamic_cast<DirectionalLight*>(parent.get())) {
                 directionalLight = light;
@@ -133,12 +123,7 @@ namespace z0 {
                 }
             }
         }
-        if (environement == nullptr) {
-            if (auto* env = dynamic_cast<Environment*>(parent.get())) {
-                environement = env;
-                log("Using environment", environement->toString());
-            }
-        }
+
         if (auto* omniLight = dynamic_cast<OmniLight*>(parent.get())) {
             omniLights.push_back(omniLight);
             if (omniLight->getCastShadows()) {
@@ -147,65 +132,34 @@ namespace z0 {
                 }
             }
         }
-        createImagesList(parent);
+        updateMaterials(parent);
         for(auto& child: parent->getChildren()) {
             loadNode(child);
         }
-    }
+    }*/
 
-    void SceneRenderer::createImagesList(std::shared_ptr<Mesh>& mesh) {
+    void SceneRenderer::updateMaterials(std::shared_ptr<Mesh>& mesh) {
         for(const auto& material : mesh->_getMaterials()) {
             if (auto standardMaterial = dynamic_cast<StandardMaterial *>(material.get())) {
-                if (standardMaterial->albedoTexture != nullptr) {
-                    images.insert(standardMaterial->albedoTexture->getImage()._getImage());
-                }
-                if (standardMaterial->specularTexture != nullptr) {
-                    images.insert(standardMaterial->specularTexture->getImage()._getImage());
-                }
-                if (standardMaterial->normalTexture != nullptr) {
-                    images.insert(standardMaterial->normalTexture->getImage()._getImage());
-                }
-            }
-        }
-    }
-
-    void SceneRenderer::createImagesList(std::shared_ptr<Node>& node) {
-        if (auto* meshInstance = dynamic_cast<MeshInstance*>(node.get())) {
-            meshes.push_back(meshInstance);
-            createImagesList(meshInstance->getMesh());
-        }
-    }
-
-    void SceneRenderer::createImagesIndex(std::shared_ptr<Mesh>& mesh) {
-        for(const auto& material : mesh->_getMaterials()) {
-            if (auto* standardMaterial = dynamic_cast<StandardMaterial*>(material.get())) {
-                if (standardMaterial->albedoTexture != nullptr) {
-                    auto &image = standardMaterial->albedoTexture->getImage();
-                    auto index = std::distance(std::begin(images), images.find(image._getImage()));
-                    imagesIndices[image.getId()] = static_cast<int32_t>(index);
-                }
-                if (standardMaterial->specularTexture != nullptr) {
-                    auto &image = standardMaterial->specularTexture->getImage();
-                    auto index = std::distance(std::begin(images), images.find(image._getImage()));
-                    imagesIndices[image.getId()] = static_cast<int32_t>(index);
-                }
-                if (standardMaterial->normalTexture != nullptr) {
-                    auto &image = standardMaterial->normalTexture->getImage();
-                    auto index = std::distance(std::begin(images), images.find(image._getImage()));
-                    imagesIndices[image.getId()] = static_cast<int32_t>(index);
+                Image* image = nullptr;
+                if (standardMaterial->albedoTexture != nullptr) image = &standardMaterial->albedoTexture->getImage();
+                if (standardMaterial->specularTexture != nullptr) image = &standardMaterial->specularTexture->getImage();
+                if (standardMaterial->normalTexture != nullptr)  image = &standardMaterial->normalTexture->getImage();
+                if (image != nullptr) {
+                    resourcesDirty = resourcesDirty || images.insert(image->_getImage()).second;
+                    auto index = std::distance(std::begin(images), images.find(image->_getImage()));
+                    imagesIndices[image->getId()] = static_cast<int32_t>(index);
                 }
             }
         }
+        for (const auto &material: mesh->_getMaterials()) {
+           if (!materialsIndices.contains(material->getId())) {
+               materialsIndices[material->getId()] = materials.size();
+               materials.push_back(material);
+               resourcesDirty = true;
+           }
+        }
     }
-
-    void SceneRenderer::createImagesIndex(std::shared_ptr<Node>& node) {
-        if (auto* meshInstance = dynamic_cast<MeshInstance*>(node.get())) {
-            createImagesIndex(meshInstance->getMesh());
-        }
-        for(auto& child: node->getChildren()) {
-            createImagesIndex(child);
-        }
-    }*/
 
     void SceneRenderer::loadShaders() {
         if (skyboxRenderer != nullptr) skyboxRenderer->loadShaders();
@@ -214,9 +168,10 @@ namespace z0 {
     }
 
     void SceneRenderer::update(uint32_t currentFrame) {
-        if (currentCamera == nullptr) return;
+        if (resourcesDirty) updateDescriptorSetLayout();
+
         if (skyboxRenderer != nullptr) skyboxRenderer->update(currentCamera, currentFrame);
-        if (meshes.empty() ) return;
+        if ((currentCamera == nullptr) || meshes.empty()) return;
 
         //**** GobalUniform
         GobalUniform globalUbo{
@@ -233,8 +188,8 @@ namespace z0 {
             };
             globalUbo.haveDirectionalLight = true;
         }
-        if (environement != nullptr) {
-            globalUbo.ambient = environement->getAmbientColorAndIntensity();
+        if (environment != nullptr) {
+            globalUbo.ambient = environment->getAmbientColorAndIntensity();
         }
         globalUbo.pointLightsCount = omniLights.size();
         writeUniformBuffer(globalBuffers, currentFrame, &globalUbo);
@@ -256,7 +211,7 @@ namespace z0 {
             pointLightsArray[i].constant = omniLights[i]->getAttenuation();
             pointLightsArray[i].linear = omniLights[i]->getLinear();
             pointLightsArray[i].quadratic = omniLights[i]->getQuadratic();
-            if (auto* spot = dynamic_cast<SpotLight*>(omniLights[i].get())) {
+            if (auto* spot = dynamic_cast<SpotLight*>(omniLights[i])) {
                 pointLightsArray[i].isSpot = true;
                 pointLightsArray[i].direction = spot->getDirection();
                 pointLightsArray[i].cutOff = spot->getCutOff();
@@ -304,46 +259,41 @@ namespace z0 {
          */
         vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
         vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_LESS_OR_EQUAL);
-        drawMeshes(commandBuffer, currentFrame, opaquesMeshes);
+        drawMeshes(commandBuffer, currentFrame, meshes);
         /*vkCmdSetDepthWriteEnable(commandBuffer, VK_TRUE);
         vkCmdSetDepthCompareOp(commandBuffer, VK_COMPARE_OP_LESS_OR_EQUAL);
         drawMeshes(commandBuffer, currentFrame, transparentsMeshes);*/
         if (skyboxRenderer != nullptr) skyboxRenderer->recordCommands(commandBuffer, currentFrame);
     }
 
-    void SceneRenderer::drawMeshes(VkCommandBuffer commandBuffer, uint32_t currentFrame, const std::vector<std::shared_ptr<MeshInstance>>& meshesToDraw) {
+    void SceneRenderer::drawMeshes(VkCommandBuffer commandBuffer, uint32_t currentFrame, const std::vector<MeshInstance*>& meshesToDraw) {
         for (const auto& meshInstance : meshesToDraw) {
             auto modelIndex = modelIndices[meshInstance->getId()];
             auto mesh = meshInstance->getMesh();
-            if (mesh->isValid()) {
-                for (const auto& surface: mesh->getSurfaces()) {
-                    const auto& material = surface->material.get();
-                    if (auto standardMaterial = dynamic_cast<StandardMaterial*>(material)) {
-                        vkCmdSetCullMode(commandBuffer,
-                                         standardMaterial->cullMode == CULLMODE_DISABLED ? VK_CULL_MODE_NONE :
-                                         standardMaterial->cullMode == CULLMODE_BACK ? VK_CULL_MODE_BACK_BIT
-                                                                                     : VK_CULL_MODE_FRONT_BIT);
-                    } else {
-                        vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_NONE);
-                    }
-                    std::array<uint32_t, 5> offsets = {
-                            0, // globalBuffers
-                            0,
-                            static_cast<uint32_t>(materialsBuffers[currentFrame]->getAlignmentSize() * materialsIndices[material->getId()]),
-                            0, // pointLightBuffers
-                            0, // shadowMapsBuffers
-                    };
-                    bindDescriptorSets(commandBuffer, currentFrame, offsets.size(), offsets.data());
-                    mesh->_getModel()->draw(commandBuffer, surface->firstVertexIndex, surface->indexCount, modelIndex);
+            for (const auto& surface: mesh->getSurfaces()) {
+                const auto& material = surface->material.get();
+                if (auto standardMaterial = dynamic_cast<StandardMaterial*>(material)) {
+                    vkCmdSetCullMode(commandBuffer,
+                                     standardMaterial->cullMode == CULLMODE_DISABLED ? VK_CULL_MODE_NONE :
+                                     standardMaterial->cullMode == CULLMODE_BACK ? VK_CULL_MODE_BACK_BIT
+                                                                                 : VK_CULL_MODE_FRONT_BIT);
+                } else {
+                    vkCmdSetCullMode(commandBuffer, VK_CULL_MODE_NONE);
                 }
+                std::array<uint32_t, 5> offsets = {
+                        0, // globalBuffers
+                        0, // modelBuffers
+                        static_cast<uint32_t>(materialsBuffers[currentFrame]->getAlignmentSize() * materialsIndices[material->getId()]),
+                        0, // pointLightBuffers
+                        0, // shadowMapsBuffers
+                };
+                bindDescriptorSets(commandBuffer, currentFrame, offsets.size(), offsets.data());
+                mesh->_getModel()->draw(commandBuffer, surface->firstVertexIndex, surface->indexCount, modelIndex);
             }
         }
     }
 
     void SceneRenderer::createDescriptorSetLayout() {
-        if (currentCamera == nullptr) return;
-        if (skyboxRenderer != nullptr) skyboxRenderer->createDescriptorSetLayout();
-        if (meshes.empty()) return;
         globalPool = VulkanDescriptorPool::Builder(vulkanDevice)
                 .setMaxSets(MAX_FRAMES_IN_FLIGHT)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // global UBO
@@ -351,9 +301,13 @@ namespace z0 {
                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // model UBO
                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // surfaces UBO
                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // pointlightarray UBO
+                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, MAX_FRAMES_IN_FLIGHT) // shadow map UBO
                 .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT) // shadow map
                 .build();
+        updateDescriptorSetLayout();
+    }
 
+    void SceneRenderer::updateDescriptorSetLayout() {
         // Global UBO
         createUniformBuffers(globalBuffers, sizeof(GobalUniform));
 
@@ -373,32 +327,38 @@ namespace z0 {
         VkDeviceSize shadowMapBufferSize = sizeof(ShadowMapUniform) * (shadowMaps.size()+ (shadowMaps.empty() ? 1 : 0));
         createUniformBuffers(shadowMapsBuffers, shadowMapBufferSize);
 
-        globalSetLayout = VulkanDescriptorSetLayout::Builder(vulkanDevice)
-            .addBinding(0, // global UBO
-                    VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-                    VK_SHADER_STAGE_ALL_GRAPHICS)
-            .addBinding(1, // images textures
-                       VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                       VK_SHADER_STAGE_FRAGMENT_BIT,
-                       images.size())
-            .addBinding(2, // model UBO
-                        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-                        VK_SHADER_STAGE_VERTEX_BIT)
-            .addBinding(3, // materials UBO
-                        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-                        VK_SHADER_STAGE_FRAGMENT_BIT)
-            .addBinding(4, // PointLight array UBO
-                        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-                        VK_SHADER_STAGE_FRAGMENT_BIT)
-            .addBinding(5, // shadow maps infos
-                        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-                        VK_SHADER_STAGE_FRAGMENT_BIT)
-            .addBinding(6, // shadow maps
-                        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                        VK_SHADER_STAGE_FRAGMENT_BIT,
-                        shadowMaps.size())
-           .build();
+        // Use the default blank image if there is no image to bind
+        if (images.empty()) images.insert(blankImage);
 
+        globalSetLayout = VulkanDescriptorSetLayout::Builder(vulkanDevice)
+                .addBinding(0, // global UBO
+                            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                            VK_SHADER_STAGE_ALL_GRAPHICS)
+                .addBinding(1, // images textures
+                            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                            VK_SHADER_STAGE_FRAGMENT_BIT,
+                            images.size())
+                .addBinding(2, // model UBO
+                            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                            VK_SHADER_STAGE_VERTEX_BIT)
+                .addBinding(3, // materials UBO
+                            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                            VK_SHADER_STAGE_FRAGMENT_BIT)
+                .addBinding(4, // PointLight array UBO
+                            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                            VK_SHADER_STAGE_FRAGMENT_BIT)
+                .addBinding(5, // shadow maps infos
+                            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                            VK_SHADER_STAGE_FRAGMENT_BIT)
+                .addBinding(6, // shadow maps
+                            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                            VK_SHADER_STAGE_FRAGMENT_BIT,
+                            shadowMaps.empty() ? 1 : shadowMaps.size())
+                .build();
+
+        if (resourcesDirty) {
+            globalPool->resetPool();
+        }
         for (uint32_t i = 0; i < descriptorSets.size(); i++) {
             auto globalBufferInfo = globalBuffers[i]->descriptorInfo(sizeof(GobalUniform));
             auto modelBufferInfo = modelsBuffers[i]->descriptorInfo(modelBufferSize);
@@ -410,22 +370,22 @@ namespace z0 {
                 imagesInfo.push_back(image->imageInfo());
             }
             auto writer = VulkanDescriptorWriter(*globalSetLayout, *globalPool)
-                .writeBuffer(0, &globalBufferInfo)
-                .writeImage(1, imagesInfo.data())
-                .writeBuffer(2, &modelBufferInfo)
-                .writeBuffer(3, &materialBufferInfo)
-                .writeBuffer(4, &pointLightBufferInfo)
-                .writeBuffer(5, &shadowMapBufferInfo);
+                    .writeBuffer(0, &globalBufferInfo)
+                    .writeImage(1, imagesInfo.data())
+                    .writeBuffer(2, &modelBufferInfo)
+                    .writeBuffer(3, &materialBufferInfo)
+                    .writeBuffer(4, &pointLightBufferInfo)
+                    .writeBuffer(5, &shadowMapBufferInfo);
             std::vector<VkDescriptorImageInfo> shadowMapsInfo{};
             if (shadowMaps.empty()) {
-                VkDescriptorImageInfo imageInfo = imagesInfo[0]; // find a better solution (blank image ?)
+                VkDescriptorImageInfo imageInfo = blankImage->imageInfo();
                 writer.writeImage(6, &imageInfo);
             } else {
                 for (const auto &shadowMap: shadowMaps) {
                     shadowMapsInfo.push_back(VkDescriptorImageInfo{
-                        .sampler = shadowMap->getSampler(),
-                        .imageView = shadowMap->getImageView(),
-                        .imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+                            .sampler = shadowMap->getSampler(),
+                            .imageView = shadowMap->getImageView(),
+                            .imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
                     });
                 }
                 writer.writeImage(6, shadowMapsInfo.data());
@@ -434,6 +394,7 @@ namespace z0 {
                 die("Cannot allocate descriptor set");
             }
         }
+        resourcesDirty = false;
     }
 
     void SceneRenderer::recreateImagesResources() {
@@ -445,6 +406,12 @@ namespace z0 {
         }
     }
 
+    void stb_write_func(void *context, void *data, int size) {
+        auto* buffer = reinterpret_cast<std::vector<unsigned char>*>(context);
+        auto* ptr = static_cast<unsigned char*>(data);
+        buffer->insert(buffer->end(), ptr, ptr + size);
+    }
+
     void SceneRenderer::createImagesResources() {
         colorAttachmentHdr = std::make_shared<ColorAttachmentHDR>(vulkanDevice);
         if (depthBuffer == nullptr) {
@@ -454,6 +421,13 @@ namespace z0 {
         } else {
             depthBuffer->createImagesResources();
         }
+        auto data = new unsigned char [1*1*3];
+        data[0] = 0;
+        data[1] = 0;
+        data[2] = 0;
+        stbi_write_jpg_to_func(stb_write_func, &blankImageData, 1, 1, 3, data, 100);
+        delete[] data;
+        blankImage = std::make_shared<VulkanImage>(vulkanDevice, 1, 1, blankImageData.size(), blankImageData.data());
     }
 
     void SceneRenderer::cleanupImagesResources() {
@@ -461,6 +435,8 @@ namespace z0 {
             resolvedDepthBuffer->cleanupImagesResources();
             depthBuffer->cleanupImagesResources();
         }
+        blankImage.reset();
+        blankImageData.clear();
         colorAttachmentHdr->cleanupImagesResources();
         colorAttachmentMultisampled.cleanupImagesResources();
     }

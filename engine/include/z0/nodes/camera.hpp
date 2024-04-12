@@ -20,6 +20,12 @@ namespace z0 {
         void updateTransform(const glm::mat4& parentMatrix);
         void updateTransform();
 
+        void setCurrent();
+        bool isCurrent();
+
+        void _onEnterScene() override;
+        void _onExitScene() override;
+
     private:
         float fov{75.0};
         float nearDistance{0.1f};

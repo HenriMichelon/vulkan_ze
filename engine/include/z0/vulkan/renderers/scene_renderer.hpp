@@ -70,21 +70,20 @@ namespace z0 {
 
         void cleanup() override;
 
-        void setCamera(std::shared_ptr<Camera>& camera);
-        void setEnvironment(std::shared_ptr<Environment>& environment);
-        void setSkyBox(std::shared_ptr<Skybox>& skybox);
-        void addMesh(std::shared_ptr<MeshInstance>& meshInstance);
-        void addLight(std::shared_ptr<OmniLight>& omniLight);
+        void setEnvironment(Environment* environment);
+        void setSkyBox(Skybox& skybox);
+        void addMesh(MeshInstance* meshInstance);
+        void addLight(OmniLight* omniLight);
 
     private:
-        std::shared_ptr<DirectionalLight> directionalLight{nullptr};
-        std::shared_ptr<Environment> environement{nullptr};
+        DirectionalLight* directionalLight{nullptr};
+        Environment* environment{nullptr};
 
         std::map<Node::id_t, uint32_t> modelIndices {};
-        std::vector<std::shared_ptr<MeshInstance>> opaquesMeshes {};
-        std::vector<std::shared_ptr<MeshInstance>> transparentsMeshes {};
+        std::vector<MeshInstance*> opaquesMeshes {};
+        std::vector<MeshInstance*> transparentsMeshes {};
 
-        std::vector<std::shared_ptr<OmniLight>> omniLights;
+        std::vector<OmniLight*> omniLights;
         std::vector<std::unique_ptr<VulkanBuffer>> pointLightBuffers{MAX_FRAMES_IN_FLIGHT};
 
         std::map<Resource::rid_t, int32_t> imagesIndices {};
@@ -107,6 +106,13 @@ namespace z0 {
         // Skybox
         std::unique_ptr<SkyboxRenderer> skyboxRenderer {nullptr};
 
+        // Default blank image
+        std::vector<unsigned char> blankImageData;
+        std::shared_ptr<VulkanImage> blankImage;
+
+        // We need to update the descriptor set before drawing
+        bool resourcesDirty = false;
+
         void update(uint32_t currentFrame) override;
         void recordCommands(VkCommandBuffer commandBuffer, uint32_t currentFrame) override;
         void createDescriptorSetLayout() override;
@@ -117,12 +123,14 @@ namespace z0 {
         void beginRendering(VkCommandBuffer commandBuffer) override;
         void endRendering(VkCommandBuffer commandBuffer, bool isLast) override;
 
-        void loadNode(std::shared_ptr<Node>& parent);
-        void createImagesList(std::shared_ptr<Node>& node);
-        void createImagesList(std::shared_ptr<Mesh>& mesh);
+        /*void loadNode(std::shared_ptr<Node>& parent);
+        void updateMaterials(std::shared_ptr<Node>& node);
         void createImagesIndex(std::shared_ptr<Node>& node);
-        void createImagesIndex(std::shared_ptr<Mesh>& mesh);
-        void drawMeshes(VkCommandBuffer commandBuffer, uint32_t currentFrame, const std::vector<std::shared_ptr<MeshInstance>>& meshesToDraw);
+        void createImagesIndex(std::shared_ptr<Mesh>& mesh);*/
+
+        void updateMaterials(std::shared_ptr<Mesh>& mesh);
+        void drawMeshes(VkCommandBuffer commandBuffer, uint32_t currentFrame, const std::vector<MeshInstance*>& meshesToDraw);
+        void updateDescriptorSetLayout();
 
     public:
         SceneRenderer(const SceneRenderer&) = delete;

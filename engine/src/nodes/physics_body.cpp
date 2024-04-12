@@ -22,13 +22,23 @@ namespace z0 {
                 motionType,
                 collisionLayer << 4 | collisionMask
         };
-        bodyId = bodyInterface.CreateAndAddBody(settings, activationMode);
+        bodyId = bodyInterface.CreateAndAddBody(settings, JPH::EActivation::DontActivate);
         setPositionAndRotation();
         needPhysics = true;
     }
 
     PhysicsBody::~PhysicsBody() {
         //bodyInterface.DestroyBody(bodyId);
+    }
+
+    void PhysicsBody::_onEnterScene() {
+        Node::_onEnterScene();
+        bodyInterface.ActivateBody(bodyId);
+    }
+
+    void PhysicsBody::_onExitScene() {
+        bodyInterface.DeactivateBody(bodyId);
+        Node::_onExitScene();
     }
 
     void PhysicsBody::_physicsUpdate() {

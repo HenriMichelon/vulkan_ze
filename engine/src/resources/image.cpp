@@ -1,5 +1,6 @@
 #include "z0/resources/image.hpp"
 #include "z0/application.hpp"
+#include "z0/viewport.hpp"
 
 namespace z0 {
 

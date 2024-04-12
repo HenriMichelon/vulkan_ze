@@ -84,7 +84,8 @@ namespace z0 {
         fragShader = createShader("skybox.frag", VK_SHADER_STAGE_FRAGMENT_BIT, 0);
     }
 
-    void SkyboxRenderer::update(std::shared_ptr<Camera> currentCamera, uint32_t currentFrame) {
+    void SkyboxRenderer::update(Camera* currentCamera, uint32_t currentFrame) {
+        if (currentCamera == nullptr) return;
         GobalUniformBufferObject globalUbo{
                 .projection = currentCamera->getProjection(),
                 .view = glm::mat4(glm::mat3(currentCamera->getView()))

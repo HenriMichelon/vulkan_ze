@@ -1,5 +1,6 @@
 #pragma once
 
+#include "z0/nodes/node.hpp"
 #include "z0/resources/multi_mesh.hpp"
 
 namespace z0 {

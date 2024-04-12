@@ -1,8 +1,9 @@
 #pragma once
 
 #include "z0/vulkan/vulkan_image.hpp"
-#include "z0/viewport.hpp"
 #include "z0/resources/resource.hpp"
+
+#include <filesystem>
 
 namespace z0 {
 

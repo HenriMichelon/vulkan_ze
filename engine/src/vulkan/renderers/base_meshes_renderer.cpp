@@ -18,6 +18,11 @@ namespace z0 {
         BaseRenderpass::cleanup();
     }
 
+    void BaseMeshesRenderer::setCamera(Camera* camera) {
+        currentCamera = camera;
+        if (currentCamera != nullptr) log("Using camera", currentCamera->toString());
+    }
+
     void BaseMeshesRenderer::setInitialState(VkCommandBuffer commandBuffer) {
         bindShaders(commandBuffer);
         vkCmdSetRasterizationSamplesEXT(commandBuffer, vulkanDevice.getSamples());

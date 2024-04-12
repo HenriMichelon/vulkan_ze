@@ -1,3 +1,5 @@
+#include "z0/application.hpp"
+#include "z0/viewport.hpp"
 #include "z0/nodes/skybox.hpp"
 
 namespace z0 {
@@ -7,8 +9,13 @@ namespace z0 {
         cubemap = std::make_shared<Cubemap>(filename, fileext);
     }
 
-    void Skybox::_onEnterTree() {
+    void Skybox::_onEnterScene() {
+        Application::getViewport()._setSkyBox(*this);
+        Node::_onEnterScene();
+    }
 
+    void Skybox::_onExitScene() {
+        Node::_onExitScene();
     }
 
 }

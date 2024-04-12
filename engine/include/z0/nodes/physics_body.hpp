@@ -25,6 +25,9 @@ namespace z0 {
         void updateTransform() override;
         void updateTransform(const glm::mat4& parentMatrix) override;
 
+        void _onEnterScene() override;
+        void _onExitScene() override;
+
     protected:
         JPH::BodyID bodyId;
         JPH::BodyInterface& bodyInterface;

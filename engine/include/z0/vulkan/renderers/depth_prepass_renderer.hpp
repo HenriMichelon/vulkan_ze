@@ -17,8 +17,8 @@ namespace z0 {
         DepthPrepassRenderer(VulkanDevice& device, const std::string& shaderDirectory);
 
         void loadScene(std::shared_ptr<DepthBuffer>& buffer,
-                       std::shared_ptr<Camera>& camera,
-                       std::vector<std::shared_ptr<MeshInstance>>& meshes);
+                       Camera* camera,
+                       std::vector<MeshInstance*>& meshes);
 
     private:
         void update(uint32_t currentFrame) override;
