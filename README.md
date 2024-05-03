@@ -1,6 +1,6 @@
-# ZeroZero
+# Vulkan Ze
 
-ZeroZero is a 3D game engine based on Vulkan 1.3 & Jolt Physics 4.x
+Vulkan Ze is a experimental, unfinished, 3D engine based on Vulkan 1.3 made for **learning Vulkan**.
 
 **Current state**
 - Scene tree & nodes using classical OO approch
@@ -10,10 +10,7 @@ ZeroZero is a 3D game engine based on Vulkan 1.3 & Jolt Physics 4.x
 - Simple shadows for directionals & spots ligths
 - Skybox using cubemap
 - HDR tone mapping
-
-**Please note**
-- This project was made for learning purpose
-- This engine is not intended for general use, features are added as needed
+- Jolt Physics for Static & Rigid bodies
 
 **Vulkan extensions and third parties dependencies**
 - Dynamic rendering (VK_KHR_dynamic_rendering)
@@ -30,7 +27,7 @@ ZeroZero is a 3D game engine based on Vulkan 1.3 & Jolt Physics 4.x
 **Building tools needed**
 - GCC/MINGW 11+ (C++ 23)
 - CMake 3.22+
-- Vulkan SDK 1.3+ 
+- Vulkan SDK 1.3+
 - Git
 
 **Building**
